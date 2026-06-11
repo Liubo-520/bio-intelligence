@@ -1,0 +1,1 @@
+"""Command-line entrypoints for training, evaluation, and interpretation."""

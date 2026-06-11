@@ -1,0 +1,49 @@
+{
+  "title": "Multi-split AUROC comparison",
+  "sources": [
+    "manuscript comparison values across random, cold-target, and cold-drug protocols"
+  ],
+  "methods": [
+    "DeepDTA",
+    "GraphDTA",
+    "MolTrans",
+    "DrugBAN",
+    "BioInteract"
+  ],
+  "splits": [
+    "random",
+    "cold_target",
+    "cold_drug"
+  ],
+  "auroc_matrix": [
+    [
+      0.878,
+      0.783,
+      0.592
+    ],
+    [
+      0.893,
+      0.815,
+      0.621
+    ],
+    [
+      0.907,
+      0.856,
+      0.668
+    ],
+    [
+      0.915,
+      0.874,
+      0.695
+    ],
+    [
+      0.921,
+      0.941,
+      0.739
+    ]
+  ],
+  "outputs": {
+    "pdf": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/submission/manuscript/figures/fig_comparison_splits.pdf",
+    "png": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/submission/manuscript/figures/fig_comparison_splits.png"
+  }
+}

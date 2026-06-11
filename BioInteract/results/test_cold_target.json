@@ -1,0 +1,9 @@
+{
+  "AUROC": 0.9417,
+  "AUPRC": 0.549,
+  "F1": 0.597,
+  "Precision": 0.5594,
+  "Recall": 0.64,
+  "threshold": 0.7295,
+  "loss": 0.9065
+}

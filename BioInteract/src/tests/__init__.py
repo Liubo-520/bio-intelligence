@@ -1,0 +1,1 @@
+"""Ad hoc smoke and integration tests for the project."""

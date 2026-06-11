@@ -1,0 +1,91 @@
+[
+  {
+    "timestamp": "2026-02-11T17:21:00.096454",
+    "dataset": "davis",
+    "split_type": "cold_drug",
+    "config": {
+      "model": {
+        "drug_encoder": {
+          "gnn_type": "GINE",
+          "num_layers": 3,
+          "hidden_dim": 256,
+          "dropout": 0.2,
+          "edge_dim": 16,
+          "num_atom_features": 52,
+          "jk": "last"
+        },
+        "target_encoder": {
+          "esm2_dim": 640,
+          "projection_dim": 256,
+          "domain_embed_dim": 32,
+          "num_domain_types": 50,
+          "use_domain_features": true
+        },
+        "interaction": {
+          "num_heads": 8,
+          "attn_dim": 256,
+          "dropout": 0.1,
+          "pooling": "gated"
+        },
+        "predictor": {
+          "hidden_dims": [
+            256,
+            128
+          ],
+          "dropout": 0.3,
+          "task": "classification"
+        }
+      },
+      "training": {
+        "batch_size": 64,
+        "lr": 0.0001,
+        "weight_decay": 1e-05,
+        "epochs": 100,
+        "patience": 15,
+        "gradient_accumulation": 1,
+        "amp": true,
+        "scheduler": "cosine",
+        "warmup_epochs": 5,
+        "seed": 42
+      },
+      "data": {
+        "dataset": "davis",
+        "split": "cold_drug",
+        "val_ratio": 0.1,
+        "test_ratio": 0.2,
+        "max_protein_len": 1200,
+        "esm2_cache_dir": "data/esm2_embeddings"
+      },
+      "interpret": {
+        "top_k_residues": 20,
+        "gradcam": true,
+        "case_study_pairs": [
+          {
+            "drug": "Imatinib",
+            "target": "ABL1",
+            "pdb": "1IEP"
+          },
+          {
+            "drug": "Erlotinib",
+            "target": "EGFR",
+            "pdb": "1M17"
+          },
+          {
+            "drug": "Sorafenib",
+            "target": "BRAF",
+            "pdb": "1UWH"
+          }
+        ]
+      }
+    },
+    "metrics": {
+      "AUROC": 0.7250511038809271,
+      "AUPRC": 0.12481138571809355,
+      "F1": 0.17258883248730963,
+      "Precision": 0.22818791946308725,
+      "Recall": 0.13877551020408163,
+      "loss": 3.505003062263131
+    },
+    "notes": ""
+  }
+]

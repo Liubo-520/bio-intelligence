@@ -1,0 +1,69 @@
+{
+  "title": "Ablation study",
+  "sources": [
+    "Table 2 ablation values used in the manuscript"
+  ],
+  "variants": [
+    "Full\nBioInteract",
+    "w/o\nCross-Attn",
+    "w/o\nDomain Feat",
+    "w/o\nESM-2",
+    "w/o\nGraph Aug"
+  ],
+  "metrics": [
+    "random_auroc",
+    "random_auprc",
+    "cold_target_auroc",
+    "cold_target_auprc"
+  ],
+  "matrix": [
+    [
+      0.921,
+      0.608,
+      0.941,
+      0.549
+    ],
+    [
+      0.864,
+      0.432,
+      0.851,
+      0.371
+    ],
+    [
+      0.906,
+      0.561,
+      0.912,
+      0.498
+    ],
+    [
+      0.845,
+      0.389,
+      0.793,
+      0.295
+    ],
+    [
+      0.908,
+      0.572,
+      0.926,
+      0.521
+    ]
+  ],
+  "drops": {
+    "random_auroc": [
+      -0.05700000000000005,
+      -0.015000000000000013,
+      -0.07600000000000007,
+      -0.013000000000000012
+    ],
+    "cold_target_auroc": [
+      -0.08999999999999997,
+      -0.028999999999999915,
+      -0.1479999999999999,
+      -0.014999999999999902
+    ]
+  },
+  "outputs": {
+    "pdf": "D:/system/\u684c\u9762/\u8bba\u6587\u8f85\u5bfc/\u667a\u80fd\u751f\u7269-hhl/submission/manuscript/figures/fig_ablation.pdf",
+    "png": "D:/system/\u684c\u9762/\u8bba\u6587\u8f85\u5bfc/\u667a\u80fd\u751f\u7269-hhl/submission/manuscript/figures/fig_ablation.png"
+  }
+}

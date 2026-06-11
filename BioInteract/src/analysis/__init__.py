@@ -1,0 +1,1 @@
+"""Figure generation and analysis helpers for manuscript outputs."""

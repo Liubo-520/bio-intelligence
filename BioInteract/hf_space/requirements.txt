@@ -1,0 +1,14 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.4.0
+torch-geometric==2.6.1
+rdkit
+transformers==5.6.1
+numpy==1.26.4
+pandas==2.0.3
+scipy==1.13.1
+scikit-learn==1.2.1
+PyYAML==6.0.2
+matplotlib==3.8.4
+seaborn==0.12.2
+tqdm==4.67.3
+Pillow==9.4.0

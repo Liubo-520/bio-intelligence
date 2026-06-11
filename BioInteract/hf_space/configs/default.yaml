@@ -1,0 +1,37 @@
+# BioInteract Default Configuration
+
+model:
+  drug_encoder:
+    gnn_type: GINE
+    num_layers: 3
+    hidden_dim: 256
+    dropout: 0.2
+    edge_dim: 16
+    num_atom_features: 52
+    jk: last
+
+  target_encoder:
+    esm2_dim: 640             # esm2_t30_150M_UR50D → 640-dim
+    projection_dim: 256
+    domain_embed_dim: 32
+    num_domain_types: 50
+    use_domain_features: true
+
+  interaction:
+    num_heads: 8
+    attn_dim: 256
+    dropout: 0.1
+    pooling: gated
+
+  predictor:
+    hidden_dims: [256, 128]
+    dropout: 0.3
+    task: classification
+
+training:
+  batch_size: 64
+  lr: 1.0e-4
+  weight_decay: 1.0e-5
+  epochs: 100
+  patience: 15
+  seed: 42

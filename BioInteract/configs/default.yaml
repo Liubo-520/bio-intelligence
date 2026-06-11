@@ -1,0 +1,63 @@
+# BioInteract Default Configuration
+
+model:
+  drug_encoder:
+    gnn_type: GINE
+    num_layers: 3
+    hidden_dim: 256
+    dropout: 0.2
+    edge_dim: 16
+    num_atom_features: 52      # see mol_graph.py for feature composition
+    jk: last                   # jumping knowledge: last / cat / max
+
+  target_encoder:
+    esm2_dim: 640             # 320 for esm2_t6_8M, 640 for esm2_t30_150M, 1280 for esm2_t33_650M
+    projection_dim: 256
+    domain_embed_dim: 32
+    num_domain_types: 50
+    use_domain_features: true
+
+  interaction:
+    num_heads: 8
+    attn_dim: 256
+    dropout: 0.1
+    pooling: gated             # gated / mean / max
+
+  predictor:
+    hidden_dims: [256, 128]
+    dropout: 0.3
+    task: classification       # classification / regression
+
+training:
+  batch_size: 64
+  lr: 1.0e-4
+  weight_decay: 1.0e-5
+  epochs: 100
+  patience: 15
+  gradient_accumulation: 1
+  amp: true
+  scheduler: cosine            # cosine / step / none
+  warmup_epochs: 5
+  seed: 42
+
+data:
+  dataset: davis
+  split: cold_drug             # random / cold_drug / cold_target / cold_both
+  val_ratio: 0.1
+  test_ratio: 0.2
+  max_protein_len: 1200        # truncate proteins longer than this
+  esm2_cache_dir: data/esm2_embeddings
+
+interpret:
+  top_k_residues: 20           # top-K residues for binding site eval
+  gradcam: true
+  case_study_pairs:            # PDB-validated drug-target pairs
+    - drug: Imatinib
+      target: ABL1
+      pdb: 1IEP
+    - drug: Erlotinib
+      target: EGFR
+      pdb: 1M17
+    - drug: Sorafenib
+      target: BRAF
+      pdb: 1UWH

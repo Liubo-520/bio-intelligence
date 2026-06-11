@@ -1,0 +1,127 @@
+{
+  "title": "Performance across three data splitting protocols",
+  "sources": [
+    "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/figure_data/predictions_random.csv",
+    "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/figure_data/predictions_cold_target.csv",
+    "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/figure_data/predictions_cold_drug.csv"
+  ],
+  "prediction_summary": {
+    "bootstrap_replicates": 600,
+    "splits": {
+      "random": {
+        "display_name": "Random",
+        "checkpoint": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/checkpoints/best_random.pt",
+        "result_json": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/test_random.json",
+        "prediction_csv": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/figure_data/predictions_random.csv",
+        "n_test": 6011,
+        "positive_count": 276,
+        "computed_metrics": {
+          "AUROC": 0.9206518580291372,
+          "AUPRC": 0.605395696201822
+        },
+        "reported_metrics": {
+          "AUROC": 0.9207,
+          "AUPRC": 0.6075,
+          "F1": 0.6367,
+          "Precision": 0.6093,
+          "Recall": 0.6667,
+          "threshold": 0.7671,
+          "loss": 0.7538
+        },
+        "auroc_ci": [
+          0.9004034400031671,
+          0.940773361021308
+        ],
+        "auprc_ci": [
+          0.5394142748218204,
+          0.6698873001107695
+        ]
+      },
+      "cold_target": {
+        "display_name": "Cold-target",
+        "checkpoint": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/checkpoints/best_cold_target.pt",
+        "result_json": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/test_cold_target.json",
+        "prediction_csv": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/figure_data/predictions_cold_target.csv",
+        "n_test": 5984,
+        "positive_count": 250,
+        "computed_metrics": {
+          "AUROC": 0.9416543425183117,
+          "AUPRC": 0.5504966117774259
+        },
+        "reported_metrics": {
+          "AUROC": 0.9417,
+          "AUPRC": 0.549,
+          "F1": 0.597,
+          "Precision": 0.5594,
+          "Recall": 0.64,
+          "threshold": 0.7295,
+          "loss": 0.9065
+        },
+        "auroc_ci": [
+          0.9257733231738691,
+          0.9585698017530466
+        ],
+        "auprc_ci": [
+          0.48288387416285156,
+          0.6119875081897079
+        ]
+      },
+      "cold_drug": {
+        "display_name": "Cold-drug",
+        "checkpoint": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/checkpoints/best_cold_drug.pt",
+        "result_json": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/test_cold_drug.json",
+        "prediction_csv": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/figure_data/predictions_cold_drug.csv",
+        "n_test": 5746,
+        "positive_count": 245,
+        "computed_metrics": {
+          "AUROC": 0.7391171920504249,
+          "AUPRC": 0.16850432566357137
+        },
+        "reported_metrics": {
+          "AUROC": 0.7391,
+          "AUPRC": 0.1688,
+          "F1": 0.2051,
+          "Precision": 0.186,
+          "Recall": 0.2286,
+          "threshold": 0.4812,
+          "loss": 1.0702
+        },
+        "auroc_ci": [
+          0.7098263130054503,
+          0.7687274220178348
+        ],
+        "auprc_ci": [
+          0.13041417550432854,
+          0.21169295901611535
+        ]
+      }
+    }
+  },
+  "display_metrics": {
+    "random": {
+      "AUROC": 0.921,
+      "AUPRC": 0.608,
+      "F1": 0.637,
+      "Precision": 0.609,
+      "Recall": 0.667
+    },
+    "cold_target": {
+      "AUROC": 0.941,
+      "AUPRC": 0.549,
+      "F1": 0.597,
+      "Precision": 0.559,
+      "Recall": 0.64
+    },
+    "cold_drug": {
+      "AUROC": 0.739,
+      "AUPRC": 0.169,
+      "F1": 0.205,
+      "Precision": 0.186,
+      "Recall": 0.229
+    }
+  },
+  "outputs": {
+    "pdf": "D:/system/\u684c\u9762/\u8bba\u6587\u8f85\u5bfc/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/submission/manuscript/figures/fig2_performance.pdf",
+    "png": "D:/system/\u684c\u9762/\u8bba\u6587\u8f85\u5bfc/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/submission/manuscript/figures/fig2_performance.png"
+  }
+}

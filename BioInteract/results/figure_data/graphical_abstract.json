@@ -1,0 +1,23 @@
+{
+  "title": "Graphical abstract for BioInteract",
+  "sources": [
+    "D:/system/\u684c\u9762/\u8bba\u6587\u8f85\u5bfc/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/interpretability/interpretability_report.json",
+    "D:/system/\u684c\u9762/\u8bba\u6587\u8f85\u5bfc/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/figure_data/prediction_summary.json",
+    "D:/system/\u684c\u9762/\u8bba\u6587\u8f85\u5bfc/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/figure_data/attention_distribution.json"
+  ],
+  "auroc_values": [
+    0.9207,
+    0.9417,
+    0.7391
+  ],
+  "display_auroc_values": [
+    0.921,
+    0.941,
+    0.739
+  ],
+  "attention_sparsity": 0.992318922989442,
+  "outputs": {
+    "pdf": "D:/system/\u684c\u9762/\u8bba\u6587\u8f85\u5bfc/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/submission/manuscript/figures/graphical_abstract.pdf",
+    "png": "D:/system/\u684c\u9762/\u8bba\u6587\u8f85\u5bfc/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/submission/manuscript/figures/graphical_abstract.png"
+  }
+}

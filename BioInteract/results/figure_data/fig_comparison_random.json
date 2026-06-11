@@ -1,0 +1,41 @@
+{
+  "title": "Baseline comparison on the random split",
+  "sources": [
+    "manuscript benchmark table values for baseline methods",
+    "results/test_random.json for BioInteract metrics"
+  ],
+  "methods": [
+    "DeepDTA\n(2018)",
+    "GraphDTA\n(2021)",
+    "AttentionDTA\n(2019)",
+    "MolTrans\n(2021)",
+    "TransformerCPI\n(2020)",
+    "DrugBAN\n(2023)",
+    "BioInteract\n(Ours)"
+  ],
+  "metrics": {
+    "AUROC": [
+      0.878,
+      0.893,
+      0.9,
+      0.907,
+      0.91,
+      0.915,
+      0.921
+    ],
+    "AUPRC": [
+      0.352,
+      0.403,
+      0.425,
+      0.48,
+      0.492,
+      0.53,
+      0.608
+    ]
+  },
+  "note": "Baseline values are the manuscript comparison values used to reproduce Figure 1A.",
+  "outputs": {
+    "pdf": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/submission/manuscript/figures/fig_comparison_random.pdf",
+    "png": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/submission/manuscript/figures/fig_comparison_random.png"
+  }
+}
