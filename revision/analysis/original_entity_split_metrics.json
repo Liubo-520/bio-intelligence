@@ -1,11 +1,20 @@
 {
   "artifact": "original_entity_split_metrics",
-  "status": {
-    "canonical": false,
-    "inference_precision": "CUDA AMP autocast (float16)",
-    "reason": "AMP-derived checkpoint predictions differ materially from the existing full-precision checkpoint prediction CSVs; do not use this artifact as canonical until a precision-matched audit is complete."
-  },
   "command": "python revision/recompute_entity_split_metrics.py --output-dir revision/analysis --device cuda",
+  "historical_relationship": {
+    "historical_prediction_files_not_overwritten": [
+      "BioInteract/results/figure_data/predictions_random.csv",
+      "BioInteract/results/figure_data/predictions_cold_target.csv",
+      "BioInteract/results/figure_data/predictions_cold_drug.csv"
+    ],
+    "retired_files": [
+      "BioInteract/results/test_random.json",
+      "BioInteract/results/test_cold_target.json",
+      "BioInteract/results/test_cold_drug.json"
+    ],
+    "statement": "This canonical current-release artifact supersedes legacy metric JSON and figure prediction CSVs because they cannot be reproduced from the archived current checkpoints and released current inputs.",
+    "supersedes_historical": true
+  },
   "inputs": {
     "BioInteract/data/esm2_embeddings": {
       "bytes": 852510612,
@@ -31,8 +40,10 @@
     "threshold_selection": "F1 threshold selected once from validation predictions"
   },
   "runtime": {
+    "amp_enabled": false,
     "cuda_available": true,
     "cuda_device_name": "NVIDIA GeForce RTX 4080",
+    "inference_mode": "torch.inference_mode (full precision)",
     "python_version": "3.10.14",
     "requested_device": "cuda",
     "resolved_device": "cuda",
@@ -46,6 +57,43 @@
   "splits": [
     {
       "checkpoint": {
+        "model_config": {
+          "drug_encoder": {
+            "drop_edge": 0.0,
+            "drop_node": 0.0,
+            "dropout": 0.2,
+            "edge_dim": 16,
+            "gnn_type": "GINE",
+            "hidden_dim": 256,
+            "jk": "last",
+            "num_atom_features": 52,
+            "num_layers": 3,
+            "use_morgan_fp": false
+          },
+          "interaction": {
+            "attn_dim": 256,
+            "dropout": 0.1,
+            "num_heads": 8,
+            "pooling": "gated"
+          },
+          "predictor": {
+            "dropout": 0.3,
+            "hidden_dims": [
+              256,
+              128
+            ],
+            "task": "classification"
+          },
+          "target_encoder": {
+            "domain_embed_dim": 32,
+            "esm2_dim": 640,
+            "num_domain_types": 50,
+            "projection_dim": 256,
+            "use_domain_features": true
+          }
+        },
+        "model_config_sha256": "16d45a2a726556a53fa7ee051296b8c7a7fe61524695d51c21247a72b8a3c581",
+        "model_config_source": "checkpoint['config']",
         "path": "BioInteract/checkpoints/best_random.pt",
         "sha256": "a91f5e75e123af4c0a66ff9302842b0bcacdce2780abb9f7f5f4170b69f3e347"
       },
@@ -65,20 +113,54 @@
           "F1": 0.5653846153846154,
           "Precision": 0.6024590163934426,
           "Recall": 0.532608695652174,
-          "threshold": 0.5966796875
+          "threshold": 0.5959881544113159
         },
         "threshold_free_metrics": {
-          "AUPRC": 0.559770774113053,
+          "AUPRC": 0.5601254874754175,
           "AUROC": 0.903904640966352
         }
       },
       "validation": {
-        "f1_threshold": 0.5966796875,
+        "f1_threshold": 0.5959881544113159,
         "predictions_csv": "random_validation_predictions.csv"
       }
     },
     {
       "checkpoint": {
+        "model_config": {
+          "drug_encoder": {
+            "dropout": 0.2,
+            "edge_dim": 16,
+            "gnn_type": "GINE",
+            "hidden_dim": 256,
+            "jk": "last",
+            "num_atom_features": 52,
+            "num_layers": 3
+          },
+          "interaction": {
+            "attn_dim": 256,
+            "dropout": 0.1,
+            "num_heads": 8,
+            "pooling": "gated"
+          },
+          "predictor": {
+            "dropout": 0.3,
+            "hidden_dims": [
+              256,
+              128
+            ],
+            "task": "classification"
+          },
+          "target_encoder": {
+            "domain_embed_dim": 32,
+            "esm2_dim": 640,
+            "num_domain_types": 50,
+            "projection_dim": 256,
+            "use_domain_features": true
+          }
+        },
+        "model_config_sha256": "c51f2188e819006320f49d50aafb70440c9a1abc432dbda14d88411f34edab2c",
+        "model_config_source": "checkpoint['config']",
         "path": "BioInteract/checkpoints/best_cold_target.pt",
         "sha256": "3b5051a8b69ea5208dceb41d9db8766c8dae87dcee2e33c0116c20c1ad003e4b"
       },
@@ -98,20 +180,57 @@
           "F1": 0.5338491295938105,
           "Precision": 0.5168539325842697,
           "Recall": 0.552,
-          "threshold": 0.60205078125
+          "threshold": 0.6022375822067261
         },
         "threshold_free_metrics": {
-          "AUPRC": 0.5233803290305664,
-          "AUROC": 0.9300041855598187
+          "AUPRC": 0.5244660498174324,
+          "AUROC": 0.9299874433205442
         }
       },
       "validation": {
-        "f1_threshold": 0.60205078125,
+        "f1_threshold": 0.6022375822067261,
         "predictions_csv": "target_id_held_out_validation_predictions.csv"
       }
     },
     {
       "checkpoint": {
+        "model_config": {
+          "drug_encoder": {
+            "drop_edge": 0.0,
+            "drop_node": 0.0,
+            "dropout": 0.2,
+            "edge_dim": 16,
+            "gnn_type": "GINE",
+            "hidden_dim": 256,
+            "jk": "last",
+            "num_atom_features": 52,
+            "num_layers": 3,
+            "use_morgan_fp": false
+          },
+          "interaction": {
+            "attn_dim": 256,
+            "dropout": 0.1,
+            "num_heads": 8,
+            "pooling": "gated"
+          },
+          "predictor": {
+            "dropout": 0.3,
+            "hidden_dims": [
+              256,
+              128
+            ],
+            "task": "classification"
+          },
+          "target_encoder": {
+            "domain_embed_dim": 32,
+            "esm2_dim": 640,
+            "num_domain_types": 50,
+            "projection_dim": 256,
+            "use_domain_features": true
+          }
+        },
+        "model_config_sha256": "16d45a2a726556a53fa7ee051296b8c7a7fe61524695d51c21247a72b8a3c581",
+        "model_config_source": "checkpoint['config']",
         "path": "BioInteract/checkpoints/best_cold_drug.pt",
         "sha256": "a813f4afd9dea005e8c49db46ce5bfd088a56d1644c87988ec293e0378805355"
       },
@@ -131,31 +250,22 @@
           "F1": 0.1,
           "Precision": 0.2727272727272727,
           "Recall": 0.061224489795918366,
-          "threshold": 0.845703125
+          "threshold": 0.8456151485443115
         },
         "threshold_free_metrics": {
-          "AUPRC": 0.1666939608841472,
-          "AUROC": 0.7336669770616846
+          "AUPRC": 0.16628563292349766,
+          "AUROC": 0.7334469799554069
         }
       },
       "validation": {
-        "f1_threshold": 0.845703125,
+        "f1_threshold": 0.8456151485443115,
         "predictions_csv": "drug_id_held_out_validation_predictions.csv"
       }
     }
   ],
-  "historical_relationship": {
-    "supersedes_historical": false,
-    "historical_prediction_files_not_overwritten": [
-      "BioInteract/results/figure_data/predictions_random.csv",
-      "BioInteract/results/figure_data/predictions_cold_target.csv",
-      "BioInteract/results/figure_data/predictions_cold_drug.csv"
-    ],
-    "retired_files": [
-      "BioInteract/results/test_random.json",
-      "BioInteract/results/test_cold_target.json",
-      "BioInteract/results/test_cold_drug.json"
-    ],
-    "statement": "This provisional AMP artifact is retained for audit only and does not supersede historical test-selected-threshold metrics."
+  "status": {
+    "canonical": true,
+    "inference_precision": "full precision",
+    "reason": "Canonical for the current-release protocol: each model is instantiated from checkpoint['config'] and evaluated with direct full-precision torch.inference_mode on the released Davis inputs."
   }
 }

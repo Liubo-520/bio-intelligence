@@ -29,7 +29,6 @@ BIOINTERACT_ROOT = WORKSPACE_ROOT / "BioInteract"
 if str(BIOINTERACT_ROOT) not in sys.path:
     sys.path.insert(0, str(BIOINTERACT_ROOT))
 
-from src.cli.evaluate import _collect_predictions, load_dataset_raw  # noqa: E402
 from src.data.dataset import DTIDataset, collate_dti  # noqa: E402
 from src.data.split import get_split_fn  # noqa: E402
 from src.models.biointeract import BioInteract  # noqa: E402
@@ -93,12 +92,67 @@ def portable_path(path: Path) -> str:
     return path.resolve().relative_to(WORKSPACE_ROOT.resolve()).as_posix()
 
 
+def config_sha256(config: dict[str, Any]) -> str:
+    """Return a stable SHA-256 for an embedded checkpoint configuration."""
+    canonical = json.dumps(config, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def load_davis_data() -> tuple[pd.DataFrame, dict[str, str], dict[str, str]]:
+    """Load the released Davis tabular inputs without using a CLI evaluator."""
+    interactions = pd.read_csv(DATA_DIR / "interactions.csv")
+    drug_df = pd.read_csv(DATA_DIR / "drug_smiles.csv")
+    target_df = pd.read_csv(DATA_DIR / "target_sequences.csv")
+    return (
+        interactions,
+        dict(zip(drug_df["drug_id"], drug_df["smiles"])),
+        dict(zip(target_df["target_id"], target_df["sequence"])),
+    )
+
+
+@torch.inference_mode()
+def collect_full_precision_predictions(
+    model: torch.nn.Module,
+    dataloader: DataLoader,
+    device: str | torch.device,
+) -> tuple[np.ndarray, np.ndarray, list[str], list[str]]:
+    """Collect sigmoid probabilities under direct full-precision inference."""
+    model.eval()
+    resolved_device = torch.device(device)
+    all_predictions = []
+    all_labels = []
+    all_drug_ids = []
+    all_target_ids = []
+
+    for batch in dataloader:
+        logits = model(
+            batch["drug_batch"].to(resolved_device),
+            batch["esm2_embedding"].to(resolved_device),
+            batch["physicochemical"].to(resolved_device),
+            batch["domain_labels"].to(resolved_device),
+            batch["protein_mask"].to(resolved_device),
+        )
+        all_predictions.append(torch.sigmoid(logits).cpu().numpy())
+        all_labels.append(batch["label"].cpu().numpy())
+        all_drug_ids.extend(batch["drug_ids"])
+        all_target_ids.extend(batch["target_ids"])
+
+    return (
+        np.concatenate(all_predictions, axis=0).flatten(),
+        np.concatenate(all_labels, axis=0).flatten(),
+        all_drug_ids,
+        all_target_ids,
+    )
+
+
 def build_split_record(
     *,
     public_name: str,
     split_key: str,
     checkpoint_path: str,
     checkpoint_sha256: str,
+    model_config: dict[str, Any],
+    model_config_sha256: str,
     input_counts: dict[str, int],
     validation_threshold: float,
     validation_csv: str,
@@ -118,6 +172,9 @@ def build_split_record(
         "checkpoint": {
             "path": checkpoint_path,
             "sha256": checkpoint_sha256,
+            "model_config_source": "checkpoint['config']",
+            "model_config_sha256": model_config_sha256,
+            "model_config": model_config,
         },
         "input_counts": {key: int(value) for key, value in input_counts.items()},
         "validation": {
@@ -156,16 +213,21 @@ def _prediction_frame(
     )
 
 
-def _dataset_kwargs(config: dict[str, Any], drug_smiles: dict, target_sequences: dict) -> dict[str, Any]:
+def _dataset_kwargs(
+    data_config: dict[str, Any],
+    model_config: dict[str, Any],
+    drug_smiles: dict,
+    target_sequences: dict,
+) -> dict[str, Any]:
     return {
         "drug_smiles": drug_smiles,
         "target_sequences": target_sequences,
-        "esm2_cache_dir": config["data"].get("esm2_cache_dir", "data/esm2_embeddings"),
-        "max_protein_len": config["data"].get("max_protein_len", 1200),
-        "use_domain_features": config["model"]["target_encoder"].get(
+        "esm2_cache_dir": data_config.get("esm2_cache_dir", "data/esm2_embeddings"),
+        "max_protein_len": data_config.get("max_protein_len", 1200),
+        "use_domain_features": model_config["target_encoder"].get(
             "use_domain_features", True
         ),
-        "task": config["model"]["predictor"].get("task", "classification"),
+        "task": model_config["predictor"].get("task", "classification"),
     }
 
 
@@ -180,6 +242,8 @@ def _runtime_metadata(requested_device: str, resolved_device: torch.device) -> d
         "cuda_device_name": torch.cuda.get_device_name(resolved_device)
         if cuda_available and resolved_device.type == "cuda"
         else None,
+        "inference_mode": "torch.inference_mode (full precision)",
+        "amp_enabled": False,
     }
 
 
@@ -200,22 +264,32 @@ def _load_source_config() -> tuple[dict[str, Any], str]:
     return config, sha256_file(CONFIG_PATH)
 
 
-def build_artifact_status(config: dict[str, Any]) -> dict[str, Any]:
+def build_artifact_status(
+    *, model_config_source: str, inference_mode: str
+) -> dict[str, Any]:
     """Describe whether an evaluation output is eligible for canonical use."""
-    if config["training"].get("amp", True):
+    expected_config_source = "checkpoint['config']"
+    expected_inference_mode = "torch.inference_mode (full precision)"
+    if (
+        model_config_source == expected_config_source
+        and inference_mode == expected_inference_mode
+    ):
         return {
-            "canonical": False,
-            "inference_precision": "CUDA AMP autocast (float16)",
+            "canonical": True,
+            "inference_precision": "full precision",
             "reason": (
-                "AMP-derived checkpoint predictions differ materially from the "
-                "existing full-precision checkpoint prediction CSVs; do not use "
-                "this artifact as canonical until a precision-matched audit is complete."
+                "Canonical for the current-release protocol: each model is "
+                "instantiated from checkpoint['config'] and evaluated with direct "
+                "full-precision torch.inference_mode on the released Davis inputs."
             ),
         }
     return {
         "canonical": False,
-        "inference_precision": "full precision (AMP disabled)",
-        "reason": "Requires an explicit precision-matched artifact audit before canonical use.",
+        "inference_precision": inference_mode,
+        "reason": (
+            "Canonical status requires checkpoint['config'] architecture recovery "
+            "and direct full-precision torch.inference_mode collection."
+        ),
     }
 
 
@@ -241,8 +315,8 @@ def recompute_entity_split_metrics(output_dir: Path, device: str) -> dict[str, A
     output_dir.mkdir(parents=True, exist_ok=True)
     portable_path(output_dir)
     resolved_device = _resolve_device(device)
-    source_config, config_sha256 = _load_source_config()
-    interactions, drug_smiles, target_sequences = load_dataset_raw("davis")
+    source_config, source_config_file_sha256 = _load_source_config()
+    interactions, drug_smiles, target_sequences = load_davis_data()
     input_metadata = _input_metadata()
     records = []
 
@@ -257,7 +331,17 @@ def recompute_entity_split_metrics(output_dir: Path, device: str) -> dict[str, A
             seed=config["training"]["seed"],
         )
 
-        dataset_kwargs = _dataset_kwargs(config, drug_smiles, target_sequences)
+        checkpoint_path = CHECKPOINTS_DIR / split_metadata["checkpoint"]
+        checkpoint = torch.load(
+            checkpoint_path, map_location=resolved_device, weights_only=False
+        )
+        model_config = checkpoint["config"]
+        if model_config["predictor"].get("task") != "classification":
+            raise ValueError(f"{checkpoint_path.name} is not a classification checkpoint.")
+
+        dataset_kwargs = _dataset_kwargs(
+            config["data"], model_config, drug_smiles, target_sequences
+        )
         validation_dataset = DTIDataset(validation_df, **dataset_kwargs)
         test_dataset = DTIDataset(test_df, **dataset_kwargs)
         batch_size = config["training"]["batch_size"]
@@ -276,21 +360,17 @@ def recompute_entity_split_metrics(output_dir: Path, device: str) -> dict[str, A
             num_workers=0,
         )
 
-        checkpoint_path = CHECKPOINTS_DIR / split_metadata["checkpoint"]
-        model = BioInteract(config["model"]).to(resolved_device)
-        checkpoint = torch.load(
-            checkpoint_path, map_location=resolved_device, weights_only=False
-        )
+        model = BioInteract(model_config).to(resolved_device)
         model.load_state_dict(checkpoint["model_state_dict"])
 
-        validation_predictions, validation_labels, validation_drug_ids, validation_target_ids = _collect_predictions(
-            model, validation_loader, config, resolved_device
+        validation_predictions, validation_labels, validation_drug_ids, validation_target_ids = collect_full_precision_predictions(
+            model, validation_loader, resolved_device
         )
         validation_threshold = select_f1_threshold(
             validation_labels, validation_predictions
         )
-        test_predictions, test_labels, test_drug_ids, test_target_ids = _collect_predictions(
-            model, test_loader, config, resolved_device
+        test_predictions, test_labels, test_drug_ids, test_target_ids = collect_full_precision_predictions(
+            model, test_loader, resolved_device
         )
 
         stem = split_metadata["artifact_stem"]
@@ -320,6 +400,8 @@ def recompute_entity_split_metrics(output_dir: Path, device: str) -> dict[str, A
                 split_key=split_metadata["split_key"],
                 checkpoint_path=portable_path(checkpoint_path),
                 checkpoint_sha256=sha256_file(checkpoint_path),
+                model_config=model_config,
+                model_config_sha256=config_sha256(model_config),
                 input_counts=input_counts,
                 validation_threshold=validation_threshold,
                 validation_csv=validation_filename,
@@ -338,17 +420,21 @@ def recompute_entity_split_metrics(output_dir: Path, device: str) -> dict[str, A
     )
     artifact = {
         "artifact": "original_entity_split_metrics",
-        "status": build_artifact_status(source_config),
+        "status": build_artifact_status(
+            model_config_source="checkpoint['config']",
+            inference_mode="torch.inference_mode (full precision)",
+        ),
         "protocol": {
             "partitioning": "archived seed-42 70/10/20 entity split",
             "threshold_selection": "F1 threshold selected once from validation predictions",
             "test_evaluation": "frozen validation threshold applied to test predictions",
         },
         "historical_relationship": {
-            "supersedes_historical": False,
+            "supersedes_historical": True,
             "statement": (
-                "This provisional AMP artifact is retained for audit only and does "
-                "not supersede historical test-selected-threshold metrics."
+                "This canonical current-release artifact supersedes legacy metric "
+                "JSON and figure prediction CSVs because they cannot be reproduced "
+                "from the archived current checkpoints and released current inputs."
             ),
             "retired_files": [
                 "BioInteract/results/test_random.json",
@@ -364,7 +450,7 @@ def recompute_entity_split_metrics(output_dir: Path, device: str) -> dict[str, A
         "seed": SEED,
         "source_config": {
             "path": portable_path(CONFIG_PATH),
-            "sha256": config_sha256,
+            "sha256": source_config_file_sha256,
         },
         "inputs": input_metadata,
         "command": command,
