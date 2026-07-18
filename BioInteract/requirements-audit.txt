@@ -1,0 +1,15 @@
+# Environment used for the canonical current-release checkpoint reconstruction
+# Python 3.10.14; Windows; NVIDIA GeForce RTX 4080; CUDA-enabled PyTorch.
+torch==2.4.0+cu121
+torch-geometric==2.6.1
+fair-esm==2.0.0
+rdkit==2025.03.6
+numpy==1.26.4
+pandas==2.1.4
+scikit-learn==1.7.2
+scipy==1.13.1
+PyYAML==6.0.3
+matplotlib==3.8.4
+seaborn==0.13.2
+tqdm==4.67.3
+tensorboard==2.15.1

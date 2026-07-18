@@ -22,7 +22,6 @@ import pandas as pd
 import torch
 import yaml
 from rdkit import RDLogger
-from sklearn.metrics import average_precision_score, roc_auc_score
 from torch.utils.data import DataLoader
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -47,6 +46,7 @@ from src.utils.paths import CHECKPOINTS_DIR, CONFIGS_DIR, DATA_DIR, LOGS_DIR, RE
 configure_matplotlib()
 
 REPORT_PATH = RESULTS_DIR / "interpretability" / "interpretability_report.json"
+STRICT_METRICS_PATH = PROJECT_ROOT.parent / "revision" / "analysis" / "strict_split_metrics.json"
 SPLIT_META = {
     "random": {
         "label": "Random",
@@ -69,11 +69,6 @@ SPLIT_META = {
         "log_path": LOGS_DIR / "run_cold_drug.log",
         "color": PALETTE["brick"],
     },
-}
-MANUSCRIPT_DISPLAY_METRICS = {
-    "random": {"AUROC": 0.921, "AUPRC": 0.608, "F1": 0.637, "Precision": 0.609, "Recall": 0.667},
-    "cold_target": {"AUROC": 0.941, "AUPRC": 0.549, "F1": 0.597, "Precision": 0.559, "Recall": 0.640},
-    "cold_drug": {"AUROC": 0.739, "AUPRC": 0.169, "F1": 0.205, "Precision": 0.186, "Recall": 0.229},
 }
 LOG_PATTERN = re.compile(r"E(\d+)\s*\|\s*loss=([0-9.]+)\s*\|\s*val_auroc=([0-9.]+)(?:\s*\|\s*val_auprc=([0-9.]+))?")
 
@@ -116,68 +111,25 @@ def run_model(model: BioInteract, batch: dict[str, Any], device: str, return_att
         return model(drug_batch, esm2, physchem, domain, protein_mask, return_attention=return_attention)
 
 
-def bootstrap_interval(labels: np.ndarray, scores: np.ndarray, metric: str, n_bootstrap: int) -> list[float]:
-    rng = np.random.default_rng(42)
-    function = roc_auc_score if metric == "AUROC" else average_precision_score
-    estimates = []
-    for _ in range(n_bootstrap):
-        indices = rng.integers(0, len(labels), len(labels))
-        sampled_labels = labels[indices]
-        if sampled_labels.min() != sampled_labels.max():
-            estimates.append(float(function(sampled_labels, scores[indices])))
-    return [float(value) for value in np.percentile(estimates, [2.5, 97.5])]
+def load_canonical_prediction_summary() -> dict[str, Any]:
+    """Load the sole approved source for original entity-split metrics.
 
-
-def compute_prediction_summary(
-    base_config: dict[str, Any], resources: dict[str, Any], device: str, n_bootstrap: int, force: bool
-) -> dict[str, Any]:
+    ``revision.promote_canonical_entity_metrics`` writes this file after checking
+    the full-precision checkpoint artifact.  Figures must not silently rerun
+    inference or recover the retired historical prediction CSVs.
+    """
     summary_path = FIGURE_DATA_DIR / "prediction_summary.json"
-    if summary_path.exists() and not force:
-        cached = json.loads(summary_path.read_text(encoding="utf-8"))
-        if cached.get("bootstrap_replicates") == n_bootstrap:
-            return cached
-
-    summary: dict[str, Any] = {"bootstrap_replicates": n_bootstrap, "splits": {}}
-    for split_name, metadata in SPLIT_META.items():
-        config = copy.deepcopy(base_config)
-        config["data"]["split"] = split_name
-        _, _, test_df = get_split_fn(split_name)(
-            resources["interactions"],
-            val_ratio=config["data"].get("val_ratio", 0.1),
-            test_ratio=config["data"].get("test_ratio", 0.2),
-            seed=config["training"]["seed"],
+    if not summary_path.exists():
+        raise FileNotFoundError(
+            "Missing canonical prediction summary. Run "
+            "python revision/promote_canonical_entity_metrics.py first."
         )
-        dataset = DTIDataset(
-            test_df,
-            drug_smiles=resources["drug_smiles"],
-            target_sequences=resources["target_sequences"],
-            esm2_cache_dir=config["data"].get("esm2_cache_dir", "data/esm2_embeddings"),
-            max_protein_len=config["data"].get("max_protein_len", 1200),
-            use_domain_features=config["model"]["target_encoder"].get("use_domain_features", True),
-            esm2_dim=config["model"]["target_encoder"].get("esm2_dim", 640),
-            task="classification",
-        )
-        loader = DataLoader(dataset, batch_size=min(config["training"].get("batch_size", 32), 24), shuffle=False, collate_fn=collate_dti, num_workers=0)
-        model = build_model(config["model"], metadata["checkpoint"], device)
-        scores, labels = [], []
-        for batch in loader:
-            logits = run_model(model, batch, device)
-            scores.append(torch.sigmoid(logits).detach().cpu().numpy().ravel())
-            labels.append(batch["label"].detach().cpu().numpy().ravel())
-        score_array = np.concatenate(scores)
-        label_array = np.concatenate(labels)
-        summary["splits"][split_name] = {
-            "display_name": metadata["label"],
-            "checkpoint": metadata["checkpoint"].as_posix(),
-            "result_json": metadata["result_json"].as_posix(),
-            "n_test": int(len(label_array)),
-            "positive_count": int(label_array.sum()),
-            "computed_metrics": {"AUROC": float(roc_auc_score(label_array, score_array)), "AUPRC": float(average_precision_score(label_array, score_array))},
-            "reported_metrics": json.loads(metadata["result_json"].read_text(encoding="utf-8")),
-            "auroc_interval": bootstrap_interval(label_array, score_array, "AUROC", n_bootstrap),
-            "auprc_interval": bootstrap_interval(label_array, score_array, "AUPRC", n_bootstrap),
-        }
-    _json_dump(summary_path, summary)
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    if not summary.get("canonical"):
+        raise ValueError("prediction_summary.json is not marked canonical")
+    missing = set(SPLIT_META) - set(summary.get("splits", {}))
+    if missing:
+        raise ValueError(f"canonical prediction summary is missing splits: {sorted(missing)}")
     return summary
 
 
@@ -245,28 +197,80 @@ def parse_training_logs(prediction_summary: dict[str, Any]) -> dict[str, Any]:
             "val_auroc": aurocs,
             "best_epoch": epochs[best_index],
             "best_val_auroc": aurocs[best_index],
-            "source_log": metadata["log_path"].as_posix(),
+            "source_log": metadata["log_path"].relative_to(PROJECT_ROOT).as_posix(),
             "reported_auroc": prediction_summary["splits"][split_name]["reported_metrics"]["AUROC"],
         }
     return curves
 
 
-def fig2_performance(prediction_summary: dict[str, Any]) -> None:
-    figure, axes = plt.subplots(1, 2, figsize=(10.5, 4.6))
-    split_names = list(SPLIT_META)
-    labels = [SPLIT_META[name]["label"] for name in split_names]
-    for axis, metric in zip(axes, ("AUROC", "AUPRC")):
-        values = [prediction_summary["splits"][name]["reported_metrics"][metric] for name in split_names]
-        bars = axis.bar(labels, values, color=[SPLIT_META[name]["color"] for name in split_names])
+def load_strict_metrics() -> dict[str, Any]:
+    """Load reviewer-requested strict metrics without conflating their protocol."""
+    if not STRICT_METRICS_PATH.exists():
+        raise FileNotFoundError(f"Missing strict-split artifact: {STRICT_METRICS_PATH}")
+    strict = json.loads(STRICT_METRICS_PATH.read_text(encoding="utf-8"))
+    expected = {"sequence_grouped_cold_target", "sequence_grouped_cold_both"}
+    if missing := expected - set(strict):
+        raise ValueError(f"strict metrics are missing protocols: {sorted(missing)}")
+    return strict
+
+
+def fig2_performance(prediction_summary: dict[str, Any], strict_metrics: dict[str, Any]) -> None:
+    figure, axes = plt.subplots(1, 2, figsize=(11.2, 4.8), sharey=True)
+    figure.subplots_adjust(bottom=0.27, wspace=0.20)
+    panels = (
+        (
+            axes[0],
+            "Original identifier-based partitions",
+            [
+                (SPLIT_META[name]["label"], prediction_summary["splits"][name]["reported_metrics"])
+                for name in SPLIT_META
+            ],
+            [SPLIT_META[name]["color"] for name in SPLIT_META],
+        ),
+        (
+            axes[1],
+            "Exact-sequence-grouped within-Davis tests",
+            [
+                ("Cold-target", strict_metrics["sequence_grouped_cold_target"]["metrics"]),
+                ("Cold-both", strict_metrics["sequence_grouped_cold_both"]["metrics"]),
+            ],
+            [PALETTE["sage"], PALETTE["brick"]],
+        ),
+    )
+    x = np.arange(2)
+    for axis, title, records, colors in panels:
+        width = 0.72 / len(records)
+        for index, ((label, metrics), color) in enumerate(zip(records, colors)):
+            offset = (index - (len(records) - 1) / 2) * width
+            values = [metrics["AUROC"], metrics["AUPRC"]]
+            bars = axis.bar(x + offset, values, width=width, color=color, label=label)
+            for bar, value in zip(bars, values):
+                axis.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    value + 0.018,
+                    f"{value:.3f}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=8.7,
+                )
+        axis.set_xticks(x)
+        axis.set_xticklabels(["AUROC", "AUPRC"])
         axis.set_ylim(0, 1.05)
-        axis.set_ylabel(metric)
-        axis.tick_params(axis="x", rotation=20)
-        for bar, value in zip(bars, values):
-            axis.text(bar.get_x() + bar.get_width() / 2, value + 0.02, f"{value:.3f}", ha="center", fontsize=9)
+        axis.set_title(title, pad=12)
+        axis.legend(frameon=False, fontsize=8.2, loc="upper right")
         soften_axes(axis, "y")
-    axes[0].set_title("Reported AUROC")
-    axes[1].set_title("Reported AUPRC")
-    save_figure(figure, "fig2_performance", metadata={"title": "Davis benchmark metrics", "splits": labels})
+    axes[0].set_ylabel("Score")
+    panel_label(axes[0], "A")
+    panel_label(axes[1], "B")
+    save_figure(
+        figure,
+        "fig2_performance",
+        metadata={
+            "title": "Canonical entity-split and strict within-Davis performance",
+            "canonical_prediction_summary": "BioInteract/results/figure_data/prediction_summary.json",
+            "strict_metrics": "revision/analysis/strict_split_metrics.json",
+        },
+    )
 
 
 def fig3_attention_sparsity(attention_data: dict[str, Any]) -> None:
@@ -301,24 +305,40 @@ def fig9_training(training_curves: dict[str, Any]) -> None:
     for axis in axes:
         soften_axes(axis, "y")
         axis.legend(frameon=False)
-    save_figure(figure, "fig9_training", metadata={"title": "Training dynamics", "curves": training_curves})
+    metadata = {
+        "title": "Archived training dynamics with canonical checkpoint metrics",
+        "curves": training_curves,
+        "note": (
+            "Lines are archived training-log diagnostics. The reported AUROC for each "
+            "split is the canonical full-precision checkpoint evaluation, not the "
+            "legacy test metric recorded in the log."
+        ),
+    }
+    save_figure(figure, "fig9_training", metadata=metadata)
+    _json_dump(FIGURE_DATA_DIR / "training_curves.json", metadata)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate aggregate public BioInteract figures.")
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
-    parser.add_argument("--bootstrap", type=int, default=600)
-    parser.add_argument("--force", action="store_true")
+    parser.add_argument(
+        "--force-attention-refresh",
+        action="store_true",
+        help="Recompute the separate aggregate-attention summary; metrics remain canonical.",
+    )
     args = parser.parse_args()
     device = args.device if torch.cuda.is_available() or args.device == "cpu" else "cpu"
     RDLogger.DisableLog("rdApp.warning")
+    report = json.loads(REPORT_PATH.read_text(encoding="utf-8")) if REPORT_PATH.exists() else {"global_stats": {}}
+    prediction_summary = load_canonical_prediction_summary()
+    strict_metrics = load_strict_metrics()
     base_config = load_base_config()
     resources = load_dataset_resources(base_config)
-    report = json.loads(REPORT_PATH.read_text(encoding="utf-8")) if REPORT_PATH.exists() else {"global_stats": {}}
-    prediction_summary = compute_prediction_summary(base_config, resources, device, args.bootstrap, args.force)
-    attention_data = compute_attention_distribution(base_config, resources, report, device, args.force)
+    attention_data = compute_attention_distribution(
+        base_config, resources, report, device, args.force_attention_refresh
+    )
     training_curves = parse_training_logs(prediction_summary)
-    fig2_performance(prediction_summary)
+    fig2_performance(prediction_summary, strict_metrics)
     fig3_attention_sparsity(attention_data)
     if training_curves:
         fig9_training(training_curves)

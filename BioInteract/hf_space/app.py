@@ -291,9 +291,9 @@ _SIDEBAR_HTML = f"""
   <table style="width:100%; border-collapse:collapse; font-size:0.82rem; margin:10px 0 12px;">
     <thead><tr style="background:#1a4a7a; color:white;"><th style="padding:6px; text-align:left;">Partition</th><th>AUROC</th><th>AUPRC</th></tr></thead>
     <tbody>
-      <tr><td style="padding:5px;">Random</td><td style="text-align:center;">0.921</td><td style="text-align:center;">0.608</td></tr>
-      <tr><td style="padding:5px;">Drug-ID-held-out</td><td style="text-align:center;">0.739</td><td style="text-align:center;">0.169</td></tr>
-      <tr><td style="padding:5px;"><strong>Target-ID-held-out</strong></td><td style="text-align:center;"><strong>0.941</strong></td><td style="text-align:center;"><strong>0.549</strong></td></tr>
+      <tr><td style="padding:5px;">Random</td><td style="text-align:center;">0.904</td><td style="text-align:center;">0.560</td></tr>
+      <tr><td style="padding:5px;">Drug-ID-held-out</td><td style="text-align:center;">0.733</td><td style="text-align:center;">0.166</td></tr>
+      <tr><td style="padding:5px;"><strong>Target-ID-held-out</strong></td><td style="text-align:center;"><strong>0.930</strong></td><td style="text-align:center;"><strong>0.524</strong></td></tr>
     </tbody>
   </table>
   <p style="font-size:0.76rem; line-height:1.4; color:#555;">Target-ID-held-out is an archived identifier-based result. Duplicate Davis sequences mean it is not a strict exact-sequence-held-out estimate.</p>

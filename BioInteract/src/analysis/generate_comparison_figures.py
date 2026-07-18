@@ -39,8 +39,8 @@ METHODS_ALL = [
 ]
 
 RANDOM_BASELINE = {
-    'AUROC': [0.878, 0.893, 0.900, 0.907, 0.910, 0.915, 0.921],
-    'AUPRC': [0.352, 0.403, 0.425, 0.480, 0.492, 0.530, 0.608],
+    'AUROC': [0.878, 0.893, 0.900, 0.907, 0.910, 0.915, 0.904],
+    'AUPRC': [0.352, 0.403, 0.425, 0.480, 0.492, 0.530, 0.560],
 }
 
 SPLIT_METHODS = ['DeepDTA', 'GraphDTA', 'MolTrans', 'DrugBAN', 'BioInteract']
@@ -49,23 +49,7 @@ SPLIT_HEATMAP = np.array([
     [0.893, 0.815, 0.621],
     [0.907, 0.856, 0.668],
     [0.915, 0.874, 0.695],
-    [0.921, 0.941, 0.739],
-])
-
-ABLATION_VARIANTS = [
-    'Full\nBioInteract',
-    'w/o\nCross-Attn',
-    'w/o\nDomain Feat',
-    'w/o\nESM-2',
-    'w/o\nGraph Aug',
-]
-
-ABLATION_MATRIX = np.array([
-    [0.921, 0.608, 0.941, 0.549],
-    [0.864, 0.432, 0.851, 0.371],
-    [0.906, 0.561, 0.912, 0.498],
-    [0.845, 0.389, 0.793, 0.295],
-    [0.908, 0.572, 0.926, 0.521],
+    [0.904, 0.930, 0.733],
 ])
 
 
@@ -101,13 +85,13 @@ def fig_baseline_comparison() -> None:
             ax.tick_params(axis='y', length=0)
         ax.invert_yaxis()
         soften_axes(ax, 'x')
-        panel_label(ax, 'A' if idx == 0 else 'B')
-        ax.set_title(f'Random split {metric}', pad=12)
+        ax.set_title(f'Random-split {metric}', pad=12)
 
-    fig.suptitle('Baseline comparison against published DTI models', x=0.52, y=0.98,
+    fig.suptitle('Contextual comparison against published DTI models', x=0.52, y=0.98,
                  fontsize=14, fontweight='bold', color=PALETTE['ink'])
+    fig.text(0.015, 0.955, 'A', fontsize=15, fontweight='bold', color=PALETTE['ink'])
     fig.text(0.5, -0.02,
-             'BioInteract improves both ranking metrics, with the largest gain on AUPRC.',
+             'Baseline values are historical; BioInteract values are canonical current-release checkpoint evaluations.',
              ha='center', color=PALETTE['slate'], fontsize=10)
 
     save_figure(
@@ -140,11 +124,11 @@ def fig_multisplit_comparison() -> None:
                     fontsize=10, fontweight='bold' if row == len(SPLIT_METHODS) - 1 else 'normal')
 
     ax.set_xticks(np.arange(3))
-    ax.set_xticklabels(['Random', 'Cold-target', 'Cold-drug'])
+    ax.set_xticklabels(['Random', 'Target-ID-held-out', 'Drug-ID-held-out'])
     ax.set_yticks(np.arange(len(SPLIT_METHODS)))
     ax.set_yticklabels(SPLIT_METHODS)
-    ax.set_title('AUROC across data splitting protocols', pad=14)
-    panel_label(ax, 'A')
+    ax.set_title('AUROC across identifier-based splitting protocols', pad=14)
+    panel_label(ax, 'B')
 
     highlight = Rectangle((-0.5, len(SPLIT_METHODS) - 1 - 0.5), 3, 1,
                           fill=False, edgecolor=PALETTE['gold'], linewidth=2.0)
@@ -153,7 +137,7 @@ def fig_multisplit_comparison() -> None:
     cbar = fig.colorbar(image, ax=ax, fraction=0.05, pad=0.03)
     cbar.set_label('AUROC')
     fig.text(0.5, -0.03,
-             'BioInteract remains strongest in all three regimes, with a particularly large cold-target margin.',
+             'Compiled historical AUROCs; cross-study values are descriptive rather than a controlled benchmark.',
              ha='center', color=PALETTE['slate'], fontsize=10)
 
     save_figure(
@@ -161,80 +145,19 @@ def fig_multisplit_comparison() -> None:
         'fig_comparison_splits',
         metadata={
             'title': 'Multi-split AUROC comparison',
-            'sources': ['manuscript comparison values across random, cold-target, and cold-drug protocols'],
+            'sources': ['manuscript comparison values across random, Target-ID-held-out, and Drug-ID-held-out protocols'],
             'methods': SPLIT_METHODS,
-            'splits': ['random', 'cold_target', 'cold_drug'],
+            'splits': ['random', 'target_id_held_out', 'drug_id_held_out'],
             'auroc_matrix': SPLIT_HEATMAP,
         },
     )
 
 
-def fig_ablation() -> None:
-    fig, axes = plt.subplots(1, 2, figsize=(11.8, 5.2), gridspec_kw={'width_ratios': [1.25, 1.0]})
-    fig.subplots_adjust(top=0.82, bottom=0.13, wspace=0.40)
-
-    heatmap_ax, delta_ax = axes
-    heatmap = heatmap_ax.imshow(ABLATION_MATRIX, cmap=plt.cm.YlOrBr, aspect='auto', vmin=0.25, vmax=0.95)
-    for row in range(ABLATION_MATRIX.shape[0]):
-        for col in range(ABLATION_MATRIX.shape[1]):
-            value = ABLATION_MATRIX[row, col]
-            heatmap_ax.text(col, row, f'{value:.3f}', ha='center', va='center',
-                            color='white' if value > 0.72 else PALETTE['ink'],
-                            fontsize=9.5, fontweight='bold' if row == 0 else 'normal')
-
-    heatmap_ax.set_xticks(np.arange(4))
-    heatmap_ax.set_xticklabels(['Random\nAUROC', 'Random\nAUPRC', 'Cold-target\nAUROC', 'Cold-target\nAUPRC'])
-    heatmap_ax.set_yticks(np.arange(len(ABLATION_VARIANTS)))
-    heatmap_ax.set_yticklabels(ABLATION_VARIANTS)
-    heatmap_ax.set_title('Metric matrix', pad=12)
-    panel_label(heatmap_ax, 'A', y=1.22)
-    fig.colorbar(heatmap, ax=heatmap_ax, fraction=0.046, pad=0.03)
-
-    full_random = ABLATION_MATRIX[0, 0]
-    full_cold = ABLATION_MATRIX[0, 2]
-    random_drop = ABLATION_MATRIX[1:, 0] - full_random
-    cold_drop = ABLATION_MATRIX[1:, 2] - full_cold
-    y = np.arange(len(ABLATION_VARIANTS) - 1)
-    delta_ax.barh(y - 0.18, random_drop, height=0.32, color=PALETTE['sky'], label='Random AUROC')
-    delta_ax.barh(y + 0.18, cold_drop, height=0.32, color=PALETTE['brick'], label='Cold-target AUROC')
-    for values, offset in ((random_drop, -0.18), (cold_drop, 0.18)):
-        for ypos, value in zip(y, values):
-            delta_ax.text(value - 0.004, ypos + offset, f'{value:.3f}', va='center', ha='right',
-                          color='white', fontsize=9, fontweight='bold')
-
-    delta_ax.set_yticks(y)
-    delta_ax.set_yticklabels(['Cross-attn', 'Domain feat', 'ESM-2', 'Graph aug'])
-    delta_ax.set_xlim(-0.18, 0.01)
-    delta_ax.axvline(0, color=PALETTE['ink'], linewidth=0.9)
-    delta_ax.set_xlabel('Delta AUROC vs. full model')
-    delta_ax.set_title('Performance drop after removing each component', pad=12)
-    delta_ax.legend(frameon=False, loc='lower left')
-    soften_axes(delta_ax, 'x')
-    panel_label(delta_ax, 'B', x=-0.13, y=1.22)
-
-    save_figure(
-        fig,
-        'fig_ablation',
-        metadata={
-            'title': 'Ablation study',
-            'sources': ['Table 2 ablation values used in the manuscript'],
-            'variants': ABLATION_VARIANTS,
-            'metrics': ['random_auroc', 'random_auprc', 'cold_target_auroc', 'cold_target_auprc'],
-            'matrix': ABLATION_MATRIX,
-            'drops': {
-                'random_auroc': random_drop,
-                'cold_target_auroc': cold_drop,
-            },
-        },
-    )
-
-
 def main() -> None:
-    print('Generating comparison and ablation figures...')
+    print('Generating canonical comparison figures...')
     fig_baseline_comparison()
     fig_multisplit_comparison()
-    fig_ablation()
-    write_manifest(['fig_comparison_random', 'fig_comparison_splits', 'fig_ablation'])
+    write_manifest(['fig_comparison_random', 'fig_comparison_splits'])
     print('Done.')
 
 

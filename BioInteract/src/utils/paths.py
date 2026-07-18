@@ -11,8 +11,10 @@ RESULTS_DIR = PROJECT_ROOT / 'results'
 LOGS_DIR = PROJECT_ROOT / 'logs'
 RUNS_DIR = PROJECT_ROOT / 'runs'
 
-SUBMISSION_DIR = WORKSPACE_ROOT / 'submission'
-MANUSCRIPT_DIR = SUBMISSION_DIR / 'manuscript'
+# Final resubmission sources and figures live here; do not write regenerated
+# figures into the retired ``submission/`` working copy.
+SUBMISSION_DIR = WORKSPACE_ROOT / 'submission_revision'
+MANUSCRIPT_DIR = SUBMISSION_DIR
 MANUSCRIPT_FIGURES_DIR = MANUSCRIPT_DIR / 'figures'
 DOCS_DIR = WORKSPACE_ROOT / 'docs'
 

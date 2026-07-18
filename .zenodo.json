@@ -1,0 +1,22 @@
+{
+  "title": "BioInteract: Interpretable Drug--Target Interaction Prediction via Residue-Level Cross-Attention with Biological Prior Knowledge",
+  "description": "Reproducibility release for the BioInteract Davis-benchmark binary high-affinity interaction classifier. The release includes source code, frozen configuration files, archived checkpoints, canonical full-precision entity-split predictions and metrics, strict split artifacts, figure-generation scripts, and a reproducibility manifest. The released model-native attributions are hypothesis-generating and are not structural-contact or binding-pocket evidence.",
+  "creators": [
+    {"name": "Wang, Shengnan"},
+    {"name": "Zhang, Qi"},
+    {"name": "Liu, Xucheng"},
+    {"name": "Wang, Zixuan"},
+    {"name": "Cheng, Jiangke"},
+    {"name": "Huang, Zhi"}
+  ],
+  "license": "MIT",
+  "keywords": [
+    "drug-target interaction",
+    "deep learning",
+    "ESM-2",
+    "cross-attention",
+    "reproducibility"
+  ],
+  "upload_type": "software",
+  "access_right": "open"
+}

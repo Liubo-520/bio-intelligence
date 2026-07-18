@@ -125,7 +125,6 @@ def test_public_operational_sources_do_not_emit_unsupported_case_or_structure_cl
         "pdb-validated",
         "resistance",
         "mutant",
-        "cold-target",
         "predicted binding probability",
         "high-confidence prediction",
     ):

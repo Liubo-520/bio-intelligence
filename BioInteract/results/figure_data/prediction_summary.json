@@ -1,92 +1,242 @@
 {
+  "artifact": "current_release_entity_split_prediction_summary",
+  "canonical": true,
+  "canonical_artifact": "revision/analysis/original_entity_split_metrics.json",
   "bootstrap_replicates": 600,
+  "bootstrap_seed": 42,
+  "source_config": {
+    "path": "BioInteract/configs/default.yaml",
+    "sha256": "ba31fa23f1a01b5547283f1fdb06c8a84d909140e4c3d500d8f4e08aed82beba"
+  },
+  "inputs": {
+    "BioInteract/data/esm2_embeddings": {
+      "bytes": 852510612,
+      "file_count": 442,
+      "sha256": "22588ffe20d2ba5a81a259898be570a661940df5a396f0f1069767aeb02503d2"
+    },
+    "BioInteract/data/raw/davis/drug_smiles.csv": {
+      "bytes": 5399,
+      "sha256": "2d0e76a53ba39fcbd8d90136cacbdf8681c437fc486f0057e13e8401b25c6b9d"
+    },
+    "BioInteract/data/raw/davis/interactions.csv": {
+      "bytes": 1214482,
+      "sha256": "996c93442822f138fabbb6553570fbddf8f4bdd863c52351776b11c3dd4be73f"
+    },
+    "BioInteract/data/raw/davis/target_sequences.csv": {
+      "bytes": 355685,
+      "sha256": "34e3a6d2deec0e7d17f57b9a53ad16999231a36496cee5dd3c732cc244e3b3a5"
+    }
+  },
   "splits": {
     "random": {
       "display_name": "Random",
-      "checkpoint": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/checkpoints/best_random.pt",
-      "result_json": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/test_random.json",
-      "prediction_csv": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/figure_data/predictions_random.csv",
       "n_test": 6011,
       "positive_count": 276,
-      "computed_metrics": {
-        "AUROC": 0.9206518580291372,
-        "AUPRC": 0.605395696201822
-      },
+      "prediction_csv": "BioInteract/results/figure_data/predictions_random.csv",
       "reported_metrics": {
-        "AUROC": 0.9207,
-        "AUPRC": 0.6075,
-        "F1": 0.6367,
-        "Precision": 0.6093,
-        "Recall": 0.6667,
-        "threshold": 0.7671,
-        "loss": 0.7538
+        "AUROC": 0.903904640966352,
+        "AUPRC": 0.5601254874754175,
+        "F1": 0.5653846153846154,
+        "Precision": 0.6024590163934426,
+        "Recall": 0.532608695652174,
+        "threshold": 0.5959881544113159
       },
-      "auroc_ci": [
-        0.9004034400031671,
-        0.940773361021308
+      "auroc_interval": [
+        0.8807473045354721,
+        0.9243678450811025
       ],
-      "auprc_ci": [
-        0.5394142748218204,
-        0.6698873001107695
-      ]
+      "auprc_interval": [
+        0.49789644484628204,
+        0.6242001531805106
+      ],
+      "validation": {
+        "f1_threshold": 0.5959881544113159,
+        "predictions_csv": "random_validation_predictions.csv"
+      },
+      "canonical_source": {
+        "artifact": "original_entity_split_metrics.json",
+        "checkpoint": "BioInteract/checkpoints/best_random.pt"
+      },
+      "checkpoint": {
+        "model_config": {
+          "drug_encoder": {
+            "drop_edge": 0.0,
+            "drop_node": 0.0,
+            "dropout": 0.2,
+            "edge_dim": 16,
+            "gnn_type": "GINE",
+            "hidden_dim": 256,
+            "jk": "last",
+            "num_atom_features": 52,
+            "num_layers": 3,
+            "use_morgan_fp": false
+          },
+          "interaction": {
+            "attn_dim": 256,
+            "dropout": 0.1,
+            "num_heads": 8,
+            "pooling": "gated"
+          },
+          "predictor": {
+            "dropout": 0.3,
+            "hidden_dims": [
+              256,
+              128
+            ],
+            "task": "classification"
+          },
+          "target_encoder": {
+            "domain_embed_dim": 32,
+            "esm2_dim": 640,
+            "num_domain_types": 50,
+            "projection_dim": 256,
+            "use_domain_features": true
+          }
+        },
+        "model_config_sha256": "16d45a2a726556a53fa7ee051296b8c7a7fe61524695d51c21247a72b8a3c581",
+        "model_config_source": "checkpoint['config']",
+        "path": "BioInteract/checkpoints/best_random.pt",
+        "sha256": "a91f5e75e123af4c0a66ff9302842b0bcacdce2780abb9f7f5f4170b69f3e347"
+      }
     },
     "cold_target": {
-      "display_name": "Cold-target",
-      "checkpoint": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/checkpoints/best_cold_target.pt",
-      "result_json": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/test_cold_target.json",
-      "prediction_csv": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/figure_data/predictions_cold_target.csv",
+      "display_name": "Target-ID-held-out",
       "n_test": 5984,
       "positive_count": 250,
-      "computed_metrics": {
-        "AUROC": 0.9416543425183117,
-        "AUPRC": 0.5504966117774259
-      },
+      "prediction_csv": "BioInteract/results/figure_data/predictions_cold_target.csv",
       "reported_metrics": {
-        "AUROC": 0.9417,
-        "AUPRC": 0.549,
-        "F1": 0.597,
-        "Precision": 0.5594,
-        "Recall": 0.64,
-        "threshold": 0.7295,
-        "loss": 0.9065
+        "AUROC": 0.9299874433205442,
+        "AUPRC": 0.5244660498174324,
+        "F1": 0.5338491295938105,
+        "Precision": 0.5168539325842697,
+        "Recall": 0.552,
+        "threshold": 0.6022375822067261
       },
-      "auroc_ci": [
-        0.9257733231738691,
-        0.9585698017530466
+      "auroc_interval": [
+        0.9109876980963884,
+        0.9476896785252473
       ],
-      "auprc_ci": [
-        0.48288387416285156,
-        0.6119875081897079
-      ]
+      "auprc_interval": [
+        0.4544076484230387,
+        0.5838630094285512
+      ],
+      "validation": {
+        "f1_threshold": 0.6022375822067261,
+        "predictions_csv": "target_id_held_out_validation_predictions.csv"
+      },
+      "canonical_source": {
+        "artifact": "original_entity_split_metrics.json",
+        "checkpoint": "BioInteract/checkpoints/best_cold_target.pt"
+      },
+      "checkpoint": {
+        "model_config": {
+          "drug_encoder": {
+            "dropout": 0.2,
+            "edge_dim": 16,
+            "gnn_type": "GINE",
+            "hidden_dim": 256,
+            "jk": "last",
+            "num_atom_features": 52,
+            "num_layers": 3
+          },
+          "interaction": {
+            "attn_dim": 256,
+            "dropout": 0.1,
+            "num_heads": 8,
+            "pooling": "gated"
+          },
+          "predictor": {
+            "dropout": 0.3,
+            "hidden_dims": [
+              256,
+              128
+            ],
+            "task": "classification"
+          },
+          "target_encoder": {
+            "domain_embed_dim": 32,
+            "esm2_dim": 640,
+            "num_domain_types": 50,
+            "projection_dim": 256,
+            "use_domain_features": true
+          }
+        },
+        "model_config_sha256": "c51f2188e819006320f49d50aafb70440c9a1abc432dbda14d88411f34edab2c",
+        "model_config_source": "checkpoint['config']",
+        "path": "BioInteract/checkpoints/best_cold_target.pt",
+        "sha256": "3b5051a8b69ea5208dceb41d9db8766c8dae87dcee2e33c0116c20c1ad003e4b"
+      }
     },
     "cold_drug": {
-      "display_name": "Cold-drug",
-      "checkpoint": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/checkpoints/best_cold_drug.pt",
-      "result_json": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/test_cold_drug.json",
-      "prediction_csv": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/figure_data/predictions_cold_drug.csv",
+      "display_name": "Drug-ID-held-out",
       "n_test": 5746,
       "positive_count": 245,
-      "computed_metrics": {
-        "AUROC": 0.7391171920504249,
-        "AUPRC": 0.16850432566357137
-      },
+      "prediction_csv": "BioInteract/results/figure_data/predictions_cold_drug.csv",
       "reported_metrics": {
-        "AUROC": 0.7391,
-        "AUPRC": 0.1688,
-        "F1": 0.2051,
-        "Precision": 0.186,
-        "Recall": 0.2286,
-        "threshold": 0.4812,
-        "loss": 1.0702
+        "AUROC": 0.7334469799554069,
+        "AUPRC": 0.16628563292349766,
+        "F1": 0.1,
+        "Precision": 0.2727272727272727,
+        "Recall": 0.061224489795918366,
+        "threshold": 0.8456151485443115
       },
-      "auroc_ci": [
-        0.7098263130054503,
-        0.7687274220178348
+      "auroc_interval": [
+        0.7030063217507134,
+        0.7631864445779839
       ],
-      "auprc_ci": [
-        0.13041417550432854,
-        0.21169295901611535
-      ]
+      "auprc_interval": [
+        0.1288598746581493,
+        0.21060952953178796
+      ],
+      "validation": {
+        "f1_threshold": 0.8456151485443115,
+        "predictions_csv": "drug_id_held_out_validation_predictions.csv"
+      },
+      "canonical_source": {
+        "artifact": "original_entity_split_metrics.json",
+        "checkpoint": "BioInteract/checkpoints/best_cold_drug.pt"
+      },
+      "checkpoint": {
+        "model_config": {
+          "drug_encoder": {
+            "drop_edge": 0.0,
+            "drop_node": 0.0,
+            "dropout": 0.2,
+            "edge_dim": 16,
+            "gnn_type": "GINE",
+            "hidden_dim": 256,
+            "jk": "last",
+            "num_atom_features": 52,
+            "num_layers": 3,
+            "use_morgan_fp": false
+          },
+          "interaction": {
+            "attn_dim": 256,
+            "dropout": 0.1,
+            "num_heads": 8,
+            "pooling": "gated"
+          },
+          "predictor": {
+            "dropout": 0.3,
+            "hidden_dims": [
+              256,
+              128
+            ],
+            "task": "classification"
+          },
+          "target_encoder": {
+            "domain_embed_dim": 32,
+            "esm2_dim": 640,
+            "num_domain_types": 50,
+            "projection_dim": 256,
+            "use_domain_features": true
+          }
+        },
+        "model_config_sha256": "16d45a2a726556a53fa7ee051296b8c7a7fe61524695d51c21247a72b8a3c581",
+        "model_config_source": "checkpoint['config']",
+        "path": "BioInteract/checkpoints/best_cold_drug.pt",
+        "sha256": "a813f4afd9dea005e8c49db46ce5bfd088a56d1644c87988ec293e0378805355"
+      }
     }
   }
 }

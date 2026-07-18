@@ -49,6 +49,9 @@ def configure_matplotlib() -> None:
         'savefig.dpi': 300,
         'savefig.bbox': 'tight',
         'savefig.pad_inches': 0.06,
+        'pdf.fonttype': 42,
+        'ps.fonttype': 42,
+        'svg.fonttype': 'none',
         'lines.linewidth': 1.8,
         'patch.linewidth': 0.8,
         'axes.spines.top': False,
@@ -101,8 +104,10 @@ def save_figure(fig, stem: str, metadata: dict[str, Any] | None = None) -> None:
     if metadata is not None:
         payload = _json_ready(metadata)
         payload.setdefault('outputs', {})
-        payload['outputs']['pdf'] = pdf_path.as_posix()
-        payload['outputs']['png'] = png_path.as_posix()
+        # Keep metadata portable: release artifacts must not contain a
+        # contributor-specific absolute workspace path.
+        payload['outputs']['pdf'] = (Path('submission_revision') / 'figures' / pdf_path.name).as_posix()
+        payload['outputs']['png'] = (Path('submission_revision') / 'figures' / png_path.name).as_posix()
         (FIGURE_METADATA_DIR / f'{stem}.json').write_text(
             json.dumps(payload, indent=2, ensure_ascii=True),
             encoding='utf-8',
@@ -122,8 +127,8 @@ def write_manifest(stems: list[str]) -> None:
     combined = list(dict.fromkeys(existing.get('figures', []) + stems))
     manifest = {
         'figures': combined,
-        'metadata_dir': FIGURE_METADATA_DIR.as_posix(),
-        'data_dir': FIGURE_DATA_DIR.as_posix(),
+        'metadata_dir': 'submission_revision/figures/metadata',
+        'data_dir': 'BioInteract/results/figure_data',
     }
     manifest_path.write_text(
         json.dumps(manifest, indent=2, ensure_ascii=True),

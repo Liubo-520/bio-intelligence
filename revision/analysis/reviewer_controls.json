@@ -1,0 +1,549 @@
+{
+  "dataset": "Davis",
+  "seed": 42,
+  "split_definition": "Exact-sequence-grouped cold-target split; target IDs with identical full amino-acid sequences remain in one partition.",
+  "sequence_grouped_cold_target": {
+    "split": {
+      "train_pairs": 21080,
+      "test_pairs": 5984,
+      "train_targets": 310,
+      "test_targets": 88,
+      "train_test_target_overlap": 0,
+      "exact_sequence_train_test_overlap": 0
+    },
+    "full_length_identity": {
+      "definition": "Exact-residue matches divided by global pairwise-alignment length; maximum score over all training targets for each held-out target.",
+      "test_to_train_max": {
+        "n": 88,
+        "mean": 0.500306,
+        "median": 0.494027,
+        "minimum": 0.230731,
+        "maximum": 0.867159
+      },
+      "per_target": [
+        {
+          "test_target_id": "T0000",
+          "nearest_train_target_id": "T0168",
+          "maximum_global_sequence_identity": 0.259287
+        },
+        {
+          "test_target_id": "T0017",
+          "nearest_train_target_id": "T0041",
+          "maximum_global_sequence_identity": 0.499029
+        },
+        {
+          "test_target_id": "T0019",
+          "nearest_train_target_id": "T0020",
+          "maximum_global_sequence_identity": 0.671206
+        },
+        {
+          "test_target_id": "T0023",
+          "nearest_train_target_id": "T0022",
+          "maximum_global_sequence_identity": 0.484985
+        },
+        {
+          "test_target_id": "T0029",
+          "nearest_train_target_id": "T0028",
+          "maximum_global_sequence_identity": 0.748673
+        },
+        {
+          "test_target_id": "T0036",
+          "nearest_train_target_id": "T0035",
+          "maximum_global_sequence_identity": 0.718023
+        },
+        {
+          "test_target_id": "T0039",
+          "nearest_train_target_id": "T0167",
+          "maximum_global_sequence_identity": 0.48254
+        },
+        {
+          "test_target_id": "T0044",
+          "nearest_train_target_id": "T0354",
+          "maximum_global_sequence_identity": 0.52129
+        },
+        {
+          "test_target_id": "T0045",
+          "nearest_train_target_id": "T0354",
+          "maximum_global_sequence_identity": 0.52129
+        },
+        {
+          "test_target_id": "T0046",
+          "nearest_train_target_id": "T0390",
+          "maximum_global_sequence_identity": 0.440404
+        },
+        {
+          "test_target_id": "T0048",
+          "nearest_train_target_id": "T0047",
+          "maximum_global_sequence_identity": 0.703431
+        },
+        {
+          "test_target_id": "T0054",
+          "nearest_train_target_id": "T0056",
+          "maximum_global_sequence_identity": 0.708709
+        },
+        {
+          "test_target_id": "T0057",
+          "nearest_train_target_id": "T0050",
+          "maximum_global_sequence_identity": 0.37605
+        },
+        {
+          "test_target_id": "T0060",
+          "nearest_train_target_id": "T0056",
+          "maximum_global_sequence_identity": 0.286329
+        },
+        {
+          "test_target_id": "T0061",
+          "nearest_train_target_id": "T0062",
+          "maximum_global_sequence_identity": 0.867159
+        },
+        {
+          "test_target_id": "T0071",
+          "nearest_train_target_id": "T0064",
+          "maximum_global_sequence_identity": 0.778884
+        },
+        {
+          "test_target_id": "T0072",
+          "nearest_train_target_id": "T0070",
+          "maximum_global_sequence_identity": 0.384615
+        },
+        {
+          "test_target_id": "T0073",
+          "nearest_train_target_id": "T0074",
+          "maximum_global_sequence_identity": 0.409736
+        },
+        {
+          "test_target_id": "T0079",
+          "nearest_train_target_id": "T0366",
+          "maximum_global_sequence_identity": 0.285223
+        },
+        {
+          "test_target_id": "T0088",
+          "nearest_train_target_id": "T0086",
+          "maximum_global_sequence_identity": 0.576832
+        },
+        {
+          "test_target_id": "T0089",
+          "nearest_train_target_id": "T0086",
+          "maximum_global_sequence_identity": 0.563679
+        },
+        {
+          "test_target_id": "T0092",
+          "nearest_train_target_id": "T0090",
+          "maximum_global_sequence_identity": 0.773836
+        },
+        {
+          "test_target_id": "T0093",
+          "nearest_train_target_id": "T0285",
+          "maximum_global_sequence_identity": 0.295285
+        },
+        {
+          "test_target_id": "T0094",
+          "nearest_train_target_id": "T0066",
+          "maximum_global_sequence_identity": 0.307692
+        },
+        {
+          "test_target_id": "T0098",
+          "nearest_train_target_id": "T0097",
+          "maximum_global_sequence_identity": 0.534483
+        },
+        {
+          "test_target_id": "T0100",
+          "nearest_train_target_id": "T0099",
+          "maximum_global_sequence_identity": 0.666667
+        },
+        {
+          "test_target_id": "T0106",
+          "nearest_train_target_id": "T0256",
+          "maximum_global_sequence_identity": 0.459026
+        },
+        {
+          "test_target_id": "T0109",
+          "nearest_train_target_id": "T0111",
+          "maximum_global_sequence_identity": 0.285714
+        },
+        {
+          "test_target_id": "T0128",
+          "nearest_train_target_id": "T0127",
+          "maximum_global_sequence_identity": 0.630151
+        },
+        {
+          "test_target_id": "T0131",
+          "nearest_train_target_id": "T0127",
+          "maximum_global_sequence_identity": 0.622378
+        },
+        {
+          "test_target_id": "T0135",
+          "nearest_train_target_id": "T0133",
+          "maximum_global_sequence_identity": 0.69505
+        },
+        {
+          "test_target_id": "T0137",
+          "nearest_train_target_id": "T0133",
+          "maximum_global_sequence_identity": 0.474952
+        },
+        {
+          "test_target_id": "T0140",
+          "nearest_train_target_id": "T0112",
+          "maximum_global_sequence_identity": 0.506464
+        },
+        {
+          "test_target_id": "T0141",
+          "nearest_train_target_id": "T0142",
+          "maximum_global_sequence_identity": 0.828496
+        },
+        {
+          "test_target_id": "T0143",
+          "nearest_train_target_id": "T0144",
+          "maximum_global_sequence_identity": 0.492414
+        },
+        {
+          "test_target_id": "T0145",
+          "nearest_train_target_id": "T0146",
+          "maximum_global_sequence_identity": 0.299635
+        },
+        {
+          "test_target_id": "T0151",
+          "nearest_train_target_id": "T0152",
+          "maximum_global_sequence_identity": 0.717208
+        },
+        {
+          "test_target_id": "T0171",
+          "nearest_train_target_id": "T0170",
+          "maximum_global_sequence_identity": 0.465986
+        },
+        {
+          "test_target_id": "T0174",
+          "nearest_train_target_id": "T0173",
+          "maximum_global_sequence_identity": 0.681159
+        },
+        {
+          "test_target_id": "T0175",
+          "nearest_train_target_id": "T0218",
+          "maximum_global_sequence_identity": 0.637457
+        },
+        {
+          "test_target_id": "T0179",
+          "nearest_train_target_id": "T0074",
+          "maximum_global_sequence_identity": 0.272142
+        },
+        {
+          "test_target_id": "T0182",
+          "nearest_train_target_id": "T0146",
+          "maximum_global_sequence_identity": 0.292496
+        },
+        {
+          "test_target_id": "T0198",
+          "nearest_train_target_id": "T0197",
+          "maximum_global_sequence_identity": 0.812646
+        },
+        {
+          "test_target_id": "T0214",
+          "nearest_train_target_id": "T0386",
+          "maximum_global_sequence_identity": 0.495961
+        },
+        {
+          "test_target_id": "T0215",
+          "nearest_train_target_id": "T0169",
+          "maximum_global_sequence_identity": 0.237456
+        },
+        {
+          "test_target_id": "T0216",
+          "nearest_train_target_id": "T0169",
+          "maximum_global_sequence_identity": 0.237456
+        },
+        {
+          "test_target_id": "T0220",
+          "nearest_train_target_id": "T0146",
+          "maximum_global_sequence_identity": 0.293478
+        },
+        {
+          "test_target_id": "T0225",
+          "nearest_train_target_id": "T0439",
+          "maximum_global_sequence_identity": 0.241826
+        },
+        {
+          "test_target_id": "T0235",
+          "nearest_train_target_id": "T0234",
+          "maximum_global_sequence_identity": 0.63035
+        },
+        {
+          "test_target_id": "T0236",
+          "nearest_train_target_id": "T0104",
+          "maximum_global_sequence_identity": 0.240764
+        },
+        {
+          "test_target_id": "T0241",
+          "nearest_train_target_id": "T0242",
+          "maximum_global_sequence_identity": 0.349892
+        },
+        {
+          "test_target_id": "T0245",
+          "nearest_train_target_id": "T0259",
+          "maximum_global_sequence_identity": 0.355017
+        },
+        {
+          "test_target_id": "T0246",
+          "nearest_train_target_id": "T0259",
+          "maximum_global_sequence_identity": 0.355017
+        },
+        {
+          "test_target_id": "T0247",
+          "nearest_train_target_id": "T0259",
+          "maximum_global_sequence_identity": 0.355017
+        },
+        {
+          "test_target_id": "T0254",
+          "nearest_train_target_id": "T0255",
+          "maximum_global_sequence_identity": 0.479592
+        },
+        {
+          "test_target_id": "T0269",
+          "nearest_train_target_id": "T0268",
+          "maximum_global_sequence_identity": 0.509248
+        },
+        {
+          "test_target_id": "T0272",
+          "nearest_train_target_id": "T0277",
+          "maximum_global_sequence_identity": 0.310317
+        },
+        {
+          "test_target_id": "T0278",
+          "nearest_train_target_id": "T0065",
+          "maximum_global_sequence_identity": 0.289855
+        },
+        {
+          "test_target_id": "T0282",
+          "nearest_train_target_id": "T0285",
+          "maximum_global_sequence_identity": 0.325142
+        },
+        {
+          "test_target_id": "T0284",
+          "nearest_train_target_id": "T0285",
+          "maximum_global_sequence_identity": 0.736264
+        },
+        {
+          "test_target_id": "T0292",
+          "nearest_train_target_id": "T0291",
+          "maximum_global_sequence_identity": 0.515373
+        },
+        {
+          "test_target_id": "T0293",
+          "nearest_train_target_id": "T0291",
+          "maximum_global_sequence_identity": 0.552778
+        },
+        {
+          "test_target_id": "T0294",
+          "nearest_train_target_id": "T0296",
+          "maximum_global_sequence_identity": 0.669643
+        },
+        {
+          "test_target_id": "T0322",
+          "nearest_train_target_id": "T0324",
+          "maximum_global_sequence_identity": 0.543269
+        },
+        {
+          "test_target_id": "T0337",
+          "nearest_train_target_id": "T0336",
+          "maximum_global_sequence_identity": 0.49564
+        },
+        {
+          "test_target_id": "T0342",
+          "nearest_train_target_id": "T0341",
+          "maximum_global_sequence_identity": 0.368195
+        },
+        {
+          "test_target_id": "T0345",
+          "nearest_train_target_id": "T0344",
+          "maximum_global_sequence_identity": 0.683007
+        },
+        {
+          "test_target_id": "T0368",
+          "nearest_train_target_id": "T0187",
+          "maximum_global_sequence_identity": 0.251701
+        },
+        {
+          "test_target_id": "T0373",
+          "nearest_train_target_id": "T0375",
+          "maximum_global_sequence_identity": 0.804845
+        },
+        {
+          "test_target_id": "T0374",
+          "nearest_train_target_id": "T0375",
+          "maximum_global_sequence_identity": 0.804845
+        },
+        {
+          "test_target_id": "T0378",
+          "nearest_train_target_id": "T0375",
+          "maximum_global_sequence_identity": 0.777036
+        },
+        {
+          "test_target_id": "T0379",
+          "nearest_train_target_id": "T0375",
+          "maximum_global_sequence_identity": 0.777036
+        },
+        {
+          "test_target_id": "T0382",
+          "nearest_train_target_id": "T0381",
+          "maximum_global_sequence_identity": 0.330986
+        },
+        {
+          "test_target_id": "T0384",
+          "nearest_train_target_id": "T0385",
+          "maximum_global_sequence_identity": 0.450959
+        },
+        {
+          "test_target_id": "T0389",
+          "nearest_train_target_id": "T0437",
+          "maximum_global_sequence_identity": 0.753676
+        },
+        {
+          "test_target_id": "T0394",
+          "nearest_train_target_id": "T0070",
+          "maximum_global_sequence_identity": 0.290055
+        },
+        {
+          "test_target_id": "T0396",
+          "nearest_train_target_id": "T0432",
+          "maximum_global_sequence_identity": 0.244275
+        },
+        {
+          "test_target_id": "T0402",
+          "nearest_train_target_id": "T0401",
+          "maximum_global_sequence_identity": 0.522267
+        },
+        {
+          "test_target_id": "T0403",
+          "nearest_train_target_id": "T0401",
+          "maximum_global_sequence_identity": 0.663682
+        },
+        {
+          "test_target_id": "T0411",
+          "nearest_train_target_id": "T0412",
+          "maximum_global_sequence_identity": 0.677804
+        },
+        {
+          "test_target_id": "T0420",
+          "nearest_train_target_id": "T0157",
+          "maximum_global_sequence_identity": 0.230731
+        },
+        {
+          "test_target_id": "T0422",
+          "nearest_train_target_id": "T0101",
+          "maximum_global_sequence_identity": 0.254315
+        },
+        {
+          "test_target_id": "T0423",
+          "nearest_train_target_id": "T0405",
+          "maximum_global_sequence_identity": 0.507132
+        },
+        {
+          "test_target_id": "T0424",
+          "nearest_train_target_id": "T0193",
+          "maximum_global_sequence_identity": 0.455749
+        },
+        {
+          "test_target_id": "T0425",
+          "nearest_train_target_id": "T0193",
+          "maximum_global_sequence_identity": 0.455749
+        },
+        {
+          "test_target_id": "T0429",
+          "nearest_train_target_id": "T0050",
+          "maximum_global_sequence_identity": 0.304167
+        },
+        {
+          "test_target_id": "T0430",
+          "nearest_train_target_id": "T0157",
+          "maximum_global_sequence_identity": 0.450796
+        },
+        {
+          "test_target_id": "T0438",
+          "nearest_train_target_id": "T0261",
+          "maximum_global_sequence_identity": 0.709821
+        }
+      ],
+      "bins": {
+        "<0.40": 31,
+        "0.40--<0.60": 28,
+        "0.60--<0.80": 24,
+        ">=0.80": 5
+      }
+    },
+    "strict_model_identity_stratification": {
+      "<0.40": {
+        "test_pairs": 2108,
+        "positive_pairs": 75,
+        "metrics": {
+          "AUROC": 0.805981,
+          "AUPRC": 0.305075,
+          "positive_prevalence": 0.035579
+        }
+      },
+      "0.40--<0.60": {
+        "test_pairs": 1904,
+        "positive_pairs": 77,
+        "metrics": {
+          "AUROC": 0.907804,
+          "AUPRC": 0.456022,
+          "positive_prevalence": 0.040441
+        }
+      },
+      "0.60--<0.80": {
+        "test_pairs": 1632,
+        "positive_pairs": 53,
+        "metrics": {
+          "AUROC": 0.908409,
+          "AUPRC": 0.465571,
+          "positive_prevalence": 0.032475
+        }
+      },
+      ">=0.80": {
+        "test_pairs": 340,
+        "positive_pairs": 3,
+        "metrics": {
+          "AUROC": 0.862018,
+          "AUPRC": 0.120722,
+          "positive_prevalence": 0.008824
+        }
+      }
+    }
+  },
+  "controls": {
+    "drug_only_morgan_logistic": {
+      "definition": "Morgan fingerprint (radius 2, 1024 bits) logistic regression; no target representation is supplied.",
+      "test_pairs": 5984,
+      "metrics": {
+        "AUROC": 0.76413,
+        "AUPRC": 0.16365,
+        "positive_prevalence": 0.034759
+      }
+    },
+    "drug_promiscuity_prior": {
+      "definition": "Per-drug positive prevalence estimated only from training targets; no target representation is supplied.",
+      "test_pairs": 5984,
+      "metrics": {
+        "AUROC": 0.763691,
+        "AUPRC": 0.162964,
+        "positive_prevalence": 0.034759
+      }
+    },
+    "target_only_constant_prior": {
+      "definition": "For held-out targets, any target-specific training label degree would leak test-target labels. The leakage-free target-only control is therefore the training positive prevalence applied uniformly.",
+      "test_pairs": 5984,
+      "metrics": {
+        "AUROC": 0.5,
+        "AUPRC": 0.034759,
+        "positive_prevalence": 0.034759
+      }
+    },
+    "label_shuffled_drug_only": {
+      "definition": "The drug-only logistic procedure after a deterministic permutation of training labels; test labels remain unaltered.",
+      "test_pairs": 5984,
+      "metrics": {
+        "AUROC": 0.406829,
+        "AUPRC": 0.028611,
+        "positive_prevalence": 0.034759
+      }
+    }
+  }
+}

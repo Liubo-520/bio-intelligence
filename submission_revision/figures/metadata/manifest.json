@@ -1,0 +1,11 @@
+{
+  "figures": [
+    "fig_comparison_random",
+    "fig_comparison_splits",
+    "fig2_performance",
+    "fig3_sparsity",
+    "fig9_training"
+  ],
+  "metadata_dir": "submission_revision/figures/metadata",
+  "data_dir": "BioInteract/results/figure_data"
+}

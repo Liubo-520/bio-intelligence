@@ -26,9 +26,9 @@ The browser demonstration is **not numerically equivalent** to the reported **1,
 
 | Partition | AUROC | AUPRC |
 |---|---:|---:|
-| Random | 0.921 | 0.608 |
-| Drug-ID-held-out | 0.739 | 0.169 |
-| Target-ID-held-out | 0.941 | 0.549 |
+| Random | 0.904 | 0.560 |
+| Drug-ID-held-out | 0.733 | 0.166 |
+| Target-ID-held-out | 0.930 | 0.524 |
 
 Target-ID-held-out is an archived identifier-based split result. Duplicate Davis protein sequences mean it is not a strict exact-sequence-held-out estimate.
 

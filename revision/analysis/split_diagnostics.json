@@ -1,0 +1,268 @@
+{
+  "dataset": "Davis",
+  "seed": 42,
+  "ratios": {
+    "train": 0.7,
+    "validation": 0.1,
+    "test": 0.2
+  },
+  "similarity_definitions": {
+    "drug": "Morgan fingerprint (radius 2, 1024 bits) Tanimoto similarity.",
+    "protein": "Normalised Indel similarity calculated for each test sequence against every training sequence; this is a sequence-similarity diagnostic, not a clustering constraint."
+  },
+  "cold_drug": {
+    "split_sizes": {
+      "train_pairs": 21658,
+      "validation_pairs": 2652,
+      "test_pairs": 5746,
+      "train_drugs": 49,
+      "validation_drugs": 6,
+      "test_drugs": 13
+    },
+    "entity_overlap": 0,
+    "similarity": {
+      "test_to_train_max": {
+        "n": 13,
+        "mean": 0.2965,
+        "median": 0.2574,
+        "minimum": 0.1959,
+        "maximum": 0.5376
+      },
+      "nearest_pairs": [
+        {
+          "test_drug_id": "D0004",
+          "nearest_train_drug_id": "D0014",
+          "tanimoto": 0.5376
+        },
+        {
+          "test_drug_id": "D0065",
+          "nearest_train_drug_id": "D0026",
+          "tanimoto": 0.4444
+        },
+        {
+          "test_drug_id": "D0061",
+          "nearest_train_drug_id": "D0015",
+          "tanimoto": 0.4157
+        },
+        {
+          "test_drug_id": "D0041",
+          "nearest_train_drug_id": "D0053",
+          "tanimoto": 0.3762
+        },
+        {
+          "test_drug_id": "D0009",
+          "nearest_train_drug_id": "D0021",
+          "tanimoto": 0.2826
+        },
+        {
+          "test_drug_id": "D0047",
+          "nearest_train_drug_id": "D0060",
+          "tanimoto": 0.2621
+        },
+        {
+          "test_drug_id": "D0058",
+          "nearest_train_drug_id": "D0010",
+          "tanimoto": 0.2574
+        },
+        {
+          "test_drug_id": "D0012",
+          "nearest_train_drug_id": "D0039",
+          "tanimoto": 0.233
+        },
+        {
+          "test_drug_id": "D0046",
+          "nearest_train_drug_id": "D0053",
+          "tanimoto": 0.219
+        },
+        {
+          "test_drug_id": "D0016",
+          "nearest_train_drug_id": "D0064",
+          "tanimoto": 0.2159
+        }
+      ]
+    }
+  },
+  "cold_target": {
+    "split_sizes": {
+      "train_pairs": 21080,
+      "validation_pairs": 2992,
+      "test_pairs": 5984,
+      "train_targets": 310,
+      "validation_targets": 44,
+      "test_targets": 88
+    },
+    "entity_overlap": 0,
+    "sequence_identity": {
+      "test_to_train_max": {
+        "n": 88,
+        "mean": 0.6101,
+        "median": 0.5785,
+        "minimum": 0.3822,
+        "maximum": 1.0
+      },
+      "nearest_pairs": [
+        {
+          "test_target_id": "T0009",
+          "nearest_train_target_id": "T0001",
+          "normalised_indel_similarity": 1.0
+        },
+        {
+          "test_target_id": "T0011",
+          "nearest_train_target_id": "T0001",
+          "normalised_indel_similarity": 1.0
+        },
+        {
+          "test_target_id": "T0015",
+          "nearest_train_target_id": "T0001",
+          "normalised_indel_similarity": 1.0
+        },
+        {
+          "test_target_id": "T0113",
+          "nearest_train_target_id": "T0112",
+          "normalised_indel_similarity": 1.0
+        },
+        {
+          "test_target_id": "T0116",
+          "nearest_train_target_id": "T0112",
+          "normalised_indel_similarity": 1.0
+        },
+        {
+          "test_target_id": "T0117",
+          "nearest_train_target_id": "T0112",
+          "normalised_indel_similarity": 1.0
+        },
+        {
+          "test_target_id": "T0203",
+          "nearest_train_target_id": "T0200",
+          "normalised_indel_similarity": 1.0
+        },
+        {
+          "test_target_id": "T0311",
+          "nearest_train_target_id": "T0308",
+          "normalised_indel_similarity": 1.0
+        },
+        {
+          "test_target_id": "T0358",
+          "nearest_train_target_id": "T0356",
+          "normalised_indel_similarity": 1.0
+        },
+        {
+          "test_target_id": "T0374",
+          "nearest_train_target_id": "T0373",
+          "normalised_indel_similarity": 1.0
+        }
+      ]
+    },
+    "exact_sequence_redundancy": {
+      "duplicate_groups_in_full_dataset": 18,
+      "target_ids_in_duplicate_groups": 81,
+      "groups_crossing_train_test": 6,
+      "crossing_groups": [
+        [
+          "T0001",
+          "T0002",
+          "T0003",
+          "T0004",
+          "T0005",
+          "T0006",
+          "T0007",
+          "T0008",
+          "T0009",
+          "T0010",
+          "T0011",
+          "T0012",
+          "T0013",
+          "T0014",
+          "T0015"
+        ],
+        [
+          "T0112",
+          "T0113",
+          "T0114",
+          "T0115",
+          "T0116",
+          "T0117",
+          "T0118",
+          "T0119",
+          "T0120",
+          "T0121",
+          "T0122",
+          "T0123"
+        ],
+        [
+          "T0308",
+          "T0309",
+          "T0310",
+          "T0311",
+          "T0312",
+          "T0313",
+          "T0314",
+          "T0315",
+          "T0316",
+          "T0317"
+        ],
+        [
+          "T0200",
+          "T0201",
+          "T0202",
+          "T0203",
+          "T0204",
+          "T0205",
+          "T0206",
+          "T0207"
+        ],
+        [
+          "T0355",
+          "T0356",
+          "T0357",
+          "T0358"
+        ],
+        [
+          "T0373",
+          "T0374"
+        ]
+      ]
+    }
+  },
+  "cold_both": {
+    "split_sizes": {
+      "train_pairs": 15190,
+      "validation_pairs": 264,
+      "test_pairs": 1144,
+      "train_drugs": 49,
+      "validation_drugs": 6,
+      "test_drugs": 13,
+      "train_targets": 310,
+      "validation_targets": 44,
+      "test_targets": 88
+    },
+    "drug_overlap": 0,
+    "target_overlap": 0
+  },
+  "sequence_grouped_cold_target": {
+    "split_sizes": {
+      "train_pairs": 21080,
+      "validation_pairs": 2992,
+      "test_pairs": 5984,
+      "train_targets": 310,
+      "validation_targets": 44,
+      "test_targets": 88
+    },
+    "exact_sequence_train_test_overlap": 0
+  },
+  "sequence_grouped_cold_both": {
+    "split_sizes": {
+      "train_pairs": 15190,
+      "validation_pairs": 264,
+      "test_pairs": 1144,
+      "train_drugs": 49,
+      "validation_drugs": 6,
+      "test_drugs": 13,
+      "train_targets": 310,
+      "validation_targets": 44,
+      "test_targets": 88
+    },
+    "drug_train_test_overlap": 0,
+    "exact_sequence_train_test_overlap": 0
+  }
+}

@@ -1,14 +1,12 @@
 {
   "n_samples": 1506,
   "n_residue_scores": 1301380,
-  "residue_attention_mean": 0.004351376555860043,
-  "residue_attention_std": 0.04624345898628235,
-  "residue_attention_median": 0.000272190198302269,
-  "residue_attention_top1pct": 0.0571928446739905,
-  "residue_attention_top5pct": 0.0036166397971101145,
-  "attention_sparsity": 0.992318922989442,
-  "top1_attention_mass": 0.7885203957557678,
-  "top5_attention_mass": 0.9045118689537048,
+  "residue_attention_mean": 0.005538010038435459,
+  "residue_attention_std": 0.049904465675354004,
+  "residue_attention_median": 0.0003382473951205611,
+  "residue_attention_top1pct": 0.09235111936926842,
+  "residue_attention_top5pct": 0.006879368913359945,
+  "attention_sparsity": 0.9904401481504249,
   "report_global_stats": {
     "residue_attention_mean": 0.004351376555860043,
     "residue_attention_std": 0.04624345526099205,
@@ -17,6 +15,5 @@
     "residue_attention_top5pct": 0.003616639366373424,
     "n_samples": 1506,
     "attention_sparsity": 0.992318922989442
-  },
-  "cache_path": "D:/system/\u684c\u9762/\u667a\u80fd\u751f\u7269-\u4ea4\u7a3f/BioInteract/results/figure_data/attention_distribution.npz"
+  }
 }
