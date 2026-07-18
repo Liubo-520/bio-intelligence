@@ -25,7 +25,7 @@ import torch.nn as nn
 from src.data.dataset import DTIDataset, collate_dti
 from src.data.split import get_split_fn
 from src.models.biointeract import BioInteract
-from src.utils.metrics import classification_metrics
+from src.utils.metrics import classification_metrics, select_f1_threshold
 from src.utils.paths import CHECKPOINTS_DIR, CONFIGS_DIR, DATA_DIR, LOGS_DIR, RESULTS_DIR, resolve_project_path
 
 
@@ -53,7 +53,7 @@ def set_seed(seed=42):
 
 
 @torch.no_grad()
-def evaluate(model, loader, criterion, device):
+def evaluate(model, loader, criterion, device, threshold=None):
     model.eval()
     all_preds, all_labels = [], []
     total_loss, n = 0.0, 0
@@ -73,7 +73,10 @@ def evaluate(model, loader, criterion, device):
         all_labels.append(labels.cpu().numpy())
     preds = np.concatenate(all_preds).flatten()
     labels = np.concatenate(all_labels).flatten()
-    m = classification_metrics(labels, preds)
+    validation_threshold = threshold
+    if validation_threshold is None:
+        validation_threshold = select_f1_threshold(labels, preds)
+    m = classification_metrics(labels, preds, threshold=validation_threshold)
     m['loss'] = total_loss / max(n, 1)
     return m
 
@@ -155,6 +158,7 @@ def main():
     patience_counter = 0
     patience = cfg['training'].get('patience', 15)
     best_state = None
+    best_validation_threshold = None
 
     for epoch in range(1, cfg['training']['epochs'] + 1):
         t0 = time.time()
@@ -195,6 +199,7 @@ def main():
             best_auroc = auroc
             patience_counter = 0
             best_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
+            best_validation_threshold = val_m['threshold']
         else:
             patience_counter += 1
             if patience_counter >= patience:
@@ -204,7 +209,10 @@ def main():
     # Test
     model.load_state_dict(best_state)
     model.to(device)
-    test_m = evaluate(model, test_loader, criterion, device)
+    test_m = evaluate(
+        model, test_loader, criterion, device,
+        threshold=best_validation_threshold,
+    )
 
     P(f"\n  TEST ({split_type}):")
     for k, v in test_m.items():
@@ -225,6 +233,7 @@ def main():
         'config': cfg['model'],
         'split': split_type,
         'best_val_auroc': best_auroc,
+        'validation_threshold': best_validation_threshold,
     }, ckpt_file)
     P(f"  Checkpoint: {ckpt_file}")
     P("DONE")

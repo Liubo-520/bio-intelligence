@@ -85,21 +85,38 @@ def rm2_index(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return float(r2_m)
 
 
+def select_f1_threshold(y_true: np.ndarray, y_pred_prob: np.ndarray) -> float:
+    """Select the F1-optimal decision threshold from validation predictions.
+
+    The threshold is selected only from the supplied labels and probabilities.
+    Callers must therefore use this helper on a validation split and pass its
+    result unchanged to :func:`classification_metrics` for test evaluation.
+    """
+    if len(y_true) == 0 or len(y_pred_prob) == 0:
+        raise ValueError("Cannot select an F1 threshold from empty inputs.")
+
+    prec_arr, rec_arr, thresholds = precision_recall_curve(y_true, y_pred_prob)
+    if len(thresholds) == 0:
+        raise ValueError(
+            "Cannot select an F1 threshold because the precision-recall curve "
+            "does not provide a threshold."
+        )
+
+    f1_arr = (
+        2 * prec_arr[:-1] * rec_arr[:-1]
+        / (prec_arr[:-1] + rec_arr[:-1] + 1e-8)
+    )
+    return float(thresholds[int(np.argmax(f1_arr))])
+
+
 def classification_metrics(y_true: np.ndarray,
                             y_pred_prob: np.ndarray,
                             threshold: float = None) -> dict:
-    """
-    Compute all classification metrics for DTI binary prediction.
-
-    If threshold is None, automatically find optimal F1 threshold from
-    the precision-recall curve (important for imbalanced datasets).
-    """
+    """Compute classification metrics using a validation-selected threshold."""
     if threshold is None:
-        # Find optimal threshold from PR curve
-        prec_arr, rec_arr, thresholds = precision_recall_curve(y_true, y_pred_prob)
-        f1_arr = 2 * prec_arr[:-1] * rec_arr[:-1] / (prec_arr[:-1] + rec_arr[:-1] + 1e-8)
-        best_idx = np.argmax(f1_arr)
-        threshold = float(thresholds[best_idx])
+        raise ValueError(
+            "Classification metrics require a validation-selected threshold."
+        )
 
     y_pred_binary = (y_pred_prob >= threshold).astype(int)
     

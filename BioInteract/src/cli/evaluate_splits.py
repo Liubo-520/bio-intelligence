@@ -25,7 +25,7 @@ import torch.nn as nn
 from src.data.dataset import DTIDataset, collate_dti
 from src.data.split import get_split_fn
 from src.models.biointeract import BioInteract
-from src.utils.metrics import classification_metrics
+from src.utils.metrics import classification_metrics, select_f1_threshold
 from src.utils.logger import setup_logger
 from src.utils.paths import CONFIGS_DIR, DATA_DIR, RESULTS_DIR, resolve_project_path
 
@@ -53,7 +53,7 @@ def load_data(dataset_name):
 
 
 @torch.no_grad()
-def evaluate(model, dataloader, criterion, device, use_amp=True):
+def evaluate(model, dataloader, criterion, device, use_amp=True, threshold=None):
     model.eval()
     all_preds, all_labels = [], []
     total_loss, n = 0, 0
@@ -73,7 +73,12 @@ def evaluate(model, dataloader, criterion, device, use_amp=True):
         all_labels.append(labels.cpu().numpy())
     preds = np.concatenate(all_preds).flatten()
     labels = np.concatenate(all_labels).flatten()
-    metrics = classification_metrics(labels, preds)
+    validation_threshold = threshold
+    if validation_threshold is None:
+        validation_threshold = select_f1_threshold(labels, preds)
+    metrics = classification_metrics(
+        labels, preds, threshold=validation_threshold
+    )
     metrics['loss'] = total_loss / max(n, 1)
     return metrics
 
@@ -135,6 +140,7 @@ def train_and_evaluate(config, split_type, device, logger):
     patience_counter = 0
     patience = config['training'].get('patience', 15)
     best_state = None
+    best_validation_threshold = None
     
     for epoch in range(1, config['training']['epochs'] + 1):
         model.train()
@@ -174,6 +180,7 @@ def train_and_evaluate(config, split_type, device, logger):
             best_metric = auroc
             patience_counter = 0
             best_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
+            best_validation_threshold = val_metrics['threshold']
         else:
             patience_counter += 1
             if patience_counter >= patience:
@@ -183,7 +190,10 @@ def train_and_evaluate(config, split_type, device, logger):
     # load best and evaluate test
     model.load_state_dict(best_state)
     model.to(device)
-    test_metrics = evaluate(model, test_loader, criterion, device)
+    test_metrics = evaluate(
+        model, test_loader, criterion, device,
+        threshold=best_validation_threshold,
+    )
     
     return test_metrics
 

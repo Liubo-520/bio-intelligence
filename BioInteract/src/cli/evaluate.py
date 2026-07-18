@@ -24,7 +24,9 @@ from torch.cuda.amp import autocast
 from src.data.dataset import DTIDataset, collate_dti
 from src.data.split import get_split_fn
 from src.models.biointeract import BioInteract
-from src.utils.metrics import classification_metrics, regression_metrics
+from src.utils.metrics import (
+    classification_metrics, regression_metrics, select_f1_threshold,
+)
 from src.utils.logger import setup_logger
 from src.utils.paths import CHECKPOINTS_DIR, CONFIGS_DIR, RESULTS_DIR, resolve_project_path
 
@@ -46,7 +48,8 @@ def load_dataset_raw(dataset_name, data_dir='data/raw'):
 
 
 @torch.no_grad()
-def evaluate_model(model, dataloader, config, device):
+def evaluate_model(model, dataloader, config, device, threshold=None):
+    """Evaluate a split, selecting a threshold only when used for validation."""
     model.eval()
     all_preds = []
     all_labels = []
@@ -78,7 +81,12 @@ def evaluate_model(model, dataloader, config, device):
 
     task = config['model']['predictor'].get('task', 'classification')
     if task == 'classification':
-        metrics = classification_metrics(all_labels, all_preds)
+        validation_threshold = threshold
+        if validation_threshold is None:
+            validation_threshold = select_f1_threshold(all_labels, all_preds)
+        metrics = classification_metrics(
+            all_labels, all_preds, threshold=validation_threshold
+        )
     else:
         metrics = regression_metrics(all_labels, all_preds)
 
@@ -103,15 +111,14 @@ def main():
     interactions, drug_smiles, target_sequences = load_dataset_raw(dataset_name)
 
     split_fn = get_split_fn(config['data']['split'])
-    _, _, test_df = split_fn(
+    _, val_df, test_df = split_fn(
         interactions,
         val_ratio=config['data'].get('val_ratio', 0.1),
         test_ratio=config['data'].get('test_ratio', 0.2),
         seed=config['training']['seed'],
     )
 
-    test_dataset = DTIDataset(
-        test_df,
+    dataset_kwargs = dict(
         drug_smiles=drug_smiles,
         target_sequences=target_sequences,
         esm2_cache_dir=config['data'].get('esm2_cache_dir', 'data/esm2_embeddings'),
@@ -119,8 +126,12 @@ def main():
         use_domain_features=config['model']['target_encoder'].get('use_domain_features', True),
         task=config['model']['predictor'].get('task', 'classification'),
     )
+    val_dataset = DTIDataset(val_df, **dataset_kwargs)
+    test_dataset = DTIDataset(test_df, **dataset_kwargs)
 
     num_workers = 0 if sys.platform == 'win32' else 4
+    val_loader = DataLoader(val_dataset, batch_size=config['training']['batch_size'],
+                            shuffle=False, collate_fn=collate_dti, num_workers=num_workers)
     test_loader = DataLoader(test_dataset, batch_size=config['training']['batch_size'],
                              shuffle=False, collate_fn=collate_dti, num_workers=num_workers)
 
@@ -131,9 +142,15 @@ def main():
     model.load_state_dict(checkpoint['model_state_dict'])
     logger.info(f"Loaded checkpoint from epoch {checkpoint.get('epoch', '?')}")
 
-    # evaluate
+    # Select the F1 threshold on validation predictions, then freeze it for test.
+    val_metrics, _, _, _, _ = evaluate_model(model, val_loader, config, device)
+    validation_threshold = val_metrics.get('threshold')
+    if validation_threshold is not None:
+        logger.info(f"Validation-selected threshold: {validation_threshold:.4f}")
+
+    # evaluate test set with the frozen validation threshold
     metrics, preds, labels, drug_ids, target_ids = evaluate_model(
-        model, test_loader, config, device
+        model, test_loader, config, device, threshold=validation_threshold
     )
 
     logger.info("=" * 60)

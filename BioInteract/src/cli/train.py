@@ -31,7 +31,9 @@ from torch.utils.tensorboard import SummaryWriter
 from src.data.dataset import DTIDataset, collate_dti
 from src.data.split import get_split_fn
 from src.models.biointeract import BioInteract
-from src.utils.metrics import classification_metrics, regression_metrics
+from src.utils.metrics import (
+    classification_metrics, regression_metrics, select_f1_threshold,
+)
 from src.utils.logger import setup_logger, ExperimentTracker
 from src.utils.paths import CHECKPOINTS_DIR, CONFIGS_DIR, RUNS_DIR, resolve_project_path
 
@@ -116,8 +118,8 @@ def train_epoch(model, dataloader, criterion, optimizer, scaler,
 
 
 @torch.no_grad()
-def evaluate(model, dataloader, criterion, config, device):
-    """Evaluate model on validation/test set."""
+def evaluate(model, dataloader, criterion, config, device, threshold=None):
+    """Evaluate a split, selecting a threshold only when used for validation."""
     model.eval()
     all_preds = []
     all_labels = []
@@ -152,7 +154,12 @@ def evaluate(model, dataloader, criterion, config, device):
     
     task = config['model']['predictor'].get('task', 'classification')
     if task == 'classification':
-        metrics = classification_metrics(all_labels, all_preds)
+        validation_threshold = threshold
+        if validation_threshold is None:
+            validation_threshold = select_f1_threshold(all_labels, all_preds)
+        metrics = classification_metrics(
+            all_labels, all_preds, threshold=validation_threshold
+        )
     else:
         metrics = regression_metrics(all_labels, all_preds)
     
@@ -306,6 +313,7 @@ def main():
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'best_metric': best_metric,
+                'validation_threshold': val_metrics.get('threshold'),
                 'config': config,
             }, CHECKPOINTS_DIR / 'best.pt')
             logger.info(f"  → New best {primary_metric}: {best_metric:.4f} (saved)")
@@ -321,7 +329,19 @@ def main():
                             weights_only=False)
     model.load_state_dict(checkpoint['model_state_dict'])
     
-    test_metrics = evaluate(model, test_loader, criterion, config, device)
+    if task == 'classification':
+        validation_threshold = checkpoint.get('validation_threshold')
+        if validation_threshold is None:
+            validation_metrics = evaluate(
+                model, val_loader, criterion, config, device
+            )
+            validation_threshold = validation_metrics['threshold']
+        test_metrics = evaluate(
+            model, test_loader, criterion, config, device,
+            threshold=validation_threshold,
+        )
+    else:
+        test_metrics = evaluate(model, test_loader, criterion, config, device)
     
     logger.info("=" * 60)
     logger.info(f"TEST RESULTS ({config['data']['split']} split):")
