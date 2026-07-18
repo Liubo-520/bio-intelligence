@@ -200,6 +200,25 @@ def _load_source_config() -> tuple[dict[str, Any], str]:
     return config, sha256_file(CONFIG_PATH)
 
 
+def build_artifact_status(config: dict[str, Any]) -> dict[str, Any]:
+    """Describe whether an evaluation output is eligible for canonical use."""
+    if config["training"].get("amp", True):
+        return {
+            "canonical": False,
+            "inference_precision": "CUDA AMP autocast (float16)",
+            "reason": (
+                "AMP-derived checkpoint predictions differ materially from the "
+                "existing full-precision checkpoint prediction CSVs; do not use "
+                "this artifact as canonical until a precision-matched audit is complete."
+            ),
+        }
+    return {
+        "canonical": False,
+        "inference_precision": "full precision (AMP disabled)",
+        "reason": "Requires an explicit precision-matched artifact audit before canonical use.",
+    }
+
+
 def _input_metadata() -> dict[str, Any]:
     embedding_sha256, embedding_file_count, embedding_total_bytes = sha256_directory(
         EMBEDDING_DIR
@@ -319,13 +338,18 @@ def recompute_entity_split_metrics(output_dir: Path, device: str) -> dict[str, A
     )
     artifact = {
         "artifact": "original_entity_split_metrics",
+        "status": build_artifact_status(source_config),
         "protocol": {
             "partitioning": "archived seed-42 70/10/20 entity split",
             "threshold_selection": "F1 threshold selected once from validation predictions",
             "test_evaluation": "frozen validation threshold applied to test predictions",
         },
-        "supersedes_historical": {
-            "statement": "This artifact supersedes historical test-selected-threshold metrics.",
+        "historical_relationship": {
+            "supersedes_historical": False,
+            "statement": (
+                "This provisional AMP artifact is retained for audit only and does "
+                "not supersede historical test-selected-threshold metrics."
+            ),
             "retired_files": [
                 "BioInteract/results/test_random.json",
                 "BioInteract/results/test_cold_target.json",

@@ -1,5 +1,10 @@
 {
   "artifact": "original_entity_split_metrics",
+  "status": {
+    "canonical": false,
+    "inference_precision": "CUDA AMP autocast (float16)",
+    "reason": "AMP-derived checkpoint predictions differ materially from the existing full-precision checkpoint prediction CSVs; do not use this artifact as canonical until a precision-matched audit is complete."
+  },
   "command": "python revision/recompute_entity_split_metrics.py --output-dir revision/analysis --device cuda",
   "inputs": {
     "BioInteract/data/esm2_embeddings": {
@@ -139,7 +144,8 @@
       }
     }
   ],
-  "supersedes_historical": {
+  "historical_relationship": {
+    "supersedes_historical": false,
     "historical_prediction_files_not_overwritten": [
       "BioInteract/results/figure_data/predictions_random.csv",
       "BioInteract/results/figure_data/predictions_cold_target.csv",
@@ -150,6 +156,6 @@
       "BioInteract/results/test_cold_target.json",
       "BioInteract/results/test_cold_drug.json"
     ],
-    "statement": "This artifact supersedes historical test-selected-threshold metrics."
+    "statement": "This provisional AMP artifact is retained for audit only and does not supersede historical test-selected-threshold metrics."
   }
 }

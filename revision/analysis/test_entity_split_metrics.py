@@ -11,7 +11,18 @@ WORKSPACE_ROOT = Path(__file__).resolve().parents[2]
 if str(WORKSPACE_ROOT) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_ROOT))
 
-from revision.recompute_entity_split_metrics import build_split_record  # noqa: E402
+from revision.recompute_entity_split_metrics import (  # noqa: E402
+    build_artifact_status,
+    build_split_record,
+)
+
+
+def test_amp_reevaluation_status_is_explicitly_noncanonical():
+    status = build_artifact_status({"training": {"amp": True}})
+
+    assert status["canonical"] is False
+    assert status["inference_precision"] == "CUDA AMP autocast (float16)"
+    assert "full-precision" in status["reason"]
 
 
 def test_split_record_freezes_validation_threshold_for_test_metrics():
