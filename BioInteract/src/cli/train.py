@@ -118,8 +118,8 @@ def train_epoch(model, dataloader, criterion, optimizer, scaler,
 
 
 @torch.no_grad()
-def evaluate(model, dataloader, criterion, config, device, threshold=None):
-    """Evaluate a split, selecting a threshold only when used for validation."""
+def _collect_predictions(model, dataloader, criterion, config, device):
+    """Collect one split's predictions without selecting a decision threshold."""
     model.eval()
     all_preds = []
     all_labels = []
@@ -152,17 +152,35 @@ def evaluate(model, dataloader, criterion, config, device, threshold=None):
     
     avg_loss = total_loss / max(n_batches, 1)
     
+    return all_labels, all_preds, avg_loss
+
+
+@torch.no_grad()
+def evaluate(model, dataloader, criterion, config, device, threshold):
+    """Evaluate a split with an explicit classification threshold."""
+    all_labels, all_preds, avg_loss = _collect_predictions(
+        model, dataloader, criterion, config, device
+    )
     task = config['model']['predictor'].get('task', 'classification')
     if task == 'classification':
-        validation_threshold = threshold
-        if validation_threshold is None:
-            validation_threshold = select_f1_threshold(all_labels, all_preds)
-        metrics = classification_metrics(
-            all_labels, all_preds, threshold=validation_threshold
-        )
+        metrics = classification_metrics(all_labels, all_preds, threshold=threshold)
     else:
         metrics = regression_metrics(all_labels, all_preds)
-    
+
+    metrics['loss'] = avg_loss
+    return metrics
+
+
+@torch.no_grad()
+def evaluate_validation(model, dataloader, criterion, config, device):
+    """Evaluate validation data and select its F1 threshold explicitly."""
+    all_labels, all_preds, avg_loss = _collect_predictions(
+        model, dataloader, criterion, config, device
+    )
+    validation_threshold = select_f1_threshold(all_labels, all_preds)
+    metrics = classification_metrics(
+        all_labels, all_preds, threshold=validation_threshold
+    )
     metrics['loss'] = avg_loss
     return metrics
 
@@ -285,7 +303,14 @@ def main():
             config, device, epoch, logger
         )
         
-        val_metrics = evaluate(model, val_loader, criterion, config, device)
+        if task == 'classification':
+            val_metrics = evaluate_validation(
+                model, val_loader, criterion, config, device
+            )
+        else:
+            val_metrics = evaluate(
+                model, val_loader, criterion, config, device, threshold=None
+            )
         
         if scheduler is not None:
             scheduler.step()
@@ -332,7 +357,7 @@ def main():
     if task == 'classification':
         validation_threshold = checkpoint.get('validation_threshold')
         if validation_threshold is None:
-            validation_metrics = evaluate(
+            validation_metrics = evaluate_validation(
                 model, val_loader, criterion, config, device
             )
             validation_threshold = validation_metrics['threshold']
@@ -341,7 +366,9 @@ def main():
             threshold=validation_threshold,
         )
     else:
-        test_metrics = evaluate(model, test_loader, criterion, config, device)
+        test_metrics = evaluate(
+            model, test_loader, criterion, config, device, threshold=None
+        )
     
     logger.info("=" * 60)
     logger.info(f"TEST RESULTS ({config['data']['split']} split):")

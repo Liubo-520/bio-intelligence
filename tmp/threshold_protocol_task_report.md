@@ -101,3 +101,70 @@ No implementation blockers remain. The requested real-data pytest path has no
 collectable test function, so its current command validates collection without
 running a real-data forward pass; this pre-existing test structure was not
 changed.
+
+## Review follow-up: explicit helper thresholds
+
+Following review, the generic evaluation helpers no longer accept a default
+threshold or select from the labels they are asked to score. Each now has a
+required `threshold` parameter for classification metrics and is backed by a
+raw `_collect_predictions` helper. F1 selection appears only in explicit
+validation-only functions:
+
+- `evaluate_validation` in `train.py`, `evaluate_splits.py`, and each
+  `run_split*.py` entry point;
+- `select_validation_threshold` in standalone `evaluate.py`.
+
+The training loops call their explicit validation function before checking
+validation AUROC, retain the threshold paired with the winning state, and pass
+that value to the regular test helper. `train.py` retains its legacy-checkpoint
+fallback, but it now invokes `evaluate_validation` rather than a generic test
+or evaluation helper. Regression calls explicitly pass `threshold=None`; that
+value is never used by `classification_metrics`.
+
+The former AST/source-structure check was replaced with behavioral coverage.
+For all seven helpers, the test suite now verifies that:
+
+1. omitting a classification threshold raises `TypeError` at the helper API;
+2. a supplied validation threshold is preserved when the test split's
+   independently F1-optimal threshold conflicts with it (`0.60` validation
+   versus `0.75` test); and
+3. the resulting test F1 is evaluated at the validation threshold rather than
+   at the better test-only optimum.
+
+The selector boundary tests now also cover empty inputs and a PR-curve result
+with no thresholds (simulated through the metrics module dependency).
+
+### Follow-up RED/GREEN evidence
+
+RED after adding the behavioral helper requirement, before changing the helper
+implementations:
+
+```powershell
+python -m pytest BioInteract\src\tests\test_threshold_protocol.py -q
+```
+
+Exit code 1: seven cases failed with `Failed: DID NOT RAISE <class 'TypeError'>`,
+one for every supported helper, demonstrating their prior `threshold=None`
+fallback.
+
+GREEN after separating raw prediction collection from explicit validation
+selection:
+
+```powershell
+python -m pytest BioInteract\src\tests\test_threshold_protocol.py -q
+```
+
+Exit code 0: `18 passed in 6.53s`. The run emitted three pre-existing PyTorch
+AMP deprecation warnings from the CLI modules; no new warning suppression was
+added.
+
+Focused integration and syntax checks:
+
+```powershell
+python -m pytest BioInteract\src\tests\test_pipeline.py BioInteract\src\tests\test_real_data.py -q
+python -m py_compile BioInteract\src\utils\metrics.py BioInteract\src\cli\train.py BioInteract\src\cli\evaluate.py BioInteract\src\cli\evaluate_splits.py BioInteract\src\experiments\run_split.py BioInteract\src\experiments\run_split_v2.py BioInteract\src\experiments\run_split_v3.py BioInteract\src\experiments\run_split_final.py
+git diff --check
+```
+
+All completed with exit code 0. The pytest command reported `1 passed in
+6.59s`; as above, `test_real_data.py` has no collectable pytest test function.

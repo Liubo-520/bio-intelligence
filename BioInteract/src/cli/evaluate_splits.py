@@ -53,7 +53,8 @@ def load_data(dataset_name):
 
 
 @torch.no_grad()
-def evaluate(model, dataloader, criterion, device, use_amp=True, threshold=None):
+def _collect_predictions(model, dataloader, criterion, device, use_amp=True):
+    """Collect one split's predictions without selecting a decision threshold."""
     model.eval()
     all_preds, all_labels = [], []
     total_loss, n = 0, 0
@@ -73,13 +74,33 @@ def evaluate(model, dataloader, criterion, device, use_amp=True, threshold=None)
         all_labels.append(labels.cpu().numpy())
     preds = np.concatenate(all_preds).flatten()
     labels = np.concatenate(all_labels).flatten()
-    validation_threshold = threshold
-    if validation_threshold is None:
-        validation_threshold = select_f1_threshold(labels, preds)
+    return labels, preds, total_loss / max(n, 1)
+
+
+@torch.no_grad()
+def evaluate(model, dataloader, criterion, device, threshold, use_amp=True):
+    """Evaluate a split with an explicit classification threshold."""
+    labels, preds, avg_loss = _collect_predictions(
+        model, dataloader, criterion, device, use_amp=use_amp
+    )
+    metrics = classification_metrics(
+        labels, preds, threshold=threshold
+    )
+    metrics['loss'] = avg_loss
+    return metrics
+
+
+@torch.no_grad()
+def evaluate_validation(model, dataloader, criterion, device, use_amp=True):
+    """Evaluate validation data and select its F1 threshold explicitly."""
+    labels, preds, avg_loss = _collect_predictions(
+        model, dataloader, criterion, device, use_amp=use_amp
+    )
+    validation_threshold = select_f1_threshold(labels, preds)
     metrics = classification_metrics(
         labels, preds, threshold=validation_threshold
     )
-    metrics['loss'] = total_loss / max(n, 1)
+    metrics['loss'] = avg_loss
     return metrics
 
 
@@ -170,7 +191,7 @@ def train_and_evaluate(config, split_type, device, logger):
         scheduler.step()
         avg_loss = total_loss / max(n_batch, 1)
         
-        val_metrics = evaluate(model, val_loader, criterion, device)
+        val_metrics = evaluate_validation(model, val_loader, criterion, device)
         auroc = val_metrics['AUROC']
         
         if epoch % 5 == 0 or epoch == 1:

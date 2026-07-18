@@ -48,8 +48,8 @@ def load_dataset_raw(dataset_name, data_dir='data/raw'):
 
 
 @torch.no_grad()
-def evaluate_model(model, dataloader, config, device, threshold=None):
-    """Evaluate a split, selecting a threshold only when used for validation."""
+def _collect_predictions(model, dataloader, config, device):
+    """Collect one split's predictions without selecting a decision threshold."""
     model.eval()
     all_preds = []
     all_labels = []
@@ -79,18 +79,33 @@ def evaluate_model(model, dataloader, config, device, threshold=None):
     all_preds = np.concatenate(all_preds, axis=0).flatten()
     all_labels = np.concatenate(all_labels, axis=0).flatten()
 
+    return all_preds, all_labels, all_drug_ids, all_target_ids
+
+
+@torch.no_grad()
+def evaluate_model(model, dataloader, config, device, threshold):
+    """Evaluate a split with an explicit classification threshold."""
+    all_preds, all_labels, all_drug_ids, all_target_ids = _collect_predictions(
+        model, dataloader, config, device
+    )
     task = config['model']['predictor'].get('task', 'classification')
     if task == 'classification':
-        validation_threshold = threshold
-        if validation_threshold is None:
-            validation_threshold = select_f1_threshold(all_labels, all_preds)
         metrics = classification_metrics(
-            all_labels, all_preds, threshold=validation_threshold
+            all_labels, all_preds, threshold=threshold
         )
     else:
         metrics = regression_metrics(all_labels, all_preds)
 
     return metrics, all_preds, all_labels, all_drug_ids, all_target_ids
+
+
+@torch.no_grad()
+def select_validation_threshold(model, dataloader, config, device):
+    """Select an F1 threshold from validation predictions only."""
+    all_preds, all_labels, _, _ = _collect_predictions(
+        model, dataloader, config, device
+    )
+    return select_f1_threshold(all_labels, all_preds)
 
 
 def main():
@@ -143,10 +158,13 @@ def main():
     logger.info(f"Loaded checkpoint from epoch {checkpoint.get('epoch', '?')}")
 
     # Select the F1 threshold on validation predictions, then freeze it for test.
-    val_metrics, _, _, _, _ = evaluate_model(model, val_loader, config, device)
-    validation_threshold = val_metrics.get('threshold')
-    if validation_threshold is not None:
+    if config['model']['predictor'].get('task', 'classification') == 'classification':
+        validation_threshold = select_validation_threshold(
+            model, val_loader, config, device
+        )
         logger.info(f"Validation-selected threshold: {validation_threshold:.4f}")
+    else:
+        validation_threshold = None
 
     # evaluate test set with the frozen validation threshold
     metrics, preds, labels, drug_ids, target_ids = evaluate_model(

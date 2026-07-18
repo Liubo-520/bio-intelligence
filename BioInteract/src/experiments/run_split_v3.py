@@ -70,7 +70,8 @@ def set_seed(seed=42):
 
 
 @torch.no_grad()
-def evaluate(model, loader, criterion, device, threshold=None):
+def _collect_predictions(model, loader, criterion, device):
+    """Collect one split's predictions without selecting a decision threshold."""
     model.eval()
     all_preds, all_labels = [], []
     total_loss, n = 0.0, 0
@@ -92,11 +93,25 @@ def evaluate(model, loader, criterion, device, threshold=None):
         all_labels.append(labels.cpu().numpy())
     preds = np.concatenate(all_preds).flatten()
     labels = np.concatenate(all_labels).flatten()
-    validation_threshold = threshold
-    if validation_threshold is None:
-        validation_threshold = select_f1_threshold(labels, preds)
+    return labels, preds, total_loss / max(n, 1)
+
+
+@torch.no_grad()
+def evaluate(model, loader, criterion, device, threshold):
+    """Evaluate a split with an explicit classification threshold."""
+    labels, preds, avg_loss = _collect_predictions(model, loader, criterion, device)
+    m = classification_metrics(labels, preds, threshold=threshold)
+    m['loss'] = avg_loss
+    return m
+
+
+@torch.no_grad()
+def evaluate_validation(model, loader, criterion, device):
+    """Evaluate validation data and select its F1 threshold explicitly."""
+    labels, preds, avg_loss = _collect_predictions(model, loader, criterion, device)
+    validation_threshold = select_f1_threshold(labels, preds)
     m = classification_metrics(labels, preds, threshold=validation_threshold)
-    m['loss'] = total_loss / max(n, 1)
+    m['loss'] = avg_loss
     return m
 
 
@@ -240,7 +255,7 @@ def main():
         scheduler.step()
         avg_loss = total_loss / max(n_batch, 1)
 
-        val_m = evaluate(model, val_loader, criterion, device)
+        val_m = evaluate_validation(model, val_loader, criterion, device)
         auroc = val_m['AUROC']
         dt = time.time() - t0
 
