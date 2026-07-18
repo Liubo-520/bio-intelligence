@@ -1,0 +1,26 @@
+{
+  "title": "Archived aggregate model-native attribution distribution",
+  "summary": {
+    "n_samples": 1506,
+    "n_residue_scores": 1301380,
+    "residue_attention_mean": 0.004351376555860043,
+    "residue_attention_std": 0.04624345898628235,
+    "residue_attention_median": 0.000272190198302269,
+    "residue_attention_top1pct": 0.0571928446739905,
+    "residue_attention_top5pct": 0.0036166397971101145,
+    "attention_sparsity": 0.992318922989442,
+    "top_1pct_attention_mass": 0.7885277738572609,
+    "top_5pct_attention_mass": 0.9044648241686423,
+    "raw_scores_artifact": "BioInteract/results/figure_data/attention_distribution.npz",
+    "normalisation": "pair-normalised residue scores pooled over all positive Davis pairs"
+  },
+  "curve": {
+    "source": "flat_scores sorted descending and cumulatively normalised at figure generation",
+    "n_points": 1301380,
+    "terminal_cumulative_attention": 1.0000000000000102
+  },
+  "outputs": {
+    "pdf": "submission_revision/figures/fig5_attention_sparsity.pdf",
+    "png": "submission_revision/figures/fig5_attention_sparsity.png"
+  }
+}

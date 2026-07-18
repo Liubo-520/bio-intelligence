@@ -11,6 +11,7 @@ import argparse
 import copy
 import hashlib
 import json
+import os
 import platform
 import sys
 from datetime import date
@@ -231,7 +232,42 @@ def _dataset_kwargs(
     }
 
 
-def _runtime_metadata(requested_device: str, resolved_device: torch.device) -> dict[str, Any]:
+def configure_deterministic_inference(device: str) -> dict[str, Any]:
+    """Configure deterministic, full-precision inference before CUDA initialization.
+
+    CUDA graph aggregation can otherwise vary at the last few floating-point bits
+    between independent processes.  A CPU release run is therefore deterministic
+    by construction; CUDA is permitted only when PyTorch can honour these strict
+    settings for the installed graph operators.
+    """
+    requested_device = torch.device(device)
+    cublas_workspace_config = None
+    if requested_device.type == "cuda":
+        cublas_workspace_config = os.environ.setdefault(
+            "CUBLAS_WORKSPACE_CONFIG", ":4096:8"
+        )
+
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
+    torch.use_deterministic_algorithms(True)
+    return {
+        "deterministic_algorithms": True,
+        "cudnn_benchmark": False,
+        "cudnn_deterministic": True,
+        "tf32_enabled": False,
+        "cublas_workspace_config": cublas_workspace_config,
+    }
+
+
+def _runtime_metadata(
+    requested_device: str,
+    resolved_device: torch.device,
+    deterministic_settings: dict[str, Any],
+) -> dict[str, Any]:
     cuda_available = torch.cuda.is_available()
     return {
         "python_version": platform.python_version(),
@@ -244,6 +280,7 @@ def _runtime_metadata(requested_device: str, resolved_device: torch.device) -> d
         else None,
         "inference_mode": "torch.inference_mode (full precision)",
         "amp_enabled": False,
+        "determinism": deterministic_settings,
     }
 
 
@@ -314,6 +351,7 @@ def recompute_entity_split_metrics(output_dir: Path, device: str) -> dict[str, A
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     portable_path(output_dir)
+    deterministic_settings = configure_deterministic_inference(device)
     resolved_device = _resolve_device(device)
     source_config, source_config_file_sha256 = _load_source_config()
     interactions, drug_smiles, target_sequences = load_davis_data()
@@ -454,7 +492,7 @@ def recompute_entity_split_metrics(output_dir: Path, device: str) -> dict[str, A
         },
         "inputs": input_metadata,
         "command": command,
-        "runtime": _runtime_metadata(device, resolved_device),
+        "runtime": _runtime_metadata(device, resolved_device, deterministic_settings),
         "splits": records,
     }
     artifact_path = output_dir / "original_entity_split_metrics.json"

@@ -187,9 +187,9 @@ def generate_pymol_script(protein_id: str,
     Generate a PyMOL .pml script that colours the protein structure
     by attention scores.
     
-    This produces the 3D figure for the paper: a protein surface
-    coloured by how much the model attends to each residue,
-    with the drug molecule shown in the binding pocket.
+    This optional script colours a user-supplied structure by model-native
+    residue attribution. It is not a structural validation figure and does not
+    identify a binding pocket.
     
     Usage: Open in PyMOL → File → Run Script → save as PNG
     """
@@ -233,7 +233,7 @@ def generate_pymol_script(protein_id: str,
             )
     
     lines.append('')
-    lines.append('# Show binding pocket residues as sticks')
+    lines.append('# Show the highest-ranked model-attribution residues as sticks')
     
     # top-20 residues shown as sticks
     sorted_residues = sorted(residue_scores.items(),

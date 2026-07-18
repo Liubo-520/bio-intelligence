@@ -1,4 +1,4 @@
-"""Build the portable BioInteract v1.0.0 Zenodo archive.
+"""Build the portable BioInteract v1.0.1 Zenodo archive.
 
 The archive deliberately includes the released source, configurations,
 checkpoints, Davis inputs/ESM cache, canonical metrics, strict-split artifacts,
@@ -9,13 +9,12 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import shutil
 import zipfile
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARCHIVE_PREFIX = "biointeract-v1.0.0"
+ARCHIVE_PREFIX = "biointeract-v1.0.1"
 
 FILES = (
     "LICENSE",
@@ -58,10 +57,12 @@ FILES = (
     "revision/analysis/abl1_variant_audit.md",
     "revision/analysis/abl1_variant_audit.py",
     "revision/analysis/test_abl1_variant_audit.py",
+    "BioInteract/src/tests/test_public_figure_provenance.py",
     "submission_revision/FINAL_PRE_SUBMISSION_AUDIT.md",
     "submission_revision/CODE_RECONCILIATION_REPORT.md",
     "submission_revision/NUMERICAL_CONSISTENCY_REPORT.md",
-    "submission_revision/SUBMISSION_CHECKLIST.md",
+    "submission_revision/consistency_audit_report.md",
+    "submission_revision/submission_checklist.md",
     "submission_revision/manuscript_clean.tex",
     "submission_revision/manuscript_clean.pdf",
     "submission_revision/manuscript_marked.tex",
@@ -96,8 +97,8 @@ SELECTED_RESULTS = (
     "BioInteract/results/figure_data/attention_distribution.json",
     "BioInteract/results/figure_data/attention_distribution.npz",
     "BioInteract/results/figure_data/fig2_performance.json",
-    "BioInteract/results/figure_data/fig3_sparsity.json",
-    "BioInteract/results/figure_data/fig9_training.json",
+    "BioInteract/results/figure_data/fig4_training.json",
+    "BioInteract/results/figure_data/fig5_attention_sparsity.json",
     "BioInteract/results/figure_data/fig_comparison_random.json",
     "BioInteract/results/figure_data/fig_comparison_splits.json",
     "BioInteract/results/figure_data/prediction_summary.json",
@@ -118,7 +119,7 @@ def file_digest(path: Path) -> str:
     return digest.hexdigest()
 
 
-def release_files() -> list[Path]:
+def release_files(*, include_esm_cache: bool = True) -> list[Path]:
     selected: set[Path] = set()
     for rel in (*FILES, *SELECTED_RESULTS):
         path = ROOT / rel
@@ -126,6 +127,8 @@ def release_files() -> list[Path]:
             raise FileNotFoundError(f"Required release file is missing: {path}")
         selected.add(path)
     for rel in TREES:
+        if rel == "BioInteract/data/esm2_embeddings" and not include_esm_cache:
+            continue
         directory = ROOT / rel
         if not directory.is_dir():
             raise FileNotFoundError(f"Required release directory is missing: {directory}")
@@ -135,9 +138,9 @@ def release_files() -> list[Path]:
     return sorted(selected, key=lambda path: path.relative_to(ROOT).as_posix())
 
 
-def build_archive(output: Path) -> tuple[int, int]:
+def build_archive(output: Path, *, include_esm_cache: bool = True) -> tuple[int, int]:
     output.parent.mkdir(parents=True, exist_ok=True)
-    files = release_files()
+    files = release_files(include_esm_cache=include_esm_cache)
     if output.exists():
         output.unlink()
     hashes: list[str] = []
@@ -146,6 +149,10 @@ def build_archive(output: Path) -> tuple[int, int]:
             relative = path.relative_to(ROOT).as_posix()
             archive.write(path, f"{ARCHIVE_PREFIX}/{relative}")
             hashes.append(f"{file_digest(path)}  {relative}")
+        if not include_esm_cache:
+            zenodo_readme = ROOT / "revision" / "ZENODO_ARCHIVE_README.md"
+            archive.write(zenodo_readme, f"{ARCHIVE_PREFIX}/ZENODO_ARCHIVE_README.md")
+            hashes.append(f"{file_digest(zenodo_readme)}  ZENODO_ARCHIVE_README.md")
         archive.writestr(f"{ARCHIVE_PREFIX}/SHA256SUMS.txt", "\n".join(hashes) + "\n")
     return len(files), output.stat().st_size
 
@@ -155,12 +162,17 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=Path,
-        default=ROOT / "tmp" / "zenodo_release" / "biointeract-v1.0.0.zip",
-        help="Output ZIP path (default: tmp/zenodo_release/biointeract-v1.0.0.zip).",
+        default=ROOT / "tmp" / "zenodo_release" / "biointeract-v1.0.1.zip",
+        help="Output ZIP path (default: tmp/zenodo_release/biointeract-v1.0.1.zip).",
+    )
+    parser.add_argument(
+        "--omit-esm-cache",
+        action="store_true",
+        help="Build the lean Zenodo package and document Git-LFS cache retrieval.",
     )
     args = parser.parse_args()
     output = args.output.resolve()
-    count, size = build_archive(output)
+    count, size = build_archive(output, include_esm_cache=not args.omit_esm_cache)
     print(f"Created {output} with {count} files ({size / 1024**2:.1f} MiB).")
 
 

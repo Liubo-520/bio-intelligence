@@ -31,6 +31,8 @@ model:
     task: classification       # classification / regression
 
 training:
+  # These are generic new-run workflow values. They are not retrospective
+  # provenance for every released historical entity-split checkpoint.
   batch_size: 64
   lr: 1.0e-4
   weight_decay: 1.0e-5
@@ -39,7 +41,7 @@ training:
   gradient_accumulation: 1
   amp: true
   scheduler: cosine            # cosine / step / none
-  warmup_epochs: 5
+  warmup_epochs: 5             # consumed by run_split_final, not src.cli.train
   seed: 42
 
 data:

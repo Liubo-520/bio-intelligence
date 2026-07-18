@@ -148,7 +148,7 @@ either from Methods or a dedicated Code Availability section.''}
 \response We added a dedicated Code Availability section with direct links to
 the public source repository, \url{https://github.com/Liubo-520/bio-intelligence},
 and the immutable Zenodo software archive,
-\url{https://doi.org/10.5281/zenodo.21429673}. The archive contains the released
+\url{https://doi.org/10.5281/zenodo.21431147}. The archive contains the released
 code, pretrained weights, configuration files, canonical prediction CSVs,
 provenance hashes, figure-generation scripts, and reproduction instructions;
 the Hugging Face Space provides the custom-prediction interface described in
@@ -387,16 +387,12 @@ figure.}
 \comment{\textbf{Minor comment: Figure 2 should be redrawn for readability,
 especially the right panel.}}
 
-\response The ablation figure was redrawn with separated panel labels, a
-non-overlapping legend, readable ticks and values, and an explicit colour scale.
-The caption now identifies Panels A/B and limits the ablation interpretation to
-the stated architecture and original Target-ID-held-out partition. The protein
-channel is now labelled ``domain-label channel''/``unknown-label embedding
-channel'' rather than ``domain features.'' The unreconciled ``w/o Graph
-Augment.'' row was removed after comparison with the fixed-graph final
-configuration.
+\response Following the final reproducibility audit, we withdrew the numerical
+ablation figure, table, and component-effect claims because matching
+ablated-model checkpoints and predictions are unavailable. Rather than redraw an
+irreproducible comparison, we removed it and state this limitation explicitly.
 
-\change{Revised Fig.~2 and caption.}
+\change{Results, ``Architecture scope and withheld historical ablations''.}
 
 \subsection*{R1.6. Training dynamics and overfitting}
 
@@ -404,15 +400,15 @@ configuration.
 training curves confirm absence of overfitting. Validation AUPRC, validation
 loss, and repeated-seed variability would make this point more convincing.}
 
-\response We agree.  We removed the assertion that the plotted single-seed
-training curves confirm absence of overfitting.  The revised text says exactly
-what the figure contains: archived validation-AUROC and training-loss
-trajectories with early stopping.  It explicitly states that these trajectories
-do not quantify validation loss or repeated-seed variability and do not isolate
-individual regularisation effects.
+\response We agree. We removed the assertion that single-seed training curves
+confirm absence of overfitting. Following final log audit, Figure~4 was rebuilt
+from one contiguous trace per protocol whose peak validation AUROC matches its
+saved checkpoint; duplicated and restarted log segments were excluded. The
+revised text limits the figure to observed validation-AUROC and training-loss
+trajectories and explicitly states that they do not quantify validation loss or
+repeated-seed variability.
 
-\change{Results, ``Training Dynamics'' and the caption of former Fig.~4 (now
-Fig.~5).}
+\change{Results, ``Training Dynamics'' and Figure~4 caption.}
 
 \subsection*{R1.7. Binary classification and cautious cold-drug interpretation}
 
@@ -675,7 +671,7 @@ the resource without having to input potentially proprietary information into a
 web server.}
 
 \response We agree that the browser demonstration and the repository must not
-be conflated. Former Figure~12 (now Fig.~7) is described as the
+be conflated. Figure~6 is described as the
 custom-prediction input/result state shown for human Aurora kinase C (UniProt
 Q9UQB9), including the generated atom--residue attention map and ``Top 10
 Residue Attributions'' chart visible in the lower portion of the screenshot.
@@ -699,7 +695,7 @@ general structure-based custom-ligand/pocket workflow, and no such functionality
 is claimed. This separates browser custom prediction from repository-based
 evaluation and attribution generation.
 
-\change{Data Availability; former Fig.~12 (now Fig.~7) caption; Conclusion.}
+\change{Data Availability; Figure~6 caption; Conclusion.}
 
 \subsection*{R3.1. Rationale for Davis only and external validation}
 
@@ -917,7 +913,7 @@ low-confidence failure-mode example.  We do not attribute it specifically to
 out-of-distribution status, few-shot coverage, hydrogen-bond bias, or sparsity.
 
 \change{Results, attention-sparsity and functional-group sections; Discussion,
-``The 99.2\% Attention Sparsity''; current Fig.~6 and functional-group tables.}
+``The 99.2\% Attention Sparsity''; Figure~5 and functional-group tables.}
 
 \subsection*{R3.6. Scalability and implementation version}
 
@@ -1034,13 +1030,11 @@ with the lowermost bar graph, and the x-axis labels are overlapping with one
 another, making it difficult to read the numerical delta values. The authors are
 requested to revise this figure for clarity.}
 
-\response We initially redrew the ablation figure for readability. However, the
-final reproducibility audit found no archived checkpoints or prediction files
-for the ablated variants, while the legacy full-model prediction files were not
-reconstructible from the released checkpoint and inputs. We therefore removed
-the ablation figure, table, and component-effect claims rather than present a
-visually improved but irreproducible comparison. The revised manuscript now
-states this limitation explicitly and confines conclusions to the reconstructible
+\response Following the final reproducibility audit, we withdrew the numerical
+ablation figure, table, and component-effect claims because matching
+ablated-model checkpoints and predictions are unavailable. Rather than redraw an
+irreproducible comparison, we removed it. The revised manuscript now
+states this limitation explicitly and confines conclusions to reconstructible
 full-model and diagnostic-control analyses.
 
 \change{Results, ``Architecture scope and withheld historical ablations''.}
@@ -1069,11 +1063,13 @@ strict-split values are reported in Table~S7.
 authors should make sure to refer to the sub-panels by their labels (e.g., A)
 validation AUROC over training epochs. B) training loss).}
 
-\response The caption now identifies Panel A as validation AUROC and Panel B as
-training loss and limits their interpretation to observed single-seed
-trajectories.
+\response Figure~4 now identifies Panel~A as validation AUROC and Panel~B as
+training loss. Each line is a single contiguous archived trace selected by
+agreement between its peak validation AUROC and the saved checkpoint; no fitted
+or interpolated trend is displayed. The caption limits interpretation to
+observed single-seed trajectories.
 
-\change{Former Fig.~4 (now Fig.~5) and caption.}
+\change{Revised Figure~4 and caption.}
 
 \subsection*{R3.14. Minor comment 6: original Figure 5}
 
@@ -1081,22 +1077,25 @@ trajectories.
 with the histogram plot. Shifting the figure legend to the right side would aid
 with clarity.}
 
-\response We moved the legend outside the plotted data region and revised the
-caption to define the attribution-concentration statistic.
+\response We rebuilt Figure~5 from the archived 1,301,380 pair-normalised
+residue scores. Panel~A is their logarithmic-scale distribution and Panel~B is
+the cumulative attribution mass after sorting the same values; the figure has no
+overlapping legend. The caption defines the attribution-concentration statistic
+and does not present it as structural validation.
 
-\change{Former Fig.~5 (now Fig.~6) and caption.}
+\change{Revised Figure~5 and caption.}
 
 \subsection*{R3.15. Minor comment 7: original Figure 6}
 
 \comment{\textbf{Minor comment 7. Figure 6:} As only one figure is being shown,
 a subpanel label (A) is not needed for this figure.}
 
-\response The former single-panel Figure~6 (the ABL1--D0017 cross-attention
-heatmap) was removed after the input audit showed that the nominal ABL1 variant
+\response The single-panel ABL1--D0017 cross-attention heatmap from the original
+submission was removed after the input audit showed that the nominal ABL1 variant
 analysis was not supportable. It therefore no longer carries a panel label or a
 caption in the revised manuscript.
 
-\change{Removed former Fig.~6 as part of the ABL1 input-audit revision.}
+\change{Removed the original single-panel ABL1 heatmap as part of the input-audit revision.}
 
 \subsection*{R3.16. Minor comment 8: original Figure 8}
 
@@ -1189,11 +1188,11 @@ SMILES, protein sequence, high-affinity-class probability, and threshold-distanc
 category.  The lower portion of the screenshot also shows the generated
 atom--residue attention map and the ``Top 10 Residue Attributions'' chart.  The
 caption states that these are model-native attribution views rather than
-physical-contact or hotspot labels. Revised Fig.~7 now presents Panel A as the
+physical-contact or hotspot labels. Revised Fig.~6 now presents Panel A as the
 full interface and Panel B as an enlarged crop of the attribution region so that
 the heatmap and ranked-residue chart are legible in the manuscript.
 
-\change{Former Fig.~12 (now Fig.~7) and caption.}
+\change{Figure~6 and caption.}
 
 \subsection*{R3.21. Remarks on code availability}
 
@@ -1208,7 +1207,7 @@ manuscript now provides direct access to the BioInteract source repository at
 \url{https://github.com/Liubo-520/bio-intelligence}, which contains the code,
 pretrained weights, configuration files, figure-generation scripts, and
 reproduction instructions, and to the immutable Zenodo archive,
-\url{https://doi.org/10.5281/zenodo.21429673}, which preserves the release
+\url{https://doi.org/10.5281/zenodo.21431147}, which preserves the release
 snapshot, canonical prediction artifacts, and provenance hashes. It also links
 to the public interactive interface at
 \url{https://huggingface.co/spaces/AI4deeperScience/BioInteract} for the

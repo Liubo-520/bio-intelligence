@@ -1,8 +1,8 @@
 # Final pre-submission audit — BioInteract revision
 
 Date: 18 July 2026
-Release target: GitHub tag `v1.0.0` and Zenodo DOI
-[`10.5281/zenodo.21429673`](https://doi.org/10.5281/zenodo.21429673)
+Release target: GitHub tag `v1.0.1` and Zenodo DOI
+[`10.5281/zenodo.21431147`](https://doi.org/10.5281/zenodo.21431147)
 
 ## Decision
 
@@ -17,7 +17,7 @@ because matching ablated checkpoints and prediction files are unavailable.
 | --- | ---: | ---: | ---: | ---: |
 | Random entity split | 0.9039 | 0.5601 | 0.5654 | 6,011 (276) |
 | Target-ID-held-out | 0.9300 | 0.5245 | 0.5338 | 5,984 (250) |
-| Drug-ID-held-out | 0.7334 | 0.1663 | 0.1000 | 5,746 (245) |
+| Drug-ID-held-out | 0.7334 | 0.1672 | 0.1000 | 5,746 (245) |
 
 Every test threshold in this table was selected once on the corresponding
 validation predictions and frozen before test evaluation. The full-precision

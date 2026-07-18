@@ -1,10 +1,8 @@
-"""
-attention_analysis.py — Extract and analyse cross-attention interaction maps.
+"""Extract and summarize model-native cross-attention attribution maps.
 
-The core idea: the attention weight M[i,j] between drug atom i and protein
-residue j is a learned proxy for "interaction strength". If the model has
-truly captured the binding mechanism, the high-attention residues should
-correspond to the experimentally determined binding pocket.
+The attention weight ``M[i,j]`` is a learned model weight. Its ranking can help
+inspect a prediction but is not a physical contact, interaction strength, or
+binding-pocket assignment.
 """
 import torch
 import numpy as np
@@ -54,9 +52,8 @@ def get_top_k_residues(interaction_map: np.ndarray,
     For each sample, aggregate atom-level attention over all drug atoms
     and return the indices of the top-K most attended protein residues.
     
-    The aggregation (sum over drug atoms) represents the total "interaction
-    pressure" on each residue — biologically, this identifies which
-    residues are most involved in binding across the entire drug molecule.
+    The aggregation (sum over drug atoms) produces a model-native residue rank.
+    It does not identify residues involved in binding.
     
     Args:
         interaction_map: (B, N_atoms, L_residues)
@@ -89,11 +86,10 @@ def binding_site_recall(predicted_residues: np.ndarray,
                         k_values: List[int] = [10, 15, 20, 30]
                         ) -> Dict[str, float]:
     """
-    Evaluate how well the attention-predicted binding residues match
-    experimentally known binding site residues.
-    
-    This is the key quantitative validation for interpretability:
-    "Does the model's attention focus on the real binding pocket?"
+    Compare model-native residue ranks with externally supplied residue labels.
+
+    This optional metric requires independently validated labels and must not
+    be interpreted as a property of the released attention scores alone.
     
     Args:
         predicted_residues: (B, max_K) — predicted residue indices
@@ -176,8 +172,9 @@ def identify_interaction_hotspots(profile: Dict[str, float],
     """
     Identify residues with attention scores above the threshold.
     
-    These are the predicted binding hotspot residues — the model
-    believes these are critical for drug-target recognition.
+    ``identify_interaction_hotspots`` is a legacy function name. It returns
+    thresholded model-score indices, not biological hotspots or critical
+    residues.
     """
     return [res for res, score in profile.items() if score >= threshold]
 
@@ -187,11 +184,9 @@ def cross_family_analysis(interaction_maps: Dict[str, np.ndarray],
     """
     Cluster interaction patterns by protein family.
     
-    For each protein family (e.g., Kinase, GPCR), compute the average
-    interaction pattern. This reveals family-specific binding preferences:
-    - Kinases: attention on hinge region and DFG motif
-    - GPCRs: attention on transmembrane helices
-    - Proteases: attention on catalytic triad residues
+    For each user-supplied family label, compute the average model-attribution
+    pattern. The result is descriptive and is not a family-specific binding
+    preference or functional annotation.
     
     Args:
         interaction_maps: {target_id: residue_score_array}

@@ -20,13 +20,24 @@ from the current released checkpoints and inputs.
 | Protocol | Test pairs (positive) | AUROC | AUPRC | F1 | Validation-selected threshold |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Random entity split | 6,011 (276) | 0.904 | 0.560 | 0.565 | 0.596 |
-| Target-ID-held-out | 5,984 (250) | 0.930 | 0.524 | 0.534 | 0.602 |
-| Drug-ID-held-out | 5,746 (245) | 0.733 | 0.166 | 0.100 | 0.846 |
+| Target-ID-held-out | 5,984 (250) | 0.930 | 0.525 | 0.534 | 0.602 |
+| Drug-ID-held-out | 5,746 (245) | 0.733 | 0.167 | 0.100 | 0.846 |
 
 The stricter exact-sequence-grouped cold-target and cold-both retraining
 experiments are separate stress tests, not replacements for these archived
 identifier-split checkpoint reconstructions. Their full artifacts are in
 `revision/analysis/strict_split_metrics.json`.
+
+## Historical training provenance
+
+The entity-split checkpoints embed their model architectures but not a uniform
+optimizer, scheduler, warmup, or label-smoothing record. The archived Random
+and Drug-ID logs identify the final runner and its AdamW/label-smoothing/warmup
+recipe; the checkpoint-matched Target-ID log records only loss and validation
+AUROC under an older runner header. Accordingly, this repository does not claim
+one verified training recipe for all three historical checkpoints. The generic
+`src.cli.train` command starts a new workflow and is not evidence of how each
+archived checkpoint was trained.
 
 ## Setup
 

@@ -10,8 +10,8 @@ validation thresholds, test metrics, and the associated CSV file names.
 | Split | AUROC | AUPRC | F1 | Precision | Recall | Frozen threshold |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Random | 0.903905 | 0.560125 | 0.565385 | 0.602459 | 0.532609 | 0.595988 |
-| Target-ID-held-out | 0.929987 | 0.524466 | 0.533849 | 0.516854 | 0.552000 | 0.602238 |
-| Drug-ID-held-out | 0.733447 | 0.166286 | 0.100000 | 0.272727 | 0.061224 | 0.845615 |
+| Target-ID-held-out | 0.929987 | 0.524523 | 0.533849 | 0.516854 | 0.552000 | 0.602237 |
+| Drug-ID-held-out | 0.733448 | 0.167230 | 0.100000 | 0.272727 | 0.061224 | 0.845615 |
 
 ## Bootstrap confidence intervals (600 paired seed-42 resamples)
 

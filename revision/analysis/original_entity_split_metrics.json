@@ -43,6 +43,13 @@
     "amp_enabled": false,
     "cuda_available": true,
     "cuda_device_name": "NVIDIA GeForce RTX 4080",
+    "determinism": {
+      "cublas_workspace_config": ":4096:8",
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": true,
+      "deterministic_algorithms": true,
+      "tf32_enabled": false
+    },
     "inference_mode": "torch.inference_mode (full precision)",
     "python_version": "3.10.14",
     "requested_device": "cuda",
@@ -52,7 +59,7 @@
   "seed": 42,
   "source_config": {
     "path": "BioInteract/configs/default.yaml",
-    "sha256": "ba31fa23f1a01b5547283f1fdb06c8a84d909140e4c3d500d8f4e08aed82beba"
+    "sha256": "1562ef54ef17fe8791cfec970242454c339cbdffadffd768c613ab7ec2865815"
   },
   "splits": [
     {
@@ -116,8 +123,8 @@
           "threshold": 0.5959881544113159
         },
         "threshold_free_metrics": {
-          "AUPRC": 0.5601254874754175,
-          "AUROC": 0.903904640966352
+          "AUPRC": 0.5601694007558918,
+          "AUROC": 0.9039055886180711
         }
       },
       "validation": {
@@ -180,15 +187,15 @@
           "F1": 0.5338491295938105,
           "Precision": 0.5168539325842697,
           "Recall": 0.552,
-          "threshold": 0.6022375822067261
+          "threshold": 0.6022372841835022
         },
         "threshold_free_metrics": {
-          "AUPRC": 0.5244660498174324,
-          "AUROC": 0.9299874433205442
+          "AUPRC": 0.5245233707288152,
+          "AUROC": 0.9299874433205441
         }
       },
       "validation": {
-        "f1_threshold": 0.6022375822067261,
+        "f1_threshold": 0.6022372841835022,
         "predictions_csv": "target_id_held_out_validation_predictions.csv"
       }
     },
@@ -250,15 +257,15 @@
           "F1": 0.1,
           "Precision": 0.2727272727272727,
           "Recall": 0.061224489795918366,
-          "threshold": 0.8456151485443115
+          "threshold": 0.8456150889396667
         },
         "threshold_free_metrics": {
-          "AUPRC": 0.16628563292349766,
-          "AUROC": 0.7334469799554069
+          "AUPRC": 0.16723035384474041,
+          "AUROC": 0.7334477219355293
         }
       },
       "validation": {
-        "f1_threshold": 0.8456151485443115,
+        "f1_threshold": 0.8456150889396667,
         "predictions_csv": "drug_id_held_out_validation_predictions.csv"
       }
     }

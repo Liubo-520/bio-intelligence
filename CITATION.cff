@@ -2,11 +2,11 @@ cff-version: 1.2.0
 message: "If you use BioInteract, please cite the associated manuscript and this archived software release."
 type: software
 title: "BioInteract: Interpretable Drug--Target Interaction Prediction via Residue-Level Cross-Attention with Biological Prior Knowledge"
-version: 1.0.0
+version: 1.0.1
 date-released: 2026-07-18
 license: MIT
 url: "https://github.com/Liubo-520/bio-intelligence"
-doi: "10.5281/zenodo.21429673"
+doi: "10.5281/zenodo.21431147"
 authors:
   - family-names: Wang
     given-names: Shengnan

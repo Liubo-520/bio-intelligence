@@ -1,12 +1,9 @@
-"""
-target_encoder.py — Protein target encoder combining ESM-2 with domain knowledge.
+"""Protein target encoder combining ESM-2 with residue descriptors.
 
-Takes pre-extracted ESM-2 embeddings and enriches them with:
-  1. Physicochemical amino acid properties (hydrophobicity, charge, etc.)
-  2. Learnable functional domain embeddings (Pfam/InterPro)
-
-This design lets us inject biological knowledge about protein structure
-and function without any additional computational cost at training time.
+It accepts frozen ESM-2 embeddings, four physicochemical descriptors, and an
+optional categorical label channel. The browser demo supplies the ``NONE``
+label for arbitrary user inputs; that channel is not Pfam/InterPro annotation
+or evidence of protein function.
 """
 import torch
 import torch.nn as nn
@@ -24,11 +21,9 @@ class TargetEncoder(nn.Module):
     Output:
         - Residue representations: (B, L, projection_dim)
     
-    The domain embedding adds awareness of which functional region each
-    residue belongs to (e.g., kinase domain, SH2 domain). This helps the
-    cross-attention module learn family-specific interaction patterns:
-    a kinase inhibitor should attend differently to residues in the
-    catalytic domain vs. a regulatory domain.
+    The optional label embedding is a model input channel. In the browser demo
+    it is the shared ``NONE`` label and is not a domain, binding-site, or
+    functional assignment.
     """
     
     def __init__(self,

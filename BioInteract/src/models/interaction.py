@@ -1,18 +1,8 @@
-"""
-interaction.py — Cross-Attention interaction module.
+"""Cross-attention module for model-native atom--residue attribution.
 
-This is the core of BioInteract: computing fine-grained atom-residue
-interaction maps that are both predictive and interpretable.
-
-Design philosophy:
-    Traditional DTI models concatenate drug and protein vectors and
-    lose spatial information. Our cross-attention computes an explicit
-    interaction matrix M ∈ R^(n_atoms × n_residues), where M[i,j]
-    represents the "interaction strength" between drug atom i and
-    protein residue j.
-    
-    This matrix directly corresponds to the biological concept of
-    molecular contacts — and can be validated against crystal structures.
+The module returns an attention matrix ``M`` over drug atoms and protein
+residues. Its values are learned model weights that help inspect a prediction;
+they are not molecular contacts, a binding pocket, or a structural mechanism.
 """
 import torch
 import torch.nn as nn
@@ -26,7 +16,7 @@ class CrossAttentionInteraction(nn.Module):
     
     Returns:
         - Fused representation for prediction
-        - Attention weights for interpretability (atom × residue interaction map)
+        - Attention weights for model-native atom--residue attribution
     """
     
     def __init__(self,

@@ -1,13 +1,9 @@
-"""
-binding_site_eval.py — Evaluate model interpretability against known binding sites.
+"""Optional external-annotation comparison utility.
 
-Uses PDB crystal structures as ground truth to quantitatively assess
-whether the model's attention patterns correspond to real molecular contacts.
-
-This is the "proof" that the model has learned genuine biology:
-if attention hotspots match experimentally determined binding pockets,
-the model isn't just fitting statistics — it's capturing the physics
-of molecular recognition.
+This legacy helper requires user-supplied structural annotations and is not run
+by the public release. A ranking overlap is an evaluation against supplied
+labels, not evidence that an attention value is itself a molecular contact or
+mechanism.
 """
 import os
 import json
@@ -80,15 +76,10 @@ def evaluate_binding_site_prediction(predicted_top_k: np.ndarray,
                                       k_values: List[int] = [10, 15, 20, 30]
                                       ) -> Dict[str, dict]:
     """
-    Comprehensive binding site prediction evaluation.
-    
-    Evaluates attention predictions against multiple levels of ground truth:
-      1. All contact residues (4Å cutoff) — general binding pocket
-      2. H-bond residues — specific polar interactions
-      3. Key residues from literature — expert-curated critical contacts
-    
-    This multi-level evaluation shows the model captures both broad
-    binding pocket geometry and specific interaction chemistry.
+    Compare a ranked attribution list with externally supplied annotations.
+
+    This routine reports set overlap only. It does not convert model-native
+    attention into contact, interaction-type, or binding-site predictions.
     """
     results = {}
     
@@ -125,17 +116,11 @@ def interaction_type_analysis(interaction_map: np.ndarray,
                                drug_mask: np.ndarray,
                                ground_truth: BindingSiteInfo,
                                protein_mask: np.ndarray) -> dict:
-    """
-    Analyse what types of interactions the model attends to most.
-    
-    Compare average attention scores on:
-      - H-bond residues vs non-H-bond contact residues
-      - Hydrophobic contact residues vs polar residues
-      - Key residues vs other contact residues
-    
-    If the model gives significantly higher attention to H-bond and
-    key residues, it indicates the model has learned the hierarchy
-    of interaction importance — not just proximity.
+    """Compare attention with optional, user-supplied structural annotations.
+
+    The annotation is external to BioInteract and is not present in the Davis
+    release. This diagnostic only summarises agreement with a supplied label; it
+    neither infers contacts nor validates an interaction mechanism.
     """
     # compute residue-level attention scores
     valid_atoms = drug_mask

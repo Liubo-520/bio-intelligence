@@ -22,7 +22,7 @@ UNK_AA_IDX = len(AMINO_ACIDS)
 
 
 # ============================================================
-# Residue-level physicochemical properties (domain knowledge)
+# Residue-level physicochemical descriptors
 # ============================================================
 
 HYDROPHOBICITY = {

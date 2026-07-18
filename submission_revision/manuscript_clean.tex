@@ -294,23 +294,28 @@ and stereochemistry.
 We employ a 3-layer GINE
 architecture:\cite{hu2020strategies}
 \begin{equation}
+\widetilde{\mathbf{e}}_{vu}=\mathbf{W}_e\mathbf{e}_{vu}+\mathbf{b}_e
+\in\mathbb{R}^{256},\qquad \mathbf{e}_{vu}\in\mathbb{R}^{16},
+\label{eq:edge_projection}
+\end{equation}
+\begin{equation}
 \mathbf{h}_v^{(\ell+1)} = \mathrm{MLP}^{(\ell)}\!\left(
-  (1+\epsilon^{(\ell)})\,\mathbf{h}_v^{(\ell)} +
+  \mathbf{h}_v^{(\ell)} +
   \sum_{u\in\mathcal{N}(v)}
-  \mathrm{ReLU}\!\left(\mathbf{h}_u^{(\ell)} + \mathbf{e}_{vu}\right)
+  \mathrm{ReLU}\!\left(\mathbf{h}_u^{(\ell)} + \widetilde{\mathbf{e}}_{vu}\right)
 \right)
 \end{equation}
 where $\mathbf{h}_v^{(\ell)}$ is the representation of atom $v$ at layer $\ell$,
-$\mathbf{e}_{vu}$ denotes the edge feature vector, and $\epsilon^{(\ell)}$ is a
-learnable scalar.  Each layer incorporates batch normalisation, ReLU activation,
+$\mathbf{e}_{vu}$ denotes the raw 16-dimensional edge feature vector, and
+$\widetilde{\mathbf{e}}_{vu}$ is its learned 16-to-256 projection before message
+passing. The released \texttt{GINEConv} instantiation uses the default fixed
+$\epsilon=0$. Each layer incorporates batch normalisation, ReLU activation,
 dropout ($p=0.2$), and a residual connection; the hidden dimension is $D=256$.
 Global graph pooling is \emph{not} applied at this stage, preserving individual
 atom representations for the subsequent cross-attention step.
 
-The reported final training runs use the fixed molecular graphs produced by the
-stated featurisation pipeline. The final scripts set both DropNode and DropEdge
-probabilities to zero, so no stochastic graph augmentation is applied during
-training or evaluation.
+The archived checkpoints use the stated molecular featurisation; public
+checkpoint reconstruction applies no stochastic graph augmentation.
 
 \subsection{Protein Target Encoder}
 
@@ -417,21 +422,23 @@ activation.  The pooled drug and protein representations are concatenated and
 passed through a two-hidden-layer MLP (256\,$\to$\,128; ReLU; dropout $p=0.3$)
 followed by sigmoid activation to produce the binding probability.
 
-\subsection{Training Procedure}
+\subsection{Training Provenance and Evaluation Thresholds}
 
-The Davis dataset is severely class-imbalanced (${\approx}\SI{5}{\percent}$
-positive rate).  We address this with weighted binary cross-entropy:
-\begin{equation}
-\mathcal{L} = -\frac{1}{N}\sum_{i=1}^{N}\left[
-  w_+\cdot y_i\log\hat{y}_i + (1-y_i)\log(1-\hat{y}_i)
-\right]
-\end{equation}
-with $w_+ = N_\text{neg}/N_\text{pos}\approx 18$, combined with label smoothing
-($\epsilon=0.05$).  Optimisation uses AdamW\cite{loshchilov2019decoupled}
-($\eta=10^{-4}$, weight decay $\lambda=10^{-5}$) with cosine annealing and a
-5-epoch linear warmup.  Early stopping monitors validation AUROC (patience~$=15$,
-maximum 100 epochs), and the decision threshold is selected by maximising F1
-on the validation precision--recall curve.
+The archived entity-split checkpoints preserve model architecture but do not
+store a uniform optimizer, scheduler, warmup, or label-smoothing record. The
+Random and Drug-ID-held-out logs explicitly record weighted binary
+cross-entropy, label smoothing of 0.05, AdamW, and a final-run header, whereas
+the checkpoint-matched Target-ID-held-out trace has the older
+\texttt{run\_split.py} header and records only loss and validation AUROC. Its
+checkpoint does not retain optimizer or loss state. We therefore do not
+retrospectively assert a single training recipe across all three historical
+checkpoints (Supporting Information, Training-provenance table).
+
+No model is retrained for the current-release metrics. The canonical
+reconstruction instantiates each released checkpoint from its embedded model
+configuration, performs full-precision inference, selects an F1 threshold once
+on the corresponding validation predictions, and applies that frozen threshold
+to test predictions. This separation prevents test-set threshold selection.
 
 \subsection{Interpretability Analysis}
 
@@ -643,7 +650,7 @@ MolTrans\cite{huang2021moltrans}            & Transformer & 0.907 & 0.480 & 0.85
 TransformerCPI\cite{chen2020transformercpi} & Transformer & 0.910 & 0.492 & 0.862 & 0.401 & 0.672 & 0.125 \\
 DrugBAN\cite{bai2023drugban}                & Bilinear    & 0.915 & 0.530 & 0.874 & 0.428 & 0.695 & 0.138 \\
 \midrule
-BioInteract & Cross-Attn  & 0.904 & 0.560 & 0.930 & 0.524 & 0.733 & 0.166 \\
+BioInteract & Cross-Attn  & 0.904 & 0.560 & 0.930 & 0.525 & 0.733 & 0.167 \\
 \bottomrule
 \end{tabular}}
 \vspace{4pt}
@@ -716,8 +723,8 @@ Information.
 \textbf{Split} & \textbf{AUROC} & \textbf{AUPRC} \\
 \midrule
 Random              & 0.904 & 0.560 \\
-Target-ID-held-out  & \textbf{0.930} & \textbf{0.524} \\
-Drug-ID-held-out    & 0.733 & 0.166 \\
+Target-ID-held-out  & \textbf{0.930} & \textbf{0.525} \\
+Drug-ID-held-out    & 0.733 & 0.167 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -838,24 +845,23 @@ out-of-distribution guarantee.
 
 \subsection{Training Dynamics}
 
-Fig.~\ref{fig:training} reports the single-seed validation-AUROC and training-loss
-trajectories for the archived protocols, with early stopping between epochs 32
-and 47.  These plots describe the observed optimisation paths only; they do not
-establish an absence of overfitting, quantify validation-loss behaviour, or
-estimate repeated-seed variability.  They also do not isolate the contribution
-of any one regularisation choice, and the final reported runs use fixed molecular
-graphs.
+Fig.~\ref{fig:training} reports a single checkpoint-matched, contiguous
+validation-AUROC and training-loss trace for each archived protocol. The
+duplicated Random trace and two restarted Target-ID fragments were excluded
+because their epoch counters reset or their peak validation AUROC did not match
+the released checkpoint. These plots describe observed optimisation paths only;
+they do not establish absence of overfitting, quantify validation-loss behaviour,
+or estimate repeated-seed variability.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{figures/fig9_training.pdf}
+\includegraphics[width=\textwidth]{figures/fig4_training.pdf}
 \caption{\textbf{Training dynamics across splitting protocols.}
   Panel A: validation AUROC over training epochs.  Panel B: training loss curves.
-  The trajectories describe the observed optimisation under the reported settings
-  and do not establish an absence of overfitting, validation-loss behaviour,
-  or repeated-seed variability. They also do not isolate the contribution of
-  individual regularisation choices. Dashed vertical lines indicate
-  early-stopping points.}
+  Each line is one contiguous archived trace whose peak validation AUROC agrees
+  with the saved checkpoint; duplicated and restarted segments are not plotted.
+  No fitted or interpolated trends are shown. The trajectories do not establish
+  absence of overfitting, validation-loss behaviour, or repeated-seed variability.}
 \label{fig:training}
 \end{figure}
 
@@ -878,9 +884,12 @@ Analysis of cross-attention patterns across all 1{,}506 positive Davis
 drug--target pairs
 reveals a global attention sparsity of \SI{99.2}{\percent}
 (Table~\ref{tab:global_attn}, Fig.~\ref{fig:sparsity}) under the stated
-normalisation threshold: fewer than \SI{1}{\percent} of residues receive
-high relative attention.  This describes concentration of the model attribution;
-it does not demonstrate the size or location of a physical binding interface.
+normalisation threshold. Figure~\ref{fig:sparsity} is computed directly from
+the archived 1{,}301{,}380 pair-normalised residue scores, not from summary
+bars; its top 1\% and 5\% of scores account for 78.9\% and 90.4\% of their
+total attribution mass, respectively. This describes concentration of model
+attribution; it does not demonstrate the size or location of a physical binding
+interface.
 
 \begin{table}[htbp]
 \centering
@@ -899,22 +908,23 @@ Median residue attention    & 0.0003 \\
 Top-1\% threshold           & 0.0572 \\
 Top-5\% threshold           & 0.0036 \\
 Fraction of residues with normalised attribution $<0.1$ of the pair-specific maximum & 99.2\% \\
+Top 1\% / top 5\% cumulative attribution mass & 78.9\% / 90.4\% \\
 Samples analysed            & 1{,}506 \\
+Residue-score observations   & 1{,}301{,}380 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\linewidth]{figures/fig3_sparsity.pdf}
+\includegraphics[width=\linewidth]{figures/fig5_attention_sparsity.pdf}
 \caption{\textbf{Attention sparsity analysis.}
-  (A)~Distribution of pair-normalised per-residue attention scores across all
-  1{,}506 positive Davis pairs, displaying a heavy-tailed attribution distribution.
-  (B)~Cumulative attention as a function of residue percentile, showing that
-  the top \SI{1}{\percent} of residues capture a disproportionate fraction of
-  total model attention.  The \SI{99.2}{\percent} value is an attribution
-  concentration statistic, not a claim about a contiguous protein-surface
-  region.}
+  (A)~Histogram of the archived pair-normalised per-residue attention scores
+  across all 1{,}506 positive Davis pairs (1{,}301{,}380 observations; logarithmic
+  axes); the dashed line denotes the 0.1 sparsity threshold. (B)~Cumulative
+  attribution mass after sorting those same scores in descending order. The
+  \SI{99.2}{\percent} value is an attribution-concentration statistic, not a
+  claim about a contiguous protein-surface region.}
 \label{fig:sparsity}
 \end{figure}
 
@@ -1190,21 +1200,21 @@ dataset used for model training and evaluation is available from the original
 publication.\cite{davis2011comprehensive} The immutable release containing the
 released checkpoints, canonical prediction CSVs, provenance hashes, strict-split
 artifacts, and reproduction scripts is archived at Zenodo,
-\url{https://doi.org/10.5281/zenodo.21429673}. The BioInteract source repository
-is \url{https://github.com/Liubo-520/bio-intelligence}. An interactive web
-server for the custom-prediction workflow is available at
-\url{https://huggingface.co/spaces/AI4deeperScience/BioInteract}; the README
+\url{https://doi.org/10.5281/zenodo.21431147}. The BioInteract source repository
+is hosted on \href{https://github.com/Liubo-520/bio-intelligence}{GitHub}. An interactive web
+server for the custom-prediction workflow is available through the
+\href{https://huggingface.co/spaces/AI4deeperScience/BioInteract}{BioInteract Space}; the README
 documents the command-line attribution workflow.
 
 \section*{Code Availability}
 
 The BioInteract source code, pretrained model weights, configuration files,
 canonical metric-reconstruction scripts, and figure-generation scripts are
-publicly available at \url{https://github.com/Liubo-520/bio-intelligence} and
-as the immutable Zenodo release, \url{https://doi.org/10.5281/zenodo.21429673}.
+publicly available through \href{https://github.com/Liubo-520/bio-intelligence}{GitHub} and
+as the immutable Zenodo release, \url{https://doi.org/10.5281/zenodo.21431147}.
 The interactive web
-application for the custom-prediction workflow is available at
-\url{https://huggingface.co/spaces/AI4deeperScience/BioInteract}.
+application for the custom-prediction workflow is available through the
+\href{https://huggingface.co/spaces/AI4deeperScience/BioInteract}{BioInteract Space}.
 
 %%====================================================================
 \section*{Author Contributions}

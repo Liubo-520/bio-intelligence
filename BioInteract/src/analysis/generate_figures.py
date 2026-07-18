@@ -133,63 +133,122 @@ def load_canonical_prediction_summary() -> dict[str, Any]:
     return summary
 
 
-def compute_attention_distribution(
-    base_config: dict[str, Any], resources: dict[str, Any], report: dict[str, Any], device: str, force: bool
-) -> dict[str, Any]:
-    summary_path = FIGURE_DATA_DIR / "attention_distribution.json"
-    if summary_path.exists() and not force:
-        return json.loads(summary_path.read_text(encoding="utf-8"))
-
-    config = copy.deepcopy(base_config)
-    positive_df = resources["interactions"][resources["interactions"]["label"] == 1][["drug_id", "target_id", "label"]].reset_index(drop=True)
-    dataset = DTIDataset(
-        positive_df,
-        drug_smiles=resources["drug_smiles"],
-        target_sequences=resources["target_sequences"],
-        esm2_cache_dir=config["data"].get("esm2_cache_dir", "data/esm2_embeddings"),
-        max_protein_len=config["data"].get("max_protein_len", 1200),
-        use_domain_features=config["model"]["target_encoder"].get("use_domain_features", True),
-        esm2_dim=config["model"]["target_encoder"].get("esm2_dim", 640),
-        task="classification",
-    )
-    loader = DataLoader(dataset, batch_size=12, shuffle=False, collate_fn=collate_dti, num_workers=0)
-    model = build_model(config["model"], CHECKPOINTS_DIR / "best.pt", device)
-    scores: list[np.ndarray] = []
-    for batch in loader:
-        _, attention = run_model(model, batch, device, return_attention=True)
-        for index in range(attention["interaction_map"].size(0)):
-            residue_scores = attention["interaction_map"][index][attention["drug_mask"][index]].sum(dim=0)
-            valid_scores = residue_scores[attention["protein_mask"][index]]
-            if valid_scores.numel():
-                scores.append((valid_scores / valid_scores.max().clamp(min=1e-8)).detach().cpu().numpy())
-    flattened = np.concatenate(scores)
-    summary = {
-        "n_samples": int(len(scores)),
-        "n_residue_scores": int(len(flattened)),
-        "residue_attention_mean": float(flattened.mean()),
-        "residue_attention_std": float(flattened.std()),
-        "residue_attention_median": float(np.median(flattened)),
-        "residue_attention_top1pct": float(np.percentile(flattened, 99)),
-        "residue_attention_top5pct": float(np.percentile(flattened, 95)),
-        "attention_sparsity": float((flattened < 0.1).mean()),
-        "report_global_stats": report.get("global_stats", {}),
+def prepare_attention_curve(flat_scores: np.ndarray) -> dict[str, np.ndarray]:
+    """Build a complete cumulative curve directly from archived raw scores."""
+    scores = np.asarray(flat_scores, dtype=np.float64).reshape(-1)
+    if scores.size == 0 or not np.isfinite(scores).all() or (scores < 0).any():
+        raise ValueError("attention scores must be finite, non-negative, and non-empty")
+    total_attention = float(scores.sum())
+    if total_attention <= 0:
+        raise ValueError("attention scores must have positive total mass")
+    sorted_scores = np.sort(scores)[::-1]
+    return {
+        "sorted_scores": sorted_scores,
+        "percentiles": np.arange(1, scores.size + 1, dtype=np.float64) / scores.size * 100,
+        "cumulative_attention": np.cumsum(sorted_scores) / total_attention,
     }
-    _json_dump(summary_path, summary)
-    return summary
+
+
+def load_attention_distribution(report: dict[str, Any]) -> tuple[dict[str, Any], dict[str, np.ndarray]]:
+    """Load the archived 1,301,380-score attribution distribution without re-inference."""
+    raw_path = FIGURE_DATA_DIR / "attention_distribution.npz"
+    if not raw_path.exists():
+        raise FileNotFoundError(
+            "Missing archived attention_distribution.npz; do not regenerate a public "
+            "distribution from a different model state."
+        )
+    raw = np.load(raw_path)
+    if "flat_scores" not in raw:
+        raise ValueError("attention_distribution.npz is missing flat_scores")
+    flat_scores = raw["flat_scores"]
+    curve = prepare_attention_curve(flat_scores)
+    global_stats = report.get("global_stats", {})
+    summary = {
+        "n_samples": int(global_stats.get("n_samples", 0)),
+        "n_residue_scores": int(flat_scores.size),
+        "residue_attention_mean": float(np.mean(flat_scores)),
+        "residue_attention_std": float(np.std(flat_scores)),
+        "residue_attention_median": float(np.median(flat_scores)),
+        "residue_attention_top1pct": float(np.percentile(flat_scores, 99)),
+        "residue_attention_top5pct": float(np.percentile(flat_scores, 95)),
+        "attention_sparsity": float(np.mean(flat_scores < 0.1)),
+        "top_1pct_attention_mass": float(curve["cumulative_attention"][int(np.ceil(flat_scores.size * 0.01)) - 1]),
+        "top_5pct_attention_mass": float(curve["cumulative_attention"][int(np.ceil(flat_scores.size * 0.05)) - 1]),
+        "raw_scores_artifact": "BioInteract/results/figure_data/attention_distribution.npz",
+        "normalisation": "pair-normalised residue scores pooled over all positive Davis pairs",
+    }
+    if summary["n_samples"] <= 0:
+        raise ValueError("interpretability report does not provide a positive sample count")
+    for key in (
+        "residue_attention_mean",
+        "residue_attention_std",
+        "residue_attention_median",
+        "residue_attention_top1pct",
+        "residue_attention_top5pct",
+        "attention_sparsity",
+    ):
+        if key in global_stats and not np.isclose(summary[key], global_stats[key], rtol=0, atol=2e-8):
+            raise ValueError(f"raw attention statistic for {key} disagrees with interpretability report")
+    _json_dump(FIGURE_DATA_DIR / "attention_distribution.json", summary)
+    return summary, curve
+
+
+def split_training_log_segments(log_text: str) -> list[list[dict[str, float | int]]]:
+    """Split a log whenever its epoch counter resets, preserving only real traces."""
+    segments: list[list[dict[str, float | int]]] = []
+    current: list[dict[str, float | int]] = []
+    previous_epoch: int | None = None
+    for match in LOG_PATTERN.finditer(log_text):
+        epoch = int(match.group(1))
+        if previous_epoch is not None and epoch <= previous_epoch:
+            if current:
+                segments.append(current)
+            current = []
+        current.append(
+            {
+                "epoch": epoch,
+                "loss": float(match.group(2)),
+                "val_auroc": float(match.group(3)),
+            }
+        )
+        previous_epoch = epoch
+    if current:
+        segments.append(current)
+    return segments
+
+
+def select_checkpoint_matching_segment(
+    segments: list[list[dict[str, float | int]]], checkpoint_best_val_auroc: float, tolerance: float = 5e-4
+) -> tuple[list[dict[str, float | int]], int]:
+    """Select the earliest complete trace whose peak agrees with the saved checkpoint."""
+    if not segments:
+        raise ValueError("training log has no parseable epoch records")
+    candidates = [
+        (abs(max(float(record["val_auroc"]) for record in segment) - checkpoint_best_val_auroc), -len(segment), index, segment)
+        for index, segment in enumerate(segments)
+    ]
+    error, _, index, segment = min(candidates, key=lambda item: item[:3])
+    if error > tolerance:
+        raise ValueError(
+            "no contiguous training-log segment does not match the checkpoint best validation AUROC"
+        )
+    return segment, index
 
 
 def parse_training_logs(prediction_summary: dict[str, Any]) -> dict[str, Any]:
     curves: dict[str, Any] = {}
     for split_name, metadata in SPLIT_META.items():
-        epochs, losses, aurocs = [], [], []
-        for line in metadata["log_path"].read_text(encoding="utf-8", errors="ignore").splitlines():
-            match = LOG_PATTERN.search(line)
-            if match:
-                epochs.append(int(match.group(1)))
-                losses.append(float(match.group(2)))
-                aurocs.append(float(match.group(3)))
-        if not epochs:
-            continue
+        checkpoint = torch.load(metadata["checkpoint"], map_location="cpu", weights_only=False)
+        checkpoint_best = checkpoint.get("best_val_auroc", checkpoint.get("best_metric"))
+        if checkpoint_best is None:
+            raise ValueError(f"{metadata['checkpoint']} lacks a saved validation AUROC")
+        segments = split_training_log_segments(
+            metadata["log_path"].read_text(encoding="utf-8", errors="ignore")
+        )
+        selected, selected_index = select_checkpoint_matching_segment(segments, float(checkpoint_best))
+        epochs = [int(record["epoch"]) for record in selected]
+        losses = [float(record["loss"]) for record in selected]
+        aurocs = [float(record["val_auroc"]) for record in selected]
         best_index = int(np.argmax(aurocs))
         curves[split_name] = {
             "epochs": epochs,
@@ -197,7 +256,15 @@ def parse_training_logs(prediction_summary: dict[str, Any]) -> dict[str, Any]:
             "val_auroc": aurocs,
             "best_epoch": epochs[best_index],
             "best_val_auroc": aurocs[best_index],
+            "checkpoint_best_val_auroc": float(checkpoint_best),
             "source_log": metadata["log_path"].relative_to(PROJECT_ROOT).as_posix(),
+            "segments_detected": len(segments),
+            "selected_segment": selected_index + 1,
+            "discarded_segment_ranges": [
+                {"start_epoch": int(segment[0]["epoch"]), "end_epoch": int(segment[-1]["epoch"])}
+                for index, segment in enumerate(segments)
+                if index != selected_index
+            ],
             "reported_auroc": prediction_summary["splits"][split_name]["reported_metrics"]["AUROC"],
         }
     return curves
@@ -273,23 +340,47 @@ def fig2_performance(prediction_summary: dict[str, Any], strict_metrics: dict[st
     )
 
 
-def fig3_attention_sparsity(attention_data: dict[str, Any]) -> None:
-    values = [
-        attention_data["residue_attention_mean"],
-        attention_data["residue_attention_median"],
-        attention_data["residue_attention_top5pct"],
-        attention_data["residue_attention_top1pct"],
-    ]
-    labels = ["Mean", "Median", "Top 5%", "Top 1%"]
-    figure, axis = plt.subplots(figsize=(7.2, 4.6))
-    axis.bar(labels, values, color=[PALETTE["slate"], PALETTE["sky"], PALETTE["teal"], PALETTE["gold"]])
-    axis.set_ylabel("Normalised model-native attention attribution")
-    axis.set_title("Aggregate attribution distribution")
-    soften_axes(axis, "y")
-    save_figure(figure, "fig3_sparsity", metadata={"title": "Aggregate model-native attribution", "summary": attention_data})
+def fig5_attention_sparsity(attention_data: dict[str, Any], curve: dict[str, np.ndarray]) -> None:
+    """Plot the saved score distribution and its directly recomputed cumulative mass."""
+    figure, axes = plt.subplots(1, 2, figsize=(10.6, 4.6))
+    distribution_axis, cumulative_axis = axes
+    bins = np.geomspace(max(float(curve["sorted_scores"][-1]), 1e-7), 1.0, 55)
+    distribution_axis.hist(
+        curve["sorted_scores"], bins=bins, color=PALETTE["sky"], edgecolor="white", linewidth=0.25
+    )
+    distribution_axis.axvline(0.1, color=PALETTE["brick"], linestyle="--", linewidth=1.1)
+    distribution_axis.set_xscale("log")
+    distribution_axis.set_yscale("log")
+    distribution_axis.set_xlabel("Pair-normalised residue attribution (log scale)")
+    distribution_axis.set_ylabel("Residue observations (log scale)")
+    distribution_axis.set_title("Attribution-score distribution")
+    cumulative_axis.plot(
+        curve["percentiles"], curve["cumulative_attention"], color=PALETTE["teal"]
+    )
+    cumulative_axis.set_xlabel("Top residue percentile included (%)")
+    cumulative_axis.set_ylabel("Cumulative share of total attribution")
+    cumulative_axis.set_ylim(0, 1.02)
+    cumulative_axis.set_xlim(0, 100)
+    cumulative_axis.set_title("Cumulative attribution concentration")
+    for axis, label in zip(axes, ("A", "B")):
+        soften_axes(axis, "y")
+        panel_label(axis, label)
+    save_figure(
+        figure,
+        "fig5_attention_sparsity",
+        metadata={
+            "title": "Archived aggregate model-native attribution distribution",
+            "summary": attention_data,
+            "curve": {
+                "source": "flat_scores sorted descending and cumulatively normalised at figure generation",
+                "n_points": int(curve["percentiles"].size),
+                "terminal_cumulative_attention": float(curve["cumulative_attention"][-1]),
+            },
+        },
+    )
 
 
-def fig9_training(training_curves: dict[str, Any]) -> None:
+def fig4_training(training_curves: dict[str, Any]) -> None:
     figure, axes = plt.subplots(1, 2, figsize=(10.4, 4.7))
     auroc_axis, loss_axis = axes
     for split_name, curves in training_curves.items():
@@ -306,15 +397,15 @@ def fig9_training(training_curves: dict[str, Any]) -> None:
         soften_axes(axis, "y")
         axis.legend(frameon=False)
     metadata = {
-        "title": "Archived training dynamics with canonical checkpoint metrics",
+        "title": "Archived checkpoint-matched training dynamics",
         "curves": training_curves,
         "note": (
-            "Lines are archived training-log diagnostics. The reported AUROC for each "
-            "split is the canonical full-precision checkpoint evaluation, not the "
-            "legacy test metric recorded in the log."
+            "Each line is one contiguous archived epoch trace selected because its "
+            "peak validation AUROC matches the saved checkpoint. Restarted or duplicated "
+            "log segments are excluded; no fitted or interpolated trends are plotted."
         ),
     }
-    save_figure(figure, "fig9_training", metadata=metadata)
+    save_figure(figure, "fig4_training", metadata=metadata)
     _json_dump(FIGURE_DATA_DIR / "training_curves.json", metadata)
 
 
@@ -334,18 +425,16 @@ def main() -> None:
     strict_metrics = load_strict_metrics()
     base_config = load_base_config()
     resources = load_dataset_resources(base_config)
-    attention_data = compute_attention_distribution(
-        base_config, resources, report, device, args.force_attention_refresh
-    )
+    attention_data, attention_curve = load_attention_distribution(report)
     training_curves = parse_training_logs(prediction_summary)
     fig2_performance(prediction_summary, strict_metrics)
-    fig3_attention_sparsity(attention_data)
+    fig5_attention_sparsity(attention_data, attention_curve)
     if training_curves:
-        fig9_training(training_curves)
-        manifest = ["fig2_performance", "fig3_sparsity", "fig9_training"]
+        fig4_training(training_curves)
+        manifest = ["fig2_performance", "fig4_training", "fig5_attention_sparsity"]
     else:
-        manifest = ["fig2_performance", "fig3_sparsity"]
-    write_manifest(manifest)
+        manifest = ["fig2_performance", "fig5_attention_sparsity"]
+    write_manifest(manifest, replace=True)
 
 
 if __name__ == "__main__":

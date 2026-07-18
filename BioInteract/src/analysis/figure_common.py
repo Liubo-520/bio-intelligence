@@ -118,13 +118,13 @@ def save_figure(fig, stem: str, metadata: dict[str, Any] | None = None) -> None:
         )
 
 
-def write_manifest(stems: list[str]) -> None:
+def write_manifest(stems: list[str], replace: bool = False) -> None:
     manifest_path = FIGURE_METADATA_DIR / 'manifest.json'
     existing: dict[str, Any] = {}
     if manifest_path.exists():
         existing = json.loads(manifest_path.read_text(encoding='utf-8'))
 
-    combined = list(dict.fromkeys(existing.get('figures', []) + stems))
+    combined = list(dict.fromkeys(stems if replace else existing.get('figures', []) + stems))
     manifest = {
         'figures': combined,
         'metadata_dir': 'submission_revision/figures/metadata',

@@ -17,12 +17,30 @@ from revision.recompute_entity_split_metrics import (  # noqa: E402
     build_artifact_status,
     build_split_record,
     collect_full_precision_predictions,
+    configure_deterministic_inference,
 )
 
 
 class _FixedLogitModel(torch.nn.Module):
     def forward(self, drug_batch, *args):
         return drug_batch
+
+
+def test_canonical_inference_explicitly_enables_deterministic_cpu_algorithms():
+    """The release artifact must record an explicit deterministic setting."""
+    previous = torch.are_deterministic_algorithms_enabled()
+    try:
+        settings = configure_deterministic_inference("cpu")
+        assert torch.are_deterministic_algorithms_enabled() is True
+        assert settings == {
+            "deterministic_algorithms": True,
+            "cudnn_benchmark": False,
+            "cudnn_deterministic": True,
+            "tf32_enabled": False,
+            "cublas_workspace_config": None,
+        }
+    finally:
+        torch.use_deterministic_algorithms(previous)
 
 
 def test_full_precision_collector_does_not_depend_on_cli_evaluator_or_amp():
