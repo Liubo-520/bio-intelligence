@@ -1,0 +1,18 @@
+# Reproducibility manifest
+
+Entries in this file are append-only. Paths are workspace-relative and no
+credential material is recorded.
+
+## 2026-07-18 — canonical original entity-split metrics (no-training reevaluation)
+
+- Commit SHA before artifact generation: `2cc1566e8f9cb04f3d82d16457225a701905e904`
+- Commit SHA after artifact generation: `89359751a8b942152d8db5d5a5782f07f87e44f0`
+- Script SHA-256: `7ea342405f64153a93c60035e832bfe799e8b21de70e4eadddd621c3ef16bc7a`
+- Unit-test SHA-256: `b3d56fd70afa939d8083fe3f2c3a724dd6ef298fbf9797b7378b5edf8b4c67f3`
+- Command: `python revision/recompute_entity_split_metrics.py --output-dir revision/analysis --device cuda`
+- Seed: `42`; requested/resolved device: `cuda` / `cuda` (NVIDIA GeForce RTX 4080); Python `3.10.14`; Torch `2.4.0+cu121`.
+- Configuration: `BioInteract/configs/default.yaml`, SHA-256 `ba31fa23f1a01b5547283f1fdb06c8a84d909140e4c3d500d8f4e08aed82beba`.
+- Archived checkpoints: `BioInteract/checkpoints/best_random.pt` `a91f5e75e123af4c0a66ff9302842b0bcacdce2780abb9f7f5f4170b69f3e347`; `BioInteract/checkpoints/best_cold_target.pt` `3b5051a8b69ea5208dceb41d9db8766c8dae87dcee2e33c0116c20c1ad003e4b`; `BioInteract/checkpoints/best_cold_drug.pt` `a813f4afd9dea005e8c49db46ce5bfd088a56d1644c87988ec293e0378805355`.
+- Davis inputs: `interactions.csv` `996c93442822f138fabbb6553570fbddf8f4bdd863c52351776b11c3dd4be73f`; `drug_smiles.csv` `2d0e76a53ba39fcbd8d90136cacbdf8681c437fc486f0057e13e8401b25c6b9d`; `target_sequences.csv` `34e3a6d2deec0e7d17f57b9a53ad16999231a36496cee5dd3c732cc244e3b3a5`; `BioInteract/data/esm2_embeddings` (442 files; 852510612 bytes) `22588ffe20d2ba5a81a259898be570a661940df5a396f0f1069767aeb02503d2`.
+- Generated artifacts: `original_entity_split_metrics.json` `b53b918a6729c6c2f2c97d7a94260bb63a2f60bc2ec1637e05531d6dbbcacdc7`; `random_validation_predictions.csv` `7a9959825af8c5790d947f320a5af9e7977275e27fb0e0b5c7ff7b59bd96fd79`; `random_test_predictions.csv` `860986156ca0e4c4360382262147afc00a77fdca6ea750d282bdfe82030f9fa4`; `target_id_held_out_validation_predictions.csv` `ec701bc6b890cd257010098055d96c39a6b57b230c9fc914391b6827d44c04b1`; `target_id_held_out_test_predictions.csv` `85de2bfa39bdca075080961f442f71fea2c036885aa8183298283ced3782b083`; `drug_id_held_out_validation_predictions.csv` `a944fb9975728ec3ae00573fb932a67c4799e95618c3c9644bf311e9b9ecab14`; `drug_id_held_out_test_predictions.csv` `9b457987694329d0067789c406b88f13cd46e043c58152c2e78b76963e5280ac`.
+- Protocol: the F1 threshold was selected once from validation predictions for each archived seed-42 split and frozen for test evaluation. No training, checkpoint writes, data/split changes, or historical-result overwrites occurred.
