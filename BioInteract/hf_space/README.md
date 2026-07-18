@@ -1,61 +1,37 @@
 ---
 title: BioInteract Drug-Target Interaction
-emoji: 🧬
+emoji: molecule
 colorFrom: blue
 colorTo: green
 sdk: gradio
-sdk_version: 5.20.0
+sdk_version: 5.0.0
 python_version: "3.11"
 app_file: app.py
 pinned: false
 license: mit
-short_description: Interpretable DTI prediction with cross-attention
+short_description: Binary high-affinity interaction classification with model-native attribution
 ---
 
 # BioInteract
 
-**Interpretable Drug–Target Interaction Prediction via Residue-Level Cross-Attention with Biological Prior Knowledge**
+BioInteract supports **binary high-affinity interaction classification** on the Davis kinase benchmark. The browser interface returns a **classifier score** and **model-native atom-residue attention attribution**. Attribution is hypothesis-generating; it is **not physical contacts**, binding-residue evidence, or a structural mechanism.
 
-BioInteract is a deep learning framework that predicts whether a drug molecule will bind to a protein target, while simultaneously generating an interpretable atom–residue interaction map that shows *which* drug atoms interact with *which* protein residues.
+## Browser demonstration scope
 
-## How to Use
+The custom workflow accepts a drug SMILES string and a protein sequence. It uses Hugging Face Transformers with a **512-residue** input limit and initialises ESM-2 during application startup. For arbitrary user-supplied sequences, the configured domain-label channel uses an **unknown-domain representation** because curated annotations are not released with this demonstration.
 
-### Tab 1 — Case Studies
-Explore three pre-computed, clinically validated drug–target pairs:
-- **ABL1(E255K) + Drug 5328940** (resistance mutant, Kd = 0.047 nM)
-- **EGFR + Drug 156414** (kinase inhibitor)
-- **BRAF + Drug 11717001** (RAF inhibitor)
+The browser demonstration is **not numerically equivalent** to the reported **1,200-residue** evaluation pipeline, which uses cached fair-ESM embeddings. It must not be used to reproduce the reported metrics or to interpret its sigmoid classifier score as a calibrated measure.
 
-Each case shows the full atom–residue interaction heatmap, top binding residues, and model prediction probability.
+## Reported Davis results
 
-### Tab 2 — Custom Prediction
-Enter any drug SMILES string and protein amino acid sequence.  
-The model will:
-1. Encode the drug via pharmacophore-aware GINE molecular graph
-2. Encode the protein using ESM-2 (150M) residue embeddings + physicochemical features
-3. Compute bidirectional cross-attention to generate an interaction map
-4. Predict binding probability
-
-> **Note:** First prediction on CPU may take 1–3 minutes as ESM-2 initialises.  
-> Sequences are truncated to 512 residues for demo speed.
-
-## Model Architecture
-
-```
-Drug (SMILES) → GINE encoder → atom representations
-Protein (AA seq) → ESM-2 + physicochemical → residue representations
-        ↓ bidirectional cross-attention ↓
-  atom × residue interaction map  →  gated pooling  →  binding score
-```
-
-## Performance (Davis Kinase Dataset)
-
-| Split | AUROC | AUPRC |
-|-------|-------|-------|
+| Partition | AUROC | AUPRC |
+|---|---:|---:|
 | Random | 0.921 | 0.608 |
-| Cold-Drug | 0.739 | 0.169 |
-| Cold-Target | **0.941** | 0.549 |
+| Drug-ID-held-out | 0.739 | 0.169 |
+| Target-ID-held-out | 0.941 | 0.549 |
 
-## Citation
+Target-ID-held-out is an archived identifier-based split result. Duplicate Davis protein sequences mean it is not a strict exact-sequence-held-out estimate.
 
-> BioInteract: Interpretable Drug–Target Interaction Prediction via Residue-Level Cross-Attention with Biological Prior Knowledge. *PLOS Computational Biology*, 2026.
+## Interpretation limit
+
+The heatmap and residue chart rank model-native attribution. They do not identify binding residues, key contacts, a binding pocket, or a mechanistic interaction map.
