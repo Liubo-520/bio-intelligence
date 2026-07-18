@@ -48,6 +48,15 @@ def test_space_retains_only_the_custom_demonstration_workflow():
         assert phrase not in app
 
 
+def test_space_warns_only_when_raw_sequence_exceeds_the_512_residue_limit():
+    app = _read(SPACE / "app.py")
+
+    assert "raw_sequence_length = len(sequence)" in app
+    assert "if raw_sequence_length > max_seq_len:" in app
+    assert "if len(sequence) == max_seq_len:" not in app
+    assert app.index("raw_sequence_length = len(sequence)") < app.index("sequence = sequence[:max_seq_len]")
+
+
 def test_readmes_disclose_supported_task_limits_and_runner_names():
     space_readme = _read(SPACE / "readme.md")
     root_readme = _read(PROJECT / "readme.md")

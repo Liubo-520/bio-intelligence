@@ -223,8 +223,9 @@ def run_prediction(smiles: str, sequence: str, progress=gr.Progress()):
     from torch_geometric.data import Batch
 
     drug_batch = Batch.from_data_list([drug_graph]).to(DEVICE)
+    raw_sequence_length = len(sequence)
     sequence = sequence[:MAX_SEQ_LEN]
-    if len(sequence) == MAX_SEQ_LEN:
+    if raw_sequence_length > MAX_SEQ_LEN:
         warnings.warn("Inputs longer than 512 residues are truncated by this demonstration.")
     length = len(sequence)
 
