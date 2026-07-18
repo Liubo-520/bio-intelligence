@@ -1,0 +1,155 @@
+{
+  "artifact": "original_entity_split_metrics",
+  "command": "python revision/recompute_entity_split_metrics.py --output-dir revision/analysis --device cuda",
+  "inputs": {
+    "BioInteract/data/esm2_embeddings": {
+      "bytes": 852510612,
+      "file_count": 442,
+      "sha256": "22588ffe20d2ba5a81a259898be570a661940df5a396f0f1069767aeb02503d2"
+    },
+    "BioInteract/data/raw/davis/drug_smiles.csv": {
+      "bytes": 5399,
+      "sha256": "2d0e76a53ba39fcbd8d90136cacbdf8681c437fc486f0057e13e8401b25c6b9d"
+    },
+    "BioInteract/data/raw/davis/interactions.csv": {
+      "bytes": 1214482,
+      "sha256": "996c93442822f138fabbb6553570fbddf8f4bdd863c52351776b11c3dd4be73f"
+    },
+    "BioInteract/data/raw/davis/target_sequences.csv": {
+      "bytes": 355685,
+      "sha256": "34e3a6d2deec0e7d17f57b9a53ad16999231a36496cee5dd3c732cc244e3b3a5"
+    }
+  },
+  "protocol": {
+    "partitioning": "archived seed-42 70/10/20 entity split",
+    "test_evaluation": "frozen validation threshold applied to test predictions",
+    "threshold_selection": "F1 threshold selected once from validation predictions"
+  },
+  "runtime": {
+    "cuda_available": true,
+    "cuda_device_name": "NVIDIA GeForce RTX 4080",
+    "python_version": "3.10.14",
+    "requested_device": "cuda",
+    "resolved_device": "cuda",
+    "torch_version": "2.4.0+cu121"
+  },
+  "seed": 42,
+  "source_config": {
+    "path": "BioInteract/configs/default.yaml",
+    "sha256": "ba31fa23f1a01b5547283f1fdb06c8a84d909140e4c3d500d8f4e08aed82beba"
+  },
+  "splits": [
+    {
+      "checkpoint": {
+        "path": "BioInteract/checkpoints/best_random.pt",
+        "sha256": "a91f5e75e123af4c0a66ff9302842b0bcacdce2780abb9f7f5f4170b69f3e347"
+      },
+      "input_counts": {
+        "all_interactions": 30056,
+        "test": 6011,
+        "test_positive": 276,
+        "train": 21040,
+        "validation": 3005,
+        "validation_positive": 164
+      },
+      "public_name": "Random",
+      "split_key": "random",
+      "test": {
+        "predictions_csv": "random_test_predictions.csv",
+        "threshold_dependent_metrics": {
+          "F1": 0.5653846153846154,
+          "Precision": 0.6024590163934426,
+          "Recall": 0.532608695652174,
+          "threshold": 0.5966796875
+        },
+        "threshold_free_metrics": {
+          "AUPRC": 0.559770774113053,
+          "AUROC": 0.903904640966352
+        }
+      },
+      "validation": {
+        "f1_threshold": 0.5966796875,
+        "predictions_csv": "random_validation_predictions.csv"
+      }
+    },
+    {
+      "checkpoint": {
+        "path": "BioInteract/checkpoints/best_cold_target.pt",
+        "sha256": "3b5051a8b69ea5208dceb41d9db8766c8dae87dcee2e33c0116c20c1ad003e4b"
+      },
+      "input_counts": {
+        "all_interactions": 30056,
+        "test": 5984,
+        "test_positive": 250,
+        "train": 21080,
+        "validation": 2992,
+        "validation_positive": 167
+      },
+      "public_name": "Target-ID-held-out",
+      "split_key": "cold_target",
+      "test": {
+        "predictions_csv": "target_id_held_out_test_predictions.csv",
+        "threshold_dependent_metrics": {
+          "F1": 0.5338491295938105,
+          "Precision": 0.5168539325842697,
+          "Recall": 0.552,
+          "threshold": 0.60205078125
+        },
+        "threshold_free_metrics": {
+          "AUPRC": 0.5233803290305664,
+          "AUROC": 0.9300041855598187
+        }
+      },
+      "validation": {
+        "f1_threshold": 0.60205078125,
+        "predictions_csv": "target_id_held_out_validation_predictions.csv"
+      }
+    },
+    {
+      "checkpoint": {
+        "path": "BioInteract/checkpoints/best_cold_drug.pt",
+        "sha256": "a813f4afd9dea005e8c49db46ce5bfd088a56d1644c87988ec293e0378805355"
+      },
+      "input_counts": {
+        "all_interactions": 30056,
+        "test": 5746,
+        "test_positive": 245,
+        "train": 21658,
+        "validation": 2652,
+        "validation_positive": 53
+      },
+      "public_name": "Drug-ID-held-out",
+      "split_key": "cold_drug",
+      "test": {
+        "predictions_csv": "drug_id_held_out_test_predictions.csv",
+        "threshold_dependent_metrics": {
+          "F1": 0.1,
+          "Precision": 0.2727272727272727,
+          "Recall": 0.061224489795918366,
+          "threshold": 0.845703125
+        },
+        "threshold_free_metrics": {
+          "AUPRC": 0.1666939608841472,
+          "AUROC": 0.7336669770616846
+        }
+      },
+      "validation": {
+        "f1_threshold": 0.845703125,
+        "predictions_csv": "drug_id_held_out_validation_predictions.csv"
+      }
+    }
+  ],
+  "supersedes_historical": {
+    "historical_prediction_files_not_overwritten": [
+      "BioInteract/results/figure_data/predictions_random.csv",
+      "BioInteract/results/figure_data/predictions_cold_target.csv",
+      "BioInteract/results/figure_data/predictions_cold_drug.csv"
+    ],
+    "retired_files": [
+      "BioInteract/results/test_random.json",
+      "BioInteract/results/test_cold_target.json",
+      "BioInteract/results/test_cold_drug.json"
+    ],
+    "statement": "This artifact supersedes historical test-selected-threshold metrics."
+  }
+}
