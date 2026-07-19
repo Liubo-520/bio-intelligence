@@ -1,8 +1,8 @@
 """Render the manuscript's Davis baseline-comparison figure.
 
-The six comparison rows retain the first-submission experiment values.  The
-BioInteract row is updated from the current canonical entity-split evaluation
-artifacts so that the comparison table and figure agree with this revision.
+The baseline rows retain the first-submission experiment values. The BioInteract
+row is updated from the current canonical entity-split evaluation artifacts so
+that every row in Table 1 is represented in Figure 1.
 """
 
 from __future__ import annotations
@@ -46,12 +46,22 @@ RANDOM_VALUES = {
     "AUROC": [0.878, 0.893, 0.900, 0.907, 0.910, 0.915, 0.904],
     "AUPRC": [0.352, 0.403, 0.425, 0.480, 0.492, 0.530, 0.560],
 }
-SPLIT_METHODS = ["DeepDTA", "GraphDTA", "MolTrans", "DrugBAN", "BioInteract"]
+SPLIT_METHODS = [
+    "DeepDTA",
+    "GraphDTA",
+    "AttentionDTA",
+    "MolTrans",
+    "TransformerCPI",
+    "DrugBAN",
+    "BioInteract",
+]
 SPLIT_AUROC = np.array(
     [
         [0.878, 0.783, 0.592],
         [0.893, 0.815, 0.621],
+        [0.900, 0.838, 0.643],
         [0.907, 0.856, 0.668],
+        [0.910, 0.862, 0.672],
         [0.915, 0.874, 0.695],
         [0.904, 0.930, 0.733],
     ]
@@ -116,8 +126,8 @@ def render_random_split() -> None:
 
 
 def render_identifier_splits() -> None:
-    fig, ax = plt.subplots(figsize=(7.6, 4.9))
-    fig.subplots_adjust(top=0.84, bottom=0.16)
+    fig, ax = plt.subplots(figsize=(7.6, 5.8))
+    fig.subplots_adjust(top=0.85, bottom=0.14)
     image = ax.imshow(SPLIT_AUROC, cmap=plt.cm.YlGnBu, aspect="auto", vmin=0.55, vmax=0.95)
     for row in range(SPLIT_AUROC.shape[0]):
         for col in range(SPLIT_AUROC.shape[1]):

@@ -1,0 +1,351 @@
+\begin{thebibliography}{10}
+\urlstyle{rm}
+\expandafter\ifx\csname url\endcsname\relax
+  \def\url#1{\texttt{#1}}\fi
+\expandafter\ifx\csname urlprefix\endcsname\relax\def\urlprefix{URL }\fi
+\expandafter\ifx\csname doiprefix\endcsname\relax\def\doiprefix{DOI: }\fi
+\providecommand{\bibinfo}[2]{#2}
+\providecommand{\eprint}[2][]{\url{#2}}
+
+\bibitem{schneider2020rethinking}
+\bibinfo{author}{Schneider, P.} \emph{et~al.}
+\newblock \bibinfo{journal}{\bibinfo{title}{Rethinking drug design in the
+  artificial intelligence era}}.
+\newblock {\emph{\JournalTitle{Nature Reviews Drug Discovery}}}
+  \textbf{\bibinfo{volume}{19}}, \bibinfo{pages}{353--364},
+  \doiprefix\url{10.1038/s41573-019-0050-3} (\bibinfo{year}{2020}).
+
+\bibitem{davis2011comprehensive}
+\bibinfo{author}{Davis, M.~I.} \emph{et~al.}
+\newblock \bibinfo{journal}{\bibinfo{title}{Comprehensive analysis of kinase
+  inhibitor selectivity}}.
+\newblock {\emph{\JournalTitle{Nature Biotechnology}}}
+  \textbf{\bibinfo{volume}{29}}, \bibinfo{pages}{1046--1051},
+  \doiprefix\url{10.1038/nbt.1990} (\bibinfo{year}{2011}).
+
+\bibitem{chen2016drug}
+\bibinfo{author}{Chen, X.} \emph{et~al.}
+\newblock \bibinfo{journal}{\bibinfo{title}{Drug--target interaction
+  prediction: databases, web servers and computational models}}.
+\newblock {\emph{\JournalTitle{Briefings in Bioinformatics}}}
+  \textbf{\bibinfo{volume}{17}}, \bibinfo{pages}{696--712},
+  \doiprefix\url{10.1093/bib/bbv066} (\bibinfo{year}{2016}).
+
+\bibitem{yamanishi2008prediction}
+\bibinfo{author}{Yamanishi, Y.}, \bibinfo{author}{Araki, M.},
+  \bibinfo{author}{Gutteridge, A.}, \bibinfo{author}{Honda, W.} \&
+  \bibinfo{author}{Kanehisa, M.}
+\newblock \bibinfo{journal}{\bibinfo{title}{Prediction of drug--target
+  interaction networks from the integration of chemical and genomic spaces}}.
+\newblock {\emph{\JournalTitle{Bioinformatics}}} \textbf{\bibinfo{volume}{24}},
+  \bibinfo{pages}{i232--i240}, \doiprefix\url{10.1093/bioinformatics/btn162}
+  (\bibinfo{year}{2008}).
+
+\bibitem{ozturk2018deepdta}
+\bibinfo{author}{{\"O}zt{\"u}rk, H.}, \bibinfo{author}{{\"O}zg{\"u}r, A.} \&
+  \bibinfo{author}{Ozkirimli, E.}
+\newblock \bibinfo{journal}{\bibinfo{title}{{DeepDTA}: deep drug--target
+  binding affinity prediction}}.
+\newblock {\emph{\JournalTitle{Bioinformatics}}} \textbf{\bibinfo{volume}{34}},
+  \bibinfo{pages}{i821--i829}, \doiprefix\url{10.1093/bioinformatics/bty593}
+  (\bibinfo{year}{2018}).
+
+\bibitem{nguyen2021graphdta}
+\bibinfo{author}{Nguyen, T.} \emph{et~al.}
+\newblock \bibinfo{journal}{\bibinfo{title}{{GraphDTA}: predicting drug--target
+  binding affinity with graph neural networks}}.
+\newblock {\emph{\JournalTitle{Bioinformatics}}} \textbf{\bibinfo{volume}{37}},
+  \bibinfo{pages}{1140--1147}, \doiprefix\url{10.1093/bioinformatics/btaa921}
+  (\bibinfo{year}{2021}).
+
+\bibitem{huang2021moltrans}
+\bibinfo{author}{Huang, K.}, \bibinfo{author}{Xiao, C.},
+  \bibinfo{author}{Glass, L.~M.} \& \bibinfo{author}{Sun, J.}
+\newblock \bibinfo{journal}{\bibinfo{title}{{MolTrans}: Molecular interaction
+  transformer for drug--target interaction prediction}}.
+\newblock {\emph{\JournalTitle{Bioinformatics}}} \textbf{\bibinfo{volume}{37}},
+  \bibinfo{pages}{830--836}, \doiprefix\url{10.1093/bioinformatics/btaa880}
+  (\bibinfo{year}{2021}).
+
+\bibitem{bai2023drugban}
+\bibinfo{author}{Bai, P.}, \bibinfo{author}{Miljkovic, F.},
+  \bibinfo{author}{John, B.} \& \bibinfo{author}{Lu, H.}
+\newblock \bibinfo{journal}{\bibinfo{title}{{DrugBAN}: a dual bilinear
+  attention network for drug--target interaction prediction}}.
+\newblock {\emph{\JournalTitle{Nature Machine Intelligence}}}
+  \textbf{\bibinfo{volume}{5}}, \bibinfo{pages}{126--136},
+  \doiprefix\url{10.1038/s42256-022-00605-1} (\bibinfo{year}{2023}).
+
+\bibitem{kitchen2004docking}
+\bibinfo{author}{Kitchen, D.~B.}, \bibinfo{author}{Decornez, H.},
+  \bibinfo{author}{Furr, J.~R.} \& \bibinfo{author}{Bajorath, J.}
+\newblock \bibinfo{journal}{\bibinfo{title}{Docking and scoring in virtual
+  screening for drug discovery: methods and applications}}.
+\newblock {\emph{\JournalTitle{Nature Reviews Drug Discovery}}}
+  \textbf{\bibinfo{volume}{3}}, \bibinfo{pages}{935--949},
+  \doiprefix\url{10.1038/nrd1549} (\bibinfo{year}{2004}).
+
+\bibitem{cherkasov2014qsar}
+\bibinfo{author}{Cherkasov, A.} \emph{et~al.}
+\newblock \bibinfo{journal}{\bibinfo{title}{{QSAR} modeling: where have you
+  been? where are you going to?}}
+\newblock {\emph{\JournalTitle{Journal of Medicinal Chemistry}}}
+  \textbf{\bibinfo{volume}{57}}, \bibinfo{pages}{4977--5010},
+  \doiprefix\url{10.1021/jm4004285} (\bibinfo{year}{2014}).
+
+\bibitem{lin2023evolutionary}
+\bibinfo{author}{Lin, Z.} \emph{et~al.}
+\newblock \bibinfo{journal}{\bibinfo{title}{Evolutionary-scale prediction of
+  atomic-level protein structure with a language model}}.
+\newblock {\emph{\JournalTitle{Science}}} \textbf{\bibinfo{volume}{379}},
+  \bibinfo{pages}{1123--1130}, \doiprefix\url{10.1126/science.ade2574}
+  (\bibinfo{year}{2023}).
+
+\bibitem{huang2025large}
+\bibinfo{author}{Huang, Z.} \emph{et~al.}
+\newblock \bibinfo{journal}{\bibinfo{title}{Large-scale chemical language
+  models for accurate and interpretable prediction of reactivity and
+  toxicity}}.
+\newblock {\emph{\JournalTitle{Process Safety and Environmental Protection}}}
+  \textbf{\bibinfo{volume}{204}}, \bibinfo{pages}{108113},
+  \doiprefix\url{10.1016/j.psep.2025.108113} (\bibinfo{year}{2025}).
+
+\bibitem{huang2025radical}
+\bibinfo{author}{Huang, Z.} \emph{et~al.}
+\newblock \bibinfo{journal}{\bibinfo{title}{{Radical-Net}: A chemistry-enhanced
+  {Transformer} for elementary radical reactions in pollutant chemistry}}.
+\newblock {\emph{\JournalTitle{Journal of Hazardous Materials}}}
+  \textbf{\bibinfo{volume}{501}}, \bibinfo{pages}{140631},
+  \doiprefix\url{10.1016/j.jhazmat.2025.140631} (\bibinfo{year}{2026}).
+
+\bibitem{huang2024ai}
+\bibinfo{author}{Huang, Z.} \emph{et~al.}
+\newblock \bibinfo{journal}{\bibinfo{title}{Ai-enhanced chemical paradigm: From
+  molecular graphs to accurate prediction and mechanism}}.
+\newblock {\emph{\JournalTitle{Journal of Hazardous Materials}}}
+  \textbf{\bibinfo{volume}{465}}, \bibinfo{pages}{133355},
+  \doiprefix\url{10.1016/j.jhazmat.2023.133355} (\bibinfo{year}{2024}).
+
+\bibitem{jain2019attention}
+\bibinfo{author}{Jain, S.} \& \bibinfo{author}{Wallace, B.~C.}
+\newblock \bibinfo{title}{Attention is not explanation}.
+\newblock In \emph{\bibinfo{booktitle}{Proceedings of the 2019 Conference of
+  the North American Chapter of the Association for Computational Linguistics:
+  Human Language Technologies}}, \bibinfo{pages}{3543--3556},
+  \doiprefix\url{10.18653/v1/N19-1357} (\bibinfo{year}{2019}).
+
+\bibitem{wen2017deep}
+\bibinfo{author}{Wen, M.} \emph{et~al.}
+\newblock \bibinfo{journal}{\bibinfo{title}{Deep-learning-based drug--target
+  interaction prediction}}.
+\newblock {\emph{\JournalTitle{Journal of proteome research}}}
+  \textbf{\bibinfo{volume}{16}}, \bibinfo{pages}{1401--1409},
+  \doiprefix\url{10.1021/acs.jproteome.6b00618} (\bibinfo{year}{2017}).
+
+\bibitem{ozturk2019widedta}
+\bibinfo{author}{{\"O}zt{\"u}rk, H.}, \bibinfo{author}{Ozkirimli, E.} \&
+  \bibinfo{author}{{\"O}zg{\"u}r, A.}
+\newblock \bibinfo{title}{{WideDTA}: prediction of drug-target binding
+  affinity} (\bibinfo{year}{2019}).
+\newblock \eprint{1902.04166}.
+
+\bibitem{chen2020transformercpi}
+\bibinfo{author}{Chen, L.} \emph{et~al.}
+\newblock \bibinfo{journal}{\bibinfo{title}{{TransformerCPI}: improving
+  compound--protein interaction prediction by sequence-based deep learning with
+  self-attention mechanism and label reversal experiments}}.
+\newblock {\emph{\JournalTitle{Bioinformatics}}} \textbf{\bibinfo{volume}{36}},
+  \bibinfo{pages}{4406--4414}, \doiprefix\url{10.1093/bioinformatics/btaa524}
+  (\bibinfo{year}{2020}).
+
+\bibitem{zhao2022attentiondta}
+\bibinfo{author}{Zhao, Q.}, \bibinfo{author}{Xiao, F.}, \bibinfo{author}{Yang,
+  M.}, \bibinfo{author}{Li, Y.} \& \bibinfo{author}{Wang, J.}
+\newblock \bibinfo{title}{{AttentionDTA}: prediction of drug--target binding
+  affinity using attention model}.
+\newblock In \emph{\bibinfo{booktitle}{2019 IEEE International Conference on
+  Bioinformatics and Biomedicine (BIBM)}}, \bibinfo{pages}{64--69},
+  \doiprefix\url{10.1109/BIBM47256.2019.8983125} (\bibinfo{publisher}{IEEE},
+  \bibinfo{year}{2019}).
+
+\bibitem{rives2021biological}
+\bibinfo{author}{Rives, A.} \emph{et~al.}
+\newblock \bibinfo{journal}{\bibinfo{title}{Biological structure and function
+  emerge from scaling unsupervised learning to 250 million protein sequences}}.
+\newblock {\emph{\JournalTitle{Proceedings of the National Academy of
+  Sciences}}} \textbf{\bibinfo{volume}{118}}, \bibinfo{pages}{e2016239118},
+  \doiprefix\url{10.1073/pnas.2016239118} (\bibinfo{year}{2021}).
+
+\bibitem{nguyen2022gefa}
+\bibinfo{author}{Nguyen, T.~M.}, \bibinfo{author}{Nguyen, T.},
+  \bibinfo{author}{Le, T.~M.} \& \bibinfo{author}{Tran, T.}
+\newblock \bibinfo{journal}{\bibinfo{title}{{GEFA}: early fusion approach in
+  drug--target affinity prediction}}.
+\newblock {\emph{\JournalTitle{IEEE/ACM Transactions on Computational Biology
+  and Bioinformatics}}} \textbf{\bibinfo{volume}{19}},
+  \bibinfo{pages}{718--728}, \doiprefix\url{10.1109/TCBB.2021.3094217}
+  (\bibinfo{year}{2022}).
+
+\bibitem{bal2023pgraphdta}
+\bibinfo{author}{Bal, R.}, \bibinfo{author}{Xiao, Y.} \& \bibinfo{author}{Wang,
+  W.}
+\newblock \bibinfo{title}{{PGraphDTA}: Improving drug--target interaction
+  prediction using protein language models and contact maps}
+  (\bibinfo{year}{2023}).
+\newblock \eprint{2310.04017}.
+
+\bibitem{li2025hcafdta}
+\bibinfo{author}{Li, J.} \& \bibinfo{author}{Yao, L.}
+\newblock \bibinfo{title}{{HCAF-DTA}: drug--target binding affinity prediction
+  with cross-attention fused hypergraph neural networks}
+  (\bibinfo{year}{2025}).
+\newblock \eprint{2504.02014}.
+
+\bibitem{voitsitskyi2023_3dprotdta}
+\bibinfo{author}{Voitsitskyi, T.} \emph{et~al.}
+\newblock \bibinfo{journal}{\bibinfo{title}{{3DProtDTA}: a deep learning model
+  for drug--target affinity prediction based on residue-level protein graphs}}.
+\newblock {\emph{\JournalTitle{RSC Advances}}} \textbf{\bibinfo{volume}{13}},
+  \bibinfo{pages}{10261--10272}, \doiprefix\url{10.1039/d3ra00281k}
+  (\bibinfo{year}{2023}).
+
+\bibitem{liu2024domainspecific}
+\bibinfo{author}{Liu, S.} \emph{et~al.}
+\newblock \bibinfo{journal}{\bibinfo{title}{Versatile framework for
+  drug--target interaction prediction by considering domain-specific
+  features}}.
+\newblock {\emph{\JournalTitle{Journal of Chemical Information and Modeling}}}
+  \textbf{\bibinfo{volume}{64}}, \bibinfo{pages}{5646--5656},
+  \doiprefix\url{10.1021/acs.jcim.4c00403} (\bibinfo{year}{2024}).
+
+\bibitem{kalemati2025inceptiondta}
+\bibinfo{author}{Kalemati, M.}, \bibinfo{author}{Zamani~Emani, M.} \&
+  \bibinfo{author}{Koohi, S.}
+\newblock \bibinfo{journal}{\bibinfo{title}{{InceptionDTA}: Predicting
+  drug--target binding affinity with biological context features and inception
+  networks}}.
+\newblock {\emph{\JournalTitle{Heliyon}}} \textbf{\bibinfo{volume}{11}},
+  \bibinfo{pages}{e42476}, \doiprefix\url{10.1016/j.heliyon.2025.e42476}
+  (\bibinfo{year}{2025}).
+
+\bibitem{jimenez2020drug}
+\bibinfo{author}{Jim{\'e}nez-Luna, J.}, \bibinfo{author}{Grisoni, F.} \&
+  \bibinfo{author}{Schneider, G.}
+\newblock \bibinfo{journal}{\bibinfo{title}{Drug discovery with explainable
+  artificial intelligence}}.
+\newblock {\emph{\JournalTitle{Nature Machine Intelligence}}}
+  \textbf{\bibinfo{volume}{2}}, \bibinfo{pages}{573--584},
+  \doiprefix\url{10.1038/s42256-020-00236-4} (\bibinfo{year}{2020}).
+
+\bibitem{li2020monn}
+\bibinfo{author}{Li, S.} \emph{et~al.}
+\newblock \bibinfo{journal}{\bibinfo{title}{{MONN}: a multi-objective neural
+  network for predicting compound--protein interactions and affinities}}.
+\newblock {\emph{\JournalTitle{Cell Systems}}} \textbf{\bibinfo{volume}{10}},
+  \bibinfo{pages}{308--322.e11}, \doiprefix\url{10.1016/j.cels.2020.03.002}
+  (\bibinfo{year}{2020}).
+
+\bibitem{huang2021therapeutics}
+\bibinfo{author}{Huang, K.} \emph{et~al.}
+\newblock \bibinfo{title}{Therapeutics data commons: Machine learning datasets
+  and tasks for drug discovery and development} (\bibinfo{year}{2021}).
+\newblock \eprint{2102.09548}.
+
+\bibitem{hu2020strategies}
+\bibinfo{author}{Hu, W.} \emph{et~al.}
+\newblock \bibinfo{title}{Strategies for pre-training graph neural networks}
+  (\bibinfo{year}{2020}).
+\newblock \eprint{1905.12265}.
+
+\bibitem{kyte1982simple}
+\bibinfo{author}{Kyte, J.} \& \bibinfo{author}{Doolittle, R.~F.}
+\newblock \bibinfo{journal}{\bibinfo{title}{A simple method for displaying the
+  hydropathic character of a protein}}.
+\newblock {\emph{\JournalTitle{Journal of Molecular Biology}}}
+  \textbf{\bibinfo{volume}{157}}, \bibinfo{pages}{105--132},
+  \doiprefix\url{10.1016/0022-2836(82)90515-0} (\bibinfo{year}{1982}).
+
+\bibitem{selvaraju2017grad}
+\bibinfo{author}{Selvaraju, R.~R.} \emph{et~al.}
+\newblock \bibinfo{title}{Grad-{CAM}: Visual explanations from deep networks
+  via gradient-based localization}.
+\newblock In \emph{\bibinfo{booktitle}{2017 IEEE International Conference on
+  Computer Vision (ICCV)}}, \bibinfo{pages}{618--626},
+  \doiprefix\url{10.1109/ICCV.2017.74} (\bibinfo{year}{2017}).
+
+\bibitem{gilson2016bindingdb}
+\bibinfo{author}{Gilson, M.~K.} \emph{et~al.}
+\newblock \bibinfo{journal}{\bibinfo{title}{Bindingdb in 2015: A public
+  database for medicinal chemistry, computational chemistry and systems
+  pharmacology}}.
+\newblock {\emph{\JournalTitle{Nucleic Acids Research}}}
+  \textbf{\bibinfo{volume}{44}}, \bibinfo{pages}{D1045--D1053},
+  \doiprefix\url{10.1093/nar/gkv1072} (\bibinfo{year}{2016}).
+
+\bibitem{fey2019fast}
+\bibinfo{author}{Fey, M.} \& \bibinfo{author}{Lenssen, J.~E.}
+\newblock \bibinfo{title}{Fast graph representation learning with {PyTorch
+  Geometric}} (\bibinfo{year}{2019}).
+\newblock \eprint{1903.02428}.
+
+\bibitem{rdkit}
+\bibinfo{author}{{RDKit Community}}.
+\newblock \bibinfo{title}{{RDKit}: Open-source cheminformatics}.
+\newblock \bibinfo{howpublished}{\url{https://www.rdkit.org/}}
+  (\bibinfo{year}{2023}).
+
+\bibitem{zhang2009targeting}
+\bibinfo{author}{Zhang, J.}, \bibinfo{author}{Yang, P.~L.} \&
+  \bibinfo{author}{Gray, N.~S.}
+\newblock \bibinfo{journal}{\bibinfo{title}{Targeting cancer with small
+  molecule kinase inhibitors}}.
+\newblock {\emph{\JournalTitle{Nature Reviews Cancer}}}
+  \textbf{\bibinfo{volume}{9}}, \bibinfo{pages}{28--39},
+  \doiprefix\url{10.1038/nrc2559} (\bibinfo{year}{2009}).
+
+\bibitem{salentin2015plip}
+\bibinfo{author}{Salentin, S.}, \bibinfo{author}{Schreiber, S.},
+  \bibinfo{author}{Haupt, V.~J.}, \bibinfo{author}{Adasme, M.~F.} \&
+  \bibinfo{author}{Schroeder, M.}
+\newblock \bibinfo{journal}{\bibinfo{title}{Plip: fully automated
+  protein--ligand interaction profiler}}.
+\newblock {\emph{\JournalTitle{Nucleic acids research}}}
+  \textbf{\bibinfo{volume}{43}}, \bibinfo{pages}{W443--W447},
+  \doiprefix\url{10.1093/nar/gkv315} (\bibinfo{year}{2015}).
+
+\bibitem{wu2022allostericbenchmark}
+\bibinfo{author}{Wu, N.}, \bibinfo{author}{Str{\"o}mich, L.} \&
+  \bibinfo{author}{Yaliraki, S.~N.}
+\newblock \bibinfo{journal}{\bibinfo{title}{Prediction of allosteric sites and
+  signaling: Insights from benchmarking datasets}}.
+\newblock {\emph{\JournalTitle{Patterns}}} \textbf{\bibinfo{volume}{3}},
+  \bibinfo{pages}{100408}, \doiprefix\url{10.1016/j.patter.2021.100408}
+  (\bibinfo{year}{2022}).
+
+\bibitem{gatlin2026allostericgrammar}
+\bibinfo{author}{Gatlin, W.} \emph{et~al.}
+\newblock \bibinfo{title}{Decoding allosteric grammar with explainable {AI}
+  integrating protein language models and energy landscape analysis: Neutral
+  frustration at allosteric binding sites encodes regulatory versatility in
+  protein kinases}, \doiprefix\url{10.64898/2026.03.21.713412}
+  (\bibinfo{year}{2026}).
+
+\bibitem{zhang2026crypticpockets}
+\bibinfo{author}{Zhang, S.} \& \bibinfo{author}{Bowman, G.~R.}
+\newblock \bibinfo{journal}{\bibinfo{title}{Decrypting cryptic pockets with
+  physics-based simulations and artificial intelligence}}.
+\newblock {\emph{\JournalTitle{Current Opinion in Structural Biology}}}
+  \textbf{\bibinfo{volume}{96}}, \bibinfo{pages}{103215},
+  \doiprefix\url{10.1016/j.sbi.2025.103215} (\bibinfo{year}{2026}).
+
+\bibitem{skrhak2024cryptobench}
+\bibinfo{author}{{\v{S}}krh{\'a}k, V.}, \bibinfo{author}{Novotn{\'y}, M.},
+  \bibinfo{author}{Feidakis, C.~P.}, \bibinfo{author}{Kriv{\'a}k, R.} \&
+  \bibinfo{author}{Hoksza, D.}
+\newblock \bibinfo{journal}{\bibinfo{title}{{CryptoBench}: cryptic
+  protein--ligand binding sites dataset and benchmark}}.
+\newblock {\emph{\JournalTitle{Bioinformatics}}} \textbf{\bibinfo{volume}{41}},
+  \bibinfo{pages}{btae745}, \doiprefix\url{10.1093/bioinformatics/btae745}
+  (\bibinfo{year}{2024}).
+
+\end{thebibliography}
