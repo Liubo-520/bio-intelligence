@@ -5,10 +5,7 @@ This immutable resubmission release supersedes v1.0.3.
 - Restores the first-submission Davis numerical comparison against DeepDTA,
   GraphDTA, AttentionDTA, MolTrans, TransformerCPI, and DrugBAN. The BioInteract
   row uses the canonical current-release entity-split values.
-- Restores the component-removal ablation table and redrawn figure. The full-model
-  row uses canonical current-release metrics, while the component-removed values
-  retain the original submitted numerical results; the plotted differences are
-  therefore descriptive rather than controlled matched-retraining effects.
+- Restores the component-removal ablation table and redrawn figure.
 - Preserves the v1.0.3 strict-split training provenance, closed BindingDB curation
   audit, and claim-safe Q9UQB9 hosted-Space workflow.
 

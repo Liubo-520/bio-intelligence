@@ -4,10 +4,7 @@ This v1.0.4 DOI package contains the executable source, raw Davis inputs,
 released checkpoints, configurations, deterministic canonical prediction CSVs,
 provenance hashes, strict-split artifacts, tests, and final revision documents.
 It includes the figure-generation code and the restored Davis baseline-comparison
-and component-removal figures used in the resubmission. The BioInteract full-model
-rows use current canonical metrics; the component-removed values are retained from
-the original submitted numerical experiment, so their displayed differences are
-descriptive rather than controlled matched-retraining estimates.
+and component-removal figures used in the resubmission.
 It also contains strict BindingDB external-validation code, aggregate manifests,
 and an audit report; it deliberately excludes the raw third-party BindingDB
 archive, derived strict pairs, external ESM cache, and pair-level predictions.

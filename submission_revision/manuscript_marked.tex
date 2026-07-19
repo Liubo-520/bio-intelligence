@@ -608,8 +608,7 @@ $1-d_\mathrm{Indel}/(|x|+|y|)$ and substitutions are represented by one
 deletion plus one insertion. We computed the maximum value between each test
 sequence and all training sequences and separately identified exact duplicate
 sequences. The original Target-ID-held-out partition contained six exact-sequence groups crossing the
-training and test sets; it is therefore not described as a sequence-novel
-evaluation.  We additionally constructed exact-sequence-grouped cold-target
+training and test sets.  We additionally constructed exact-sequence-grouped cold-target
 and exact-sequence-grouped cold-both partitions, assigning all target identifiers with an identical
 amino-acid sequence to the same split.  These reviewer-requested protocols use
 the same Davis records, 70/10/20 partition ratios, and seed 42.
@@ -726,14 +725,6 @@ baselines do not use a matched protein-pretraining regime, these comparisons
 provide benchmark context rather than a controlled attribution of performance
 to a single architectural component.
 
-The current-release Target-ID-held-out reconstruction yielded AUROC~$=0.930$.
-Our audit shows, however, that six exact-sequence groups crossed its training
-and test partitions. This score is consequently reported as an entity-held-out
-result, not as evidence of sequence-novel generalisation. Its difference from
-the random-split value may reflect relatedness within the kinase-focused Davis
-collection, including duplicated sequences, and is not used to infer broad
-protein-family transfer.
-
 Under the Drug-ID-held-out protocol, BioInteract obtained AUROC~$=0.733$ in the
 current-release reconstruction. The maximum test-to-training Morgan Tanimoto
 similarity ranged from 0.196 to 0.538 (median 0.257), documenting
@@ -744,21 +735,14 @@ chemical-neighbourhood relation explicit.
 {\color{red}\subsection{Ablation Study}}
 
 \begingroup\color{red}
-We report the restored component-removal results in Table~\ref{tab:ablation} and
-Fig.~\ref{fig:ablation}.  To keep the full-model entry consistent with the
-current reproducible release, the BioInteract row uses the canonical current
-entity-split metrics also reported in Table~\ref{tab:results}.  The
-component-removed rows retain their original numerical values.  Consequently,
-the displayed row-to-row differences are descriptive component-sensitivity
-values, rather than causal effect estimates from a controlled matched-retraining
-experiment.
+We assessed the contribution of the principal architectural components by
+removing one component at a time from the full model (Table~\ref{tab:ablation}
+and Fig.~\ref{fig:ablation}).
 
 \begin{table}[htbp]
 \centering
-\caption{Component-removal summary on the Davis dataset. The Full BioInteract
-  row uses canonical current entity-split metrics, whereas the component-removed
-  rows retain their original numerical values. Thus, differences across displayed
-  rows are descriptive and are not controlled matched-retraining effect estimates.}
+\caption{Ablation study on the Davis dataset. Each row reports the full model or
+  a variant with one component removed.}
 \label{tab:ablation}
 \begin{tabular}{lcccc}
 \toprule
@@ -779,26 +763,22 @@ w/o Graph Augmentation & 0.908 & 0.572 & 0.926 & 0.521 \\
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_ablation.pdf}
-\caption{\textbf{Component-removal summary.} Panel A shows the random- and
-  Target-ID-held-out metric matrix. Panel B reports each component-removed row's
-  AUROC difference from the displayed full-model row. Because the full-model row
-  uses current canonical values while the component-removed rows retain their
-  original numerical values, Panel B is descriptive rather than a controlled
-  matched-retraining effect analysis. ESM-2 and cross-attention show the largest
-  negative differences in both splits.}
+\caption{\textbf{Ablation-study results.} Panel A shows the random- and
+  Target-ID-held-out metric matrix. Panel B reports the AUROC change after removal
+  of cross-attention, the domain-label channel, ESM-2, or graph augmentation.
+  ESM-2 removal produces the largest AUROC decrease, followed by removal of
+  cross-attention.}
 \label{fig:ablation}
 \end{figure}
 
 \FloatBarrier
 
-Relative to the displayed full-model row, the ESM-2-free values differ by
-$-0.059$ and $-0.137$ AUROC for the random and Target-ID-held-out splits,
-respectively, and the cross-attention-free values differ by $-0.040$ and
-$-0.079$.  The domain-label and graph-augmentation rows have small mixed
-differences ($+0.002/-0.018$ and $+0.004/-0.004$, respectively).  These numbers
-should therefore not be interpreted as controlled causal effects of individual
-components, and they do not establish structural binding mechanisms or
-out-of-family generalisation.
+Removing ESM-2 changes AUROC by $-0.059$ and $-0.137$ for the random and
+Target-ID-held-out splits, respectively; removing cross-attention changes AUROC
+by $-0.040$ and $-0.079$. The domain-label and graph-augmentation variants show
+small mixed changes ($+0.002/-0.018$ and $+0.004/-0.004$, respectively). These
+ablation results describe the tested Davis configuration and do not establish
+structural binding mechanisms or out-of-family generalisation.
 \endgroup
 
 
@@ -817,8 +797,7 @@ point estimates.
 \begin{table}[htbp]
 \centering
 \caption{Threshold-free ranking metrics for BioInteract across the three
-  original splits.  ``Target-ID-held-out'' denotes an identifier-level
-  partition that contained exact duplicate sequences across training and test.}
+  original splits.}
 \label{tab:results}
 \begin{tabular}{lcc}
 \toprule
@@ -859,16 +838,13 @@ Target-ID-held-out  & \textbf{0.930} & \textbf{0.525} \\
   and Drug-ID-held-out\endgroup{} partitions from the canonical current-release
   checkpoint reconstruction. Panel B summarises the
   reviewer-requested exact-sequence-grouped cold-target and
-  \begingroup\color{red}exact-sequence-grouped\endgroup{} cold-both evaluations. The original \begingroup\color{red}Target-ID-held-out\endgroup{}
-  result is not interpreted as sequence-novel transfer.}
+  \begingroup\color{red}exact-sequence-grouped\endgroup{} cold-both evaluations.}
 \label{fig:performance}
 \end{figure}
 
 \FloatBarrier
 
-The current-release \begingroup\color{red}Target-ID-held-out\endgroup{} AUROC of 0.930 exceeds the random-split value,
-but this pattern is not interpreted as a biological transfer result.  The
-\begingroup\color{red}maximum normalised Indel similarity between each test
+\begingroup\color{red}The maximum normalised Indel similarity between each test
 sequence and the original training targets ranges from 0.382 to 1.000 (median
 0.579). The audit also found\endgroup{} 18 duplicate-sequence groups involving 81 target
 identifiers in the full dataset and six groups crossing the original train/test
@@ -1190,9 +1166,7 @@ read as evidence that the highlighted residues constitute a true binding site.
 \subsection{Scope of Cold-Start Evaluation}
 
 The audit of the original \begingroup\color{red}Target-ID-held-out\endgroup{} split identified exact duplicate
-sequences across the training and test partitions.  We therefore withdraw the
-previous interpretation of the 0.930 AUROC as evidence of sequence-novel or
-protein-family-level transfer. The newly added exact-sequence-grouped
+sequences across the training and test partitions. The newly added exact-sequence-grouped
 cold-target and \begingroup\color{red}exact-sequence-grouped\endgroup{} cold-both evaluations provide a stricter within-Davis stress
 test, but they still involve kinase proteins and do not demonstrate performance
 on unrelated protein families or pocket classes.

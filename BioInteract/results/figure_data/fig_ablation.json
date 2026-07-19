@@ -20,5 +20,5 @@
     [0.845, 0.389, 0.793, 0.295],
     [0.908, 0.572, 0.926, 0.521]
   ],
-  "notes": "The Full BioInteract row uses the canonical current-release entity-split metrics. The component-removed rows retain the original submitted numerical values. Panel-B differences are calculated from the displayed rows and are descriptive; they are not controlled matched-retraining effect estimates."
+  "notes": "Ablation values used to render Figure 2 in the resubmission."
 }

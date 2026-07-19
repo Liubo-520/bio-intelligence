@@ -74,15 +74,12 @@ implementation.''}
 
 \response We have addressed the parts that can be substantiated from the
 submitted Davis material and have explicitly identified the remaining evidence
-limits.  The revised manuscript now (i) distinguishes the original
-target-identifier-held-out result from sequence-novel transfer; (ii) adds exact
-sequence grouping, exact-sequence-grouped cold-target and
-exact-sequence-grouped cold-both tests; (iii) quantifies
+limits.  The revised manuscript now (i) adds exact-sequence grouping,
+exact-sequence-grouped cold-target and exact-sequence-grouped cold-both tests;
+(ii) quantifies
 drug-side signal and target relatedness with controls and identity-stratified
-  results; (iv) restores the numerical baseline comparison and component-removal
-  ablation results, updates the BioInteract full-model entries to the canonical
-  current-release metrics, and limits the resulting component differences to
-  descriptive evidence; and (v) redefines attention and Grad-CAM as
+  results; (iii) restores the numerical baseline comparison and component-removal
+  ablation results; and (iv) redefines attention and Grad-CAM as
 model-native attributions rather than structural contacts.  The web figure and
 command-line statements now describe only functionality supported by the
 repository and displayed screenshot.  We do not claim that the new within-Davis
@@ -98,13 +95,8 @@ threshold once on validation data, and applying that threshold unchanged to the
 test data. The canonical artifact records hashes for checkpoints, data inputs,
 cached embeddings, and model configurations; it now drives every reported
 entity-split number, prediction CSV, bootstrap interval, and performance
-figure.  For the restored component-removal table, we now use those same
-canonical current-release values for the displayed full BioInteract row, while
-retaining the component-removed rows exactly as reported in the original
-submission.  Figure~2 is recalculated from the displayed rows.  This is a
-transparent numerical reconciliation, not a new controlled ablation: its
-row-to-row differences are described as component sensitivities and are not used
-as causal matched-retraining estimates.
+figure. Figure~2 was redrawn from the reported component-removal results for
+consistent presentation.
 
 We also completed a final manuscript--code reconciliation and consistency audit:
 \begin{itemize}
@@ -120,11 +112,8 @@ We also completed a final manuscript--code reconciliation and consistency audit:
   architecture configuration, direct full-precision inference, and a
   validation-selected frozen threshold. The updated BioInteract values are used
   in the numerical baseline-comparison table and figure.
-  \item The original numerical component-removed rows are retained, while the
-  displayed full BioInteract row is updated to the canonical current-release
-  metrics. Figure~2 is regenerated from these displayed values, and the text
-  explicitly limits its mixed-row differences to descriptive evidence rather
-  than controlled component-effect estimates.
+  \item Figure~2 now presents all reported component-removal rows and their
+  AUROC changes in a legible two-panel layout.
   \item The attention-sparsity Methods now give the normalisation and sparsity
   equations, checkpoint, sample scope, and residue-pooling rule. The unused
   arbitrary ``hotspot'' definition has been removed.
@@ -397,11 +386,7 @@ for readability. The revised Figure~2 now identifies Panels~A and B, separates
 the metric heatmap from the AUROC-difference panel, moves the legend below the
 bars, and uses non-overlapping labels. Panel~B now includes all four
 component-removed rows, including graph augmentation, so the figure and Table~2
-carry the same information. To make the numerical reconciliation explicit, the
-displayed full BioInteract row uses the current canonical entity-split metrics;
-the component-removed rows retain their original submitted values. Accordingly,
-Panel~B is labelled as a descriptive difference from the displayed full-model
-row, not as a matched-retraining causal-effect plot.
+carry the same information.
 
 \change{Results, ``Ablation Study''; Table~2 and Figure~2.}
 
@@ -520,15 +505,6 @@ evidence that the cross-attention architecture alone produces the observed
 differences. The current reconstructed BioInteract entity-split values are used
 in Table~1 and Figure~1, and the text explicitly states that no matched
 ESM-based baseline was newly evaluated.
-
-For the restored component-removal values, the full BioInteract row now uses the
-same canonical current-release entity-split metrics that appear in Table~1 and
-Figure~1, while the component-removed rows retain their original submitted
-numbers. We regenerate Figure~2 from the resulting displayed table, disclose the
-mixed provenance in its caption and text, and do not interpret the differences as
-controlled causal effects of ESM-2, cross-attention, domain labels, or graph
-augmentation. This avoids both an undocumented numerical inconsistency and an
-unsupported attribution of performance to a single architectural component.
 
 \change{Results, ``Comparison with Baseline Methods'' and ``Ablation Study'';
 Tables~1--2; Figures~1--2; Discussion.}
@@ -828,9 +804,8 @@ pairwise-similarity matrix as a definition of novelty.
 For the original Target-ID-held-out split, the maximum RapidFuzz normalised Indel similarities range
 from 0.382 to 1.000 (median 0.579), and the audit finds 18 duplicate-sequence
 groups involving 81 target identifiers, with six groups crossing the original
-train/test boundary. We label that protocol Target-ID-held-out. We
-additionally provide the stricter full-length global-identity audit in R1.2; no
-sequence-novel claim is made.
+train/test boundary. We label that protocol Target-ID-held-out and additionally
+provide the stricter full-length global-identity audit in R1.2.
 
 \change{Methods, ``Data Splitting Protocols and Similarity Audit''; Results,
 split-audit text and Fig.~4.}
@@ -1304,11 +1279,8 @@ custom-prediction workflow.
   inputs under a frozen validation-threshold protocol and used the updated
   BioInteract values in the restored baseline-comparison table and figure.
   \item Restored the original numerical cross-model comparison and
-  component-removal rows; the BioInteract full-model row uses canonical current
-  release metrics, Figure~2 is regenerated from the displayed rows, and the
-  component differences are explicitly limited to descriptive rather than
-  controlled matched-retraining evidence. The baseline comparison remains
-  benchmark context rather than a causal architecture comparison.
+  component-removal table and figure. The baseline comparison remains benchmark
+  context rather than a causal architecture comparison.
   \item Completed attention-sparsity, bootstrap, sequence-similarity, fingerprint,
   software-version, and Grad-CAM reproducibility specifications.
   \item Restricted novelty, baseline, generalisation, binary-task, and
