@@ -1,6 +1,8 @@
 """Tests for the prespecified strict BindingDB external-validation protocol."""
 
 from pathlib import Path
+import os
+import subprocess
 import sys
 import zipfile
 
@@ -74,6 +76,23 @@ def test_curate_measurements_excludes_exact_davis_sequence_even_when_target_ids_
     assert audit["excluded_davis_target"] == 1
 
 
+def test_curate_measurements_accepts_documented_202607_single_chain_column_names():
+    frame = pd.DataFrame([record("CCO", "AAAA", "10")]).rename(
+        columns={
+            "Number of Protein Chains in Target": (
+                "Number of Protein Chains in Target (>1 implies a multichain complex)"
+            ),
+            "BindingDB Target Chain Sequence": "BindingDB Target Chain Sequence 1",
+        }
+    )
+
+    pairs, audit = curate_measurements(frame, set(), set())
+
+    assert len(pairs) == 1
+    assert pairs.loc[0, "label"] == 1
+    assert audit["retained_pairs"] == 1
+
+
 def test_load_davis_entity_sets_canonicalizes_ligands_and_normalizes_sequences(tmp_path):
     pd.DataFrame({"drug_id": ["D1"], "smiles": ["OCC"]}).to_csv(
         tmp_path / "drug_smiles.csv", index=False
@@ -119,6 +138,8 @@ def test_curate_archive_writes_pairs_fasta_and_complete_manifest(tmp_path):
 
     assert manifest["source_version"] == "fixture"
     assert manifest["counts"]["retained_pairs"] == 1
+    assert manifest["davis_identity_reference"] == "data/raw/davis"
+    assert str(davis_dir) not in str(manifest)
     assert (tmp_path / "out" / "pairs.csv").exists()
     assert (tmp_path / "out" / "targets.fasta").read_text(encoding="utf-8") == \
         ">BDBT_63c1dd951ffedf6f\nAAAA\n"
@@ -229,3 +250,31 @@ def test_evaluation_cli_pins_the_random_checkpoint_and_validation_threshold():
 
     assert args.checkpoint == "checkpoints/best_random.pt"
     assert args.threshold == pytest.approx(0.5959881544113159)
+
+
+def test_evaluation_manifest_paths_are_project_relative():
+    from src.cli.evaluate_bindingdb_external import _portable_project_path
+
+    assert _portable_project_path(PROJECT_ROOT / "results" / "example.json") == (
+        "results/example.json"
+    )
+
+
+def test_evaluation_cli_sets_cublas_workspace_before_loading_torch():
+    env = os.environ.copy()
+    env.pop("CUBLAS_WORKSPACE_CONFIG", None)
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import os; import src.cli.evaluate_bindingdb_external; "
+            "print(os.environ['CUBLAS_WORKSPACE_CONFIG'])",
+        ],
+        cwd=PROJECT_ROOT,
+        env=env,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.stdout.strip() == ":4096:8"

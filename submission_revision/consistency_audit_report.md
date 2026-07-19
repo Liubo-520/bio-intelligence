@@ -1,15 +1,18 @@
 # BioInteract final consistency audit
 
-Audit date: 2026-07-18
-Release: GitHub tag `v1.0.1`; Zenodo DOI
-[`10.5281/zenodo.21431147`](https://doi.org/10.5281/zenodo.21431147)
+Audit date: 2026-07-19
+Release candidate: GitHub tag `v1.0.2`; a new Zenodo version is to be minted
+after the verified release archive is uploaded. The preceding v1.0.1 record
+([`10.5281/zenodo.21431147`](https://doi.org/10.5281/zenodo.21431147)) remains
+immutable.
 
 ## Decision
 
-The revised submission is internally consistent with the released inputs,
-archived checkpoints, raw attribution artifact, and public code. No model was
-retrained, no data, labels, seed, or split was changed, and no structural or
-experimental validation was invented.
+The revised submission is internally consistent with the released Davis inputs,
+archived checkpoints, raw attribution artifact, strict BindingDB manifests, and
+public code. No Davis model was retrained and no Davis data, labels, seed, or
+split was changed. The externally measured BindingDB result is reported as a
+transfer limitation; no structural or experimental validation was invented.
 
 ## Corrected issues and evidence
 
@@ -22,6 +25,7 @@ experimental validation was invented.
 | GINE specification | Edge handling and epsilon status were under-specified. | The manuscript now states that 16-dimensional edge features are projected to 256 dimensions before `GINEConv`; epsilon is fixed at zero rather than learnable. | `BioInteract/src/models/drug_encoder.py`; checkpoint configuration. | Method description now matches executable architecture. |
 | Historical optimizer claims | A uniform AdamW/warmup/label-smoothing recipe was not recoverable for all checkpoints. | The text distinguishes Random/Drug-ID final-run log headers from the checkpoint-matched Target-ID log, for which optimizer, scheduler, warmup, and smoothing are not recoverable. | Checkpoint configs; archived runner logs; SI Table S3. | No unsupported uniform historical-training claim remains. |
 | Ablations | Submitted numeric ablation claims lacked matching ablated checkpoints and predictions. | Numerical ablation figure, table, and component-effect claims are withdrawn. | Response R1.5/R3.11; manuscript limitation. | No irreproducible ablation conclusion is retained. |
+| External BindingDB transfer | Davis-only evidence could not answer the reviewers' external-dataset request. | A strict $K_d$-only cohort excludes censored values, multi-chain targets, exact Davis ligand matches, exact Davis full-sequence matches, and threshold-conflicting replicates; the released `best_random` checkpoint and Davis threshold are frozen. | `BioInteract/results/external_validation/`; `revision/analysis/bindingdb_external_validation_report.md`; Table~S14. | 1,932 pairs (516 positive); AUROC 0.5597 [0.5313, 0.5885], AUPRC 0.3404 [0.3138, 0.3724]. The result documents limited transfer and does not support broad DTI transfer. |
 | Public interpretation scope | Domain-label and attention wording risked implying curated annotations or contacts. | Public code/docs state that Davis uses the unknown-domain representation and attention/Grad-CAM are not contacts, pockets, residue validation, or mechanisms. | `README.md`; `hf_space`; model/interpretation source. | No structural-contact or Pfam/InterPro annotation claim is made. |
 
 ## Canonical entity-split outputs
@@ -40,6 +44,9 @@ experimental validation was invented.
   recipe.
 - No ablated checkpoint, external assay, PDB/PLIP analysis, docking result,
   or experimental validation is added or implied.
+- The BindingDB result is an exact-entity external test, not a scaffold,
+  remote-homology, pocket, attention, or mechanism validation. Its weak frozen
+  recall is reported without recalibration or threshold tuning.
 - The title retains the authors' phrase “biological prior knowledge”; its
   definition is narrowed in the manuscript to frozen ESM-2 and residue
   physicochemical features, not curated domain annotation. A shorter title is a
@@ -48,9 +55,12 @@ experimental validation was invented.
 ## Verification record
 
 - `python -m pytest revision/analysis/test_entity_split_metrics.py -q`
+- `python -m pytest BioInteract/src/tests/test_bindingdb_external.py revision/analysis/test_bindingdb_submission_claims.py -q`
 - `python -m pytest BioInteract/src/tests/test_public_figure_provenance.py -q`
 - `python BioInteract/hf_space/test_public_copy.py`
-- Figure generation from archived artifacts and four successful PDF builds.
+- Figure generation from archived artifacts and four successful PDF builds,
+  with visual review of the new Methods, external-results, SI Table~S14, and
+  response-letter pages.
 - Source scans found no obsolete figure-renumbering language, no assertion that
   attention is a physical contact, and no uniform historical
   AdamW/warmup/label-smoothing claim.

@@ -1,0 +1,45 @@
+{
+  "checkpoint": {
+    "path": "checkpoints/best_random.pt",
+    "sha256": "a91f5e75e123af4c0a66ff9302842b0bcacdce2780abb9f7f5f4170b69f3e347"
+  },
+  "curation_manifest": {
+    "archive": {
+      "bytes": 18114757,
+      "filename": "BindingDB_BindingDB_Articles_202607_tsv.zip",
+      "sha256": "d2584d1519318d00ab5f46289da5ab3549affe732d598a5072f8777b6b3b5262",
+      "tsv_member": "BindingDB_BindingDB_Articles.tsv"
+    },
+    "counts": {
+      "eligible_measurements_before_replicate_reconciliation": 2158,
+      "excluded_censored_kd": 82988,
+      "excluded_conflicting_pair": 15,
+      "excluded_davis_ligand": 64,
+      "excluded_davis_target": 94,
+      "excluded_invalid_sequence": 139,
+      "excluded_invalid_smiles": 8,
+      "excluded_multichain": 8261,
+      "input_rows": 93712,
+      "retained_negative_pairs": 1416,
+      "retained_pairs": 1932,
+      "retained_positive_pairs": 516,
+      "retained_unique_drugs": 1195,
+      "retained_unique_targets": 396
+    },
+    "curated_at_utc": "2026-07-19T03:08:40.981801+00:00",
+    "davis_identity_reference": "data/raw/davis",
+    "output": {
+      "pairs_csv": "pairs.csv",
+      "targets_fasta": "targets.fasta"
+    },
+    "protocol": "strict_bindingdb_kd_only_double_novel_v1",
+    "source_url": "https://www.bindingdb.org/rwd/bind/downloads/BindingDB_BindingDB_Articles_202607_tsv.zip",
+    "source_version": "BindingDB_BindingDB_Articles_202607"
+  },
+  "prediction_artifact": {
+    "path": "data/external/bindingdb_articles_202607/predictions.csv",
+    "probability_sha256": "9e50dfadbdcb9974d6bc2dcefbdc4edbf4bd089b14598d76724da48fa40bba1c"
+  },
+  "protocol": "strict_bindingdb_kd_only_double_novel_v1",
+  "summary_path": "results/external_validation/bindingdb_external_summary.json"
+}

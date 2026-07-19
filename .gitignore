@@ -2,6 +2,9 @@
 .history/
 .vscode/
 .worktrees/
+BioInteract/data/external/
+BioInteract/results/external_validation/*.csv
+BioInteract/results/external_validation/*.pt
 __pycache__/
 *.py[cod]
 *.aux

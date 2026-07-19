@@ -21,11 +21,12 @@ BioInteract: Interpretable Drug--Target Interaction Prediction via Residue-Level
 \begin{document}
 \maketitle
 
-\noindent This document reports only values recoverable from the released Davis
-records, configuration files, saved result files, and source code included with
-this revision. ``Classifier score'' denotes the sigmoid output for the binary
-high-affinity class; it is not an experimental affinity. Model-native attention
-and Grad-CAM values are attribution scores, not contact assignments.
+\noindent This document reports values recoverable from the released Davis
+records, configuration files, saved result files, source code, and the fixed
+BindingDB external-validation manifest included with this revision. ``Classifier
+score'' denotes the sigmoid output for the binary high-affinity class; it is not
+an experimental affinity. Model-native attention and Grad-CAM values are
+attribution scores, not contact assignments.
 
 \section*{Model configuration and input features}
 
@@ -368,6 +369,49 @@ Heterocycle-N attribution & 0.000 \\
 Quantity & Value \\
 \midrule
 Total trainable parameters & 2,442,083 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\clearpage
+\section*{Strict external BindingDB evaluation}
+
+% Source identifier: BindingDB_BindingDB_Articles_202607
+Table~S14 records the frozen external evaluation requested by the reviewers.
+The official curated-articles snapshot was handled independently of Davis, then
+filtered under the pre-specified exact-$K_d$ and exact double-novel protocol.
+This is an external exact-entity test, not a claim of scaffold or remote-homology
+novelty, and no BindingDB label was used to retrain, calibrate, select the
+checkpoint, or select the threshold.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Strict BindingDB external-validation provenance, curation, and frozen
+result. The source archive was \texttt{BindingDB\_BindingDB\_Articles\_202607\_tsv.zip}
+(SHA-256 \texttt{d2584d1519318d00ab5f46289da5ab3549affe732d598a5072f8777b6b3b5262}).
+Only finite exact $K_d$ measurements in nM for valid single-chain proteins
+(maximum 1,200 residues) and valid ligand structures were considered. Exact
+canonical-isomeric-SMILES and full-normalised-sequence matches to every Davis
+ligand or target were excluded. Confidence intervals are pair-stratified
+bootstrap 95\% intervals from 600 replicates (seed 42).}
+\label{tab:bindingdb_external_si}
+\begin{tabular}{p{0.42\linewidth}p{0.49\linewidth}}
+\toprule
+Item & Value \\
+\midrule
+Source snapshot & \texttt{BindingDB\_BindingDB\_Articles\_202607} (official BindingDB curated articles TSV) \\
+Source rows / final pairs & 93,712 / 1,932 \\
+Final positives / negatives & 516 / 1,416 \\
+Unique ligands / targets & 1,195 / 396 \\
+Exclusions & 82,988 censored/non-exact $K_d$; 8,261 multi-chain; 139 invalid sequences; 8 invalid SMILES; 64 Davis-ligand matches; 94 Davis-sequence matches; 15 threshold-conflicting pairs \\
+Frozen model and threshold & \texttt{checkpoints/best\_random.pt}; 0.5959881544 (existing Davis random-validation threshold) \\
+Protein features & Newly extracted \texttt{fair-esm} 2.0.0 \texttt{esm2\_t30\_150M\_UR50D}; all 396 caches passed 640-dimensional and length checks \\
+AUROC (95\% CI) & 0.5597 [0.5313, 0.5885] \\
+AUPRC (95\% CI) & 0.3404 [0.3138, 0.3724] \\
+Frozen-threshold F1 / precision / recall & 0.0701 / 0.7308 / 0.0368 \\
+Two-run reproducibility & Identical per-pair probabilities; the complete SHA-256 is recorded in \texttt{bindingdb\_external\_manifest.json} \\
+Interpretation & Limited external transfer; the result does not support a broad DTI-transfer claim and is not used for structural or attribution interpretation. \\
 \bottomrule
 \end{tabular}
 \end{table}

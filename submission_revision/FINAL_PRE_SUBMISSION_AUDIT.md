@@ -1,8 +1,10 @@
 # Final pre-submission audit — BioInteract revision
 
-Date: 18 July 2026
-Release target: GitHub tag `v1.0.1` and Zenodo DOI
-[`10.5281/zenodo.21431147`](https://doi.org/10.5281/zenodo.21431147)
+Date: 19 July 2026
+Release target: GitHub tag `v1.0.2` and a new Zenodo version, to be minted from
+the verified archive. The existing v1.0.1 Zenodo record
+([`10.5281/zenodo.21431147`](https://doi.org/10.5281/zenodo.21431147)) is not
+altered.
 
 ## Decision
 
@@ -12,6 +14,13 @@ entity-split CSV/JSON scores were not reproducible from the released inputs and
 released checkpoints, so they have been retired rather than retained as a
 second, conflicting result set. Historical numerical ablations are withdrawn
 because matching ablated checkpoints and prediction files are unavailable.
+
+The strict external BindingDB evaluation contains 1,932 exact-double-novel
+pairs (516 high-affinity) and uses the unchanged `best_random` checkpoint and
+0.5959881544 Davis validation threshold. Its AUROC is 0.5597 [0.5313, 0.5885]
+and AUPRC is 0.3404 [0.3138, 0.3724]. This transparent result documents limited
+transfer; it is not presented as broad DTI, structural, or interpretability
+validation.
 
 | Protocol | AUROC | AUPRC | F1 | Test pairs (positive) |
 | --- | ---: | ---: | ---: | ---: |
@@ -43,6 +52,9 @@ CSVs, and bootstrap intervals are recorded in
 - The public web demonstration has a 512-residue Transformers input limit and
   uncalibrated classifier score. It is not numerically equivalent to the
   reported 1,200-residue cached-ESM evaluation pipeline.
+- The externally curated BindingDB records and ESM cache are excluded from the
+  release archive; only code, tests, aggregate manifests, and the audit report
+  are released, so raw-source access and curation remain reproducible.
 
 ## Title recommendation requiring author approval
 
@@ -64,7 +76,8 @@ authorial decision.
 - `supporting_information.tex`: input audit, computation environment, canonical
   metric table, confidence intervals, and reproducibility procedure.
 - `response_to_reviewers.tex`: editor DOI request, result reconciliation,
-  withdrawal of irreproducible ablations, and scope limits.
+  withdrawal of irreproducible ablations, external BindingDB response, and
+  scope limits.
 - `figures/fig2_performance.*`: original identifier-split checkpoint
   reconstruction distinguished from strict split stress tests.
 - `BioInteract/results/`: canonical public prediction CSVs and result JSON
@@ -73,4 +86,5 @@ authorial decision.
 ## Remaining production gate
 
 Compile all four TeX deliverables without unresolved references, render-check
-the PDFs, and verify the public GitHub release and published Zenodo record.
+the PDFs, build and verify the v1.0.2 archive, and verify the public GitHub
+release and published Zenodo record.

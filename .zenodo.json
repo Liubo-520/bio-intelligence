@@ -1,6 +1,6 @@
 {
   "title": "BioInteract: Interpretable Drug--Target Interaction Prediction via Residue-Level Cross-Attention with Biological Prior Knowledge",
-  "description": "Reproducibility release for the BioInteract Davis-benchmark binary high-affinity interaction classifier. The release includes source code, frozen configuration files, archived checkpoints, canonical full-precision entity-split predictions and metrics, strict split artifacts, figure-generation scripts, and a reproducibility manifest. The released model-native attributions are hypothesis-generating and are not structural-contact or binding-pocket evidence.",
+  "description": "Reproducibility release for the BioInteract Davis-benchmark binary high-affinity interaction classifier. The release includes source code, frozen configuration files, archived checkpoints, canonical full-precision entity-split predictions and metrics, strict split artifacts, figure-generation scripts, and reproducibility manifests. It adds the code, aggregate manifests, and audit for a prespecified strict BindingDB Kd-only exact-double-novel external evaluation performed with a frozen Davis checkpoint and threshold. That external result shows limited transfer and is not evidence for broad DTI generalisation, structural contacts, binding pockets, or mechanisms.",
   "creators": [
     {"name": "Wang, Shengnan"},
     {"name": "Zhang, Qi"},
@@ -18,6 +18,6 @@
     "reproducibility"
   ],
   "upload_type": "software",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "access_right": "open"
 }

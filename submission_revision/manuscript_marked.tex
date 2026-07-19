@@ -538,6 +538,33 @@ and 442 targets (protein kinases) forming 30{,}056 drug--target pairs.  Binding
 affinities ($K_d$) are binarised at \SI{30}{nM}, yielding approximately
 \SI{5}{\percent} positive interactions.
 
+\begingroup\color{red}
+\subsection{Pre-specified External BindingDB Evaluation}
+
+To test exact-entity transfer without changing the submitted Davis training
+protocol, we curated the official BindingDB curated-articles snapshot
+\texttt{BindingDB\_BindingDB\_Articles\_202607}\cite{gilson2016bindingdb}.
+We retained only finite, exact numerical $K_d$ measurements in nM for valid,
+single-chain proteins of at most 1{,}200 residues and RDKit-valid ligands.
+Inequality-qualified values and pairs with valid replicate $K_d$ measurements on
+opposite sides of the \SI{30}{nM} boundary were excluded. The positive label
+was $K_d<\SI{30}{nM}$, matching the Davis definition. Before replicate
+reconciliation, any external pair was excluded when its canonical isomeric
+SMILES occurred anywhere in Davis or when its full normalised amino-acid
+sequence occurred anywhere in Davis. The resulting cohort is therefore
+double-novel by exact ligand and target-sequence identity, although it is not a
+claim of scaffold or remote-homology novelty.
+
+The released \texttt{best\_random} checkpoint was evaluated without retraining,
+fine-tuning, calibration, or threshold selection on BindingDB. We used the
+existing random-validation threshold (0.5959881544), the same ESM-2 model
+(\texttt{esm2\_t30\_150M\_UR50D}; 640 dimensions), and only newly extracted
+external protein embeddings that passed dimension and sequence-length checks.
+AUROC and AUPRC confidence intervals use 600 pair-stratified bootstrap
+replicates with seed 42. Curation and frozen-inference provenance, including
+source and prediction hashes, are reported in Table~S14.
+\endgroup
+
 \subsection{Data Splitting Protocols and Similarity Audit}
 
 \begingroup\color{red}
@@ -889,6 +916,43 @@ current-release reconstruction. The fingerprint audit is included to clarify tha
 unseen compound identifiers, not an externally validated scaffold-hopping or
 out-of-distribution guarantee.
 
+\begingroup\color{red}
+\subsection{Strict External BindingDB Evaluation}
+
+We next performed the pre-specified, frozen external evaluation on the curated
+BindingDB cohort. After all measurement-quality, exact-identity novelty, and
+replicate-consistency filters, it contains 1{,}932 pairs from 1{,}195 ligands
+and 396 targets: 516 high-affinity and 1{,}416 low-affinity pairs
+(Table~\ref{tab:bindingdb_external}). The model was neither retrained nor
+recalibrated, and no BindingDB label was used to choose the checkpoint or
+threshold.
+
+The frozen checkpoint achieved AUROC $=0.560$ (95\% CI 0.531--0.589) and
+AUPRC $=0.340$ (95\% CI 0.314--0.372). At the frozen Davis threshold, F1 was
+0.070, precision was 0.731, and recall was 0.037. Thus, although the exact
+double-novel cohort is a valid external test, it does not support a broad DTI-transfer claim.
+Instead, it shows limited transfer from this Davis-trained classifier to the
+broader BindingDB cohort. This external result does not alter the within-Davis
+checkpoint reconstructions and is not used to interpret attention, residue
+attribution, binding pockets, or mechanisms.
+
+\begin{table}[htbp]
+\centering
+\caption{Frozen strict external evaluation on BindingDB\cite{gilson2016bindingdb}.
+The source uses exact $K_d$ measurements only; ligand and full protein-sequence
+overlap with all Davis records were excluded. AUROC and AUPRC intervals are
+600-replicate pair-stratified bootstrap 95\% confidence intervals.}
+\label{tab:bindingdb_external}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Cohort} & \textbf{Pairs / positives} & \textbf{AUROC} & \textbf{AUPRC} & \textbf{F1} \\
+\midrule
+BindingDB, strict double-novel & 1{,}932 / 516 & 0.560 [0.531, 0.589] & 0.340 [0.314, 0.372] & 0.070 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\endgroup
+
 \subsection{Training Dynamics}
 
 \begingroup\color{red}Fig.~\ref{fig:training} reports a single
@@ -1146,12 +1210,14 @@ analysis of mutation effects or drug resistance in this study.
 \begingroup\color{red}
 \subsection{Future Directions}
 
-The Davis results motivate, but do not establish, several future directions.
-Future evaluation on chemically broader data and non-kinase targets is required
-before making a protein-family generalisation claim. Direct comparison with
-independent experimental evidence is also needed before attributions can be
-assigned a structural meaning. The present kinase-only data do not support a
-robustness claim beyond the analysed setting.
+The strict BindingDB evaluation directly indicates limited transfer beyond the
+Davis benchmark; it therefore cannot support a protein-family-agnostic,
+broad-pocket, or chemical-space generalisation claim. Evaluation after
+retraining and validation on a wider, pre-specified multi-family protocol is
+required to establish whether the limitation arises from the Davis training
+distribution, task definition, or model. Direct comparison with independent
+experimental evidence is also needed before attributions can be assigned a
+structural meaning.
 
 \begingroup\color{red}
 No overlap analysis between the Davis cases and PDBBind or LP-PDBBind, and no
@@ -1197,6 +1263,8 @@ We also distinguish \begingroup\color{red}Target-ID-held-out\endgroup{} performa
 from exact-sequence-grouped cold-start evaluation after detecting duplicate
 sequences in the original target partition.  Broader datasets and direct
 structural validation remain necessary for generalisation and mechanistic claims.
+\begingroup\color{red} In particular, the strict external BindingDB test shows limited transfer of the
+frozen Davis checkpoint, rather than establishing broad DTI transfer.\endgroup
 
 BioInteract is available as a publicly accessible interactive web interface at
 \url{https://huggingface.co/spaces/AI4deeperScience/BioInteract} for the
@@ -1252,7 +1320,8 @@ The Supporting Information contains: model hyperparameters and feature details
 statistics (Tables~S5--S7); baseline scope (Table~S8); atom features (Table~S9);
 the Davis ABL1 nominal-variant input audit (Table~S10); non-mutant EGFR and BRAF
 case summaries (Tables~S11--S12); and complete model parameter counts
-(Table~S13).
+(Table~S13); and strict BindingDB external-validation provenance and results
+(Table~S14).
 \endgroup
 This material is available free of charge.
 
@@ -1262,10 +1331,16 @@ This material is available free of charge.
 
 All data used in this study are publicly available. The Davis kinase inhibitor
 dataset used for model training and evaluation is available from the original
-publication.\cite{davis2011comprehensive} The immutable release containing the
+publication.\cite{davis2011comprehensive}
+\begingroup\color{red}The external evaluation uses the official BindingDB
+curated-articles TSV snapshot \texttt{BindingDB\_BindingDB\_Articles\_202607},
+obtained from the BindingDB download service;\cite{gilson2016bindingdb} the raw
+archive remains available from its source, and the release provides the
+deterministic curation and frozen evaluation scripts plus manifest hashes.\endgroup{}
+The immutable release containing the
 released checkpoints, canonical prediction CSVs, provenance hashes, strict-split
 artifacts, and reproduction scripts is archived at Zenodo,
-\url{https://doi.org/10.5281/zenodo.21431147}. The BioInteract source repository
+\url{https://doi.org/10.5281/zenodo.21436351}. The BioInteract source repository
 is hosted on \href{https://github.com/Liubo-520/bio-intelligence}{GitHub}. An interactive web
 server for the custom-prediction workflow is available through the
 \href{https://huggingface.co/spaces/AI4deeperScience/BioInteract}{BioInteract Space}; the README
@@ -1277,7 +1352,7 @@ documents the command-line attribution workflow.
 The BioInteract source code, pretrained model weights, configuration files,
 canonical metric-reconstruction scripts, and figure-generation scripts are
 publicly available through \href{https://github.com/Liubo-520/bio-intelligence}{GitHub} and
-as the immutable Zenodo release, \url{https://doi.org/10.5281/zenodo.21431147}.
+as the immutable Zenodo release, \url{https://doi.org/10.5281/zenodo.21436351}.
 The interactive web
 application for the custom-prediction workflow is available through the
 \href{https://huggingface.co/spaces/AI4deeperScience/BioInteract}{BioInteract Space}.

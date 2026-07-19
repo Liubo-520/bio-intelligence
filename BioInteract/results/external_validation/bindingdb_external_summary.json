@@ -1,0 +1,34 @@
+{
+  "all_esm_valid": true,
+  "checkpoint": "checkpoints/best_random.pt",
+  "has_both_classes": true,
+  "manifest_complete": true,
+  "metrics": {
+    "AUPRC": 0.34042591899153285,
+    "AUPRC_95CI": [
+      0.3138175670880262,
+      0.37242651533360693
+    ],
+    "AUROC": 0.5596943021066001,
+    "AUROC_95CI": [
+      0.5313149074256559,
+      0.5885344471269652
+    ],
+    "F1": 0.07011070110701106,
+    "Precision": 0.7307692307692307,
+    "Recall": 0.03682170542635659,
+    "bootstrap_replicates": 600,
+    "bootstrap_seed": 42,
+    "threshold": 0.5959881544113159
+  },
+  "negative_pairs": 1416,
+  "positive_pairs": 516,
+  "prediction_probability_sha256": "9e50dfadbdcb9974d6bc2dcefbdc4edbf4bd089b14598d76724da48fa40bba1c",
+  "primary_gate_passed": true,
+  "protocol": "strict_bindingdb_kd_only_double_novel_v1",
+  "rerun_identical": true,
+  "threshold": 0.5959881544113159,
+  "total_pairs": 1932,
+  "unique_drugs": 1195,
+  "unique_targets": 396
+}

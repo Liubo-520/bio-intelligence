@@ -1,4 +1,4 @@
-"""Build the portable BioInteract v1.0.1 Zenodo archive.
+"""Build the portable BioInteract v1.0.2 Zenodo archive.
 
 The archive deliberately includes the released source, configurations,
 checkpoints, Davis inputs/ESM cache, canonical metrics, strict-split artifacts,
@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARCHIVE_PREFIX = "biointeract-v1.0.1"
+ARCHIVE_PREFIX = "biointeract-v1.0.2"
 
 FILES = (
     "LICENSE",
@@ -31,6 +31,10 @@ FILES = (
     "BioInteract/hf_space/test_public_copy.py",
     "BioInteract/hf_space/configs/default.yaml",
     "BioInteract/hf_space/checkpoints/best.pt",
+    "BioInteract/src/analysis/bindingdb_external.py",
+    "BioInteract/src/cli/curate_bindingdb_external.py",
+    "BioInteract/src/cli/evaluate_bindingdb_external.py",
+    "BioInteract/src/tests/test_bindingdb_external.py",
     "revision/recompute_entity_split_metrics.py",
     "revision/build_release_archive.py",
     "revision/promote_canonical_entity_metrics.py",
@@ -57,6 +61,8 @@ FILES = (
     "revision/analysis/abl1_variant_audit.md",
     "revision/analysis/abl1_variant_audit.py",
     "revision/analysis/test_abl1_variant_audit.py",
+    "revision/analysis/bindingdb_external_validation_report.md",
+    "revision/analysis/test_bindingdb_submission_claims.py",
     "BioInteract/src/tests/test_public_figure_provenance.py",
     "submission_revision/FINAL_PRE_SUBMISSION_AUDIT.md",
     "submission_revision/CODE_RECONCILIATION_REPORT.md",
@@ -77,6 +83,8 @@ FILES = (
     "submission_revision/jabbrv-ltwa-all.ldf",
     "submission_revision/jabbrv-ltwa-en.ldf",
     "submission_revision/naturemag-doi.bst",
+    "docs/superpowers/specs/2026-07-19-bindingdb-external-validation-design.md",
+    "docs/superpowers/plans/2026-07-19-bindingdb-external-validation.md",
 )
 
 TREES = (
@@ -85,7 +93,6 @@ TREES = (
     "BioInteract/data/raw",
     "BioInteract/data/esm2_embeddings",
     "BioInteract/checkpoints",
-    "BioInteract/logs",
     "BioInteract/hf_space/src",
     "submission_revision/figures",
 )
@@ -106,6 +113,8 @@ SELECTED_RESULTS = (
     "BioInteract/results/figure_data/predictions_cold_target.csv",
     "BioInteract/results/figure_data/predictions_cold_drug.csv",
     "BioInteract/results/figure_data/training_curves.json",
+    "BioInteract/results/external_validation/bindingdb_external_manifest.json",
+    "BioInteract/results/external_validation/bindingdb_external_summary.json",
 )
 
 EXCLUDED_PARTS = {"__pycache__", ".pytest_cache", ".git", ".env"}
@@ -162,8 +171,8 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=Path,
-        default=ROOT / "tmp" / "zenodo_release" / "biointeract-v1.0.1.zip",
-        help="Output ZIP path (default: tmp/zenodo_release/biointeract-v1.0.1.zip).",
+        default=ROOT / "tmp" / "zenodo_release" / "biointeract-v1.0.2.zip",
+        help="Output ZIP path (default: tmp/zenodo_release/biointeract-v1.0.2.zip).",
     )
     parser.add_argument(
         "--omit-esm-cache",

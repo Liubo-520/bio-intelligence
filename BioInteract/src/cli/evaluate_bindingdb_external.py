@@ -28,6 +28,14 @@ from src.utils.paths import resolve_project_path
 FROZEN_CHECKPOINT = "checkpoints/best_random.pt"
 
 
+def _portable_project_path(path: Path) -> str:
+    """Represent an artifact path relative to the released BioInteract root."""
+    try:
+        return path.resolve().relative_to(PROJECT_ROOT.resolve()).as_posix()
+    except ValueError as exc:
+        raise ValueError(f"artifact is outside the BioInteract project: {path}") from exc
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the fixed external-blind-evaluation command-line contract."""
     parser = argparse.ArgumentParser(
@@ -147,10 +155,10 @@ def main(argv: list[str] | None = None) -> dict[str, object]:
             "sha256": hashlib.sha256(checkpoint.read_bytes()).hexdigest(),
         },
         "prediction_artifact": {
-            "path": str(predictions_path),
+            "path": _portable_project_path(predictions_path),
             "probability_sha256": probability_hash,
         },
-        "summary_path": str(summary_path),
+        "summary_path": _portable_project_path(summary_path),
     }
     _write_json(summary_path, summary)
     _write_json(manifest_path, result_manifest)

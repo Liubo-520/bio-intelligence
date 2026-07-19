@@ -12,10 +12,15 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import math
+import os
 import re
 from pathlib import Path
 from typing import Iterable
 import zipfile
+
+# CUDA >= 10.2 requires this process-wide setting before importing torch when
+# deterministic cuBLAS matrix multiplication is requested below.
+os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
 
 import numpy as np
 import pandas as pd
@@ -93,10 +98,49 @@ def _stable_identifier(prefix: str, value: str) -> str:
     return f"{prefix}_{digest}"
 
 
-def _require_columns(frame: pd.DataFrame) -> None:
-    missing = sorted(set(REQUIRED_BINDINGDB_COLUMNS) - set(frame.columns))
-    if missing:
-        raise ValueError(f"BindingDB frame is missing required columns: {missing}")
+def _canonical_bindingdb_columns(frame: pd.DataFrame) -> pd.DataFrame:
+    """Normalize documented legacy and 2026-07 BindingDB headers for one TSV chunk."""
+    available = set(frame.columns)
+    column_map: dict[str, str] = {}
+    for canonical in (
+        "BindingDB Reactant_set_id",
+        "Ligand SMILES",
+        "Kd (nM)",
+    ):
+        if canonical not in available:
+            raise ValueError(f"BindingDB frame is missing required column: {canonical}")
+        column_map[canonical] = canonical
+
+    chain_count = "Number of Protein Chains in Target"
+    if chain_count not in available:
+        candidates = sorted(
+            column for column in available
+            if column.startswith("Number of Protein Chains in Target")
+        )
+        if not candidates:
+            raise ValueError(f"BindingDB frame is missing required column: {chain_count}")
+        column_map[chain_count] = candidates[0]
+    else:
+        column_map[chain_count] = chain_count
+
+    sequence = "BindingDB Target Chain Sequence"
+    if sequence not in available:
+        candidates = sorted(
+            column for column in available
+            if column == "BindingDB Target Chain Sequence 1"
+        )
+        if not candidates:
+            raise ValueError(f"BindingDB frame is missing required column: {sequence}")
+        column_map[sequence] = candidates[0]
+    else:
+        column_map[sequence] = sequence
+
+    rename_map = {
+        source: canonical
+        for canonical, source in column_map.items()
+        if source != canonical
+    }
+    return frame.rename(columns=rename_map)
 
 
 def curate_measurements(
@@ -124,7 +168,7 @@ def _filter_eligible_measurements(
     davis_sequences: set[str],
 ) -> tuple[pd.DataFrame, Counter[str]]:
     """Filter one BindingDB frame without reconciling cross-chunk replicates."""
-    _require_columns(frame)
+    frame = _canonical_bindingdb_columns(frame)
     audit: Counter[str] = Counter(input_rows=int(len(frame)))
     eligible: list[dict[str, object]] = []
 
@@ -342,7 +386,10 @@ def curate_archive(
             "tsv_member": tsv_members[0],
         },
         "counts": dict(audit),
-        "davis_identity_reference": str(Path(davis_dir)),
+        # The released protocol always excludes identities against this Davis
+        # collection. Keep the manifest portable rather than recording a local
+        # workstation path passed by a caller or test fixture.
+        "davis_identity_reference": "data/raw/davis",
         "output": {
             "pairs_csv": pairs_path.name,
             "targets_fasta": targets_path.name,

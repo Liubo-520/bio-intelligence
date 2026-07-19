@@ -239,8 +239,8 @@ Run: `git add BioInteract/src/analysis/bindingdb_external.py BioInteract/src/cli
 ### Task 5: Run the prespecified external experiment and enforce gates
 
 **Files:**
-- Create (untracked): `BioInteract/data/external/BindingDB_All_202607_tsv.zip`
-- Create (untracked): `BioInteract/data/external/bindingdb_202607/`
+- Create (untracked): `BioInteract/data/external/BindingDB_BindingDB_Articles_202607_tsv.zip`
+- Create (untracked): `BioInteract/data/external/bindingdb_articles_202607/`
 - Create: `BioInteract/results/external_validation/bindingdb_external_manifest.json`
 - Create: `BioInteract/results/external_validation/bindingdb_external_summary.json`
 - Create: `revision/analysis/bindingdb_external_validation_report.md`
@@ -249,27 +249,27 @@ Run: `git add BioInteract/src/analysis/bindingdb_external.py BioInteract/src/cli
 - Consumes: fixed archive, curation/evaluation CLIs, ESM extractor, frozen checkpoint.
 - Produces: one passing aggregate result or one transparent feasibility report.
 
-- [ ] **Step 1: Download and fingerprint the dated BindingDB snapshot**
+- [x] **Step 1: Download and fingerprint the dated BindingDB snapshot**
 
-Run: `Invoke-WebRequest -Uri 'https://www.bindingdb.org/rwd/bind/downloads/BindingDB_All_202607_tsv.zip' -OutFile 'BioInteract/data/external/BindingDB_All_202607_tsv.zip'`
+Run: `Invoke-WebRequest -Uri 'https://www.bindingdb.org/rwd/bind/downloads/BindingDB_BindingDB_Articles_202607_tsv.zip' -OutFile 'BioInteract/data/external/BindingDB_BindingDB_Articles_202607_tsv.zip'`
 
 Expected: nonempty ZIP; record the exact SHA-256 and file size through the curation manifest.
 
-- [ ] **Step 2: Curate before generating any external ESM embeddings**
+- [x] **Step 2: Curate before generating any external ESM embeddings**
 
-Run: `Set-Location BioInteract; python -m src.cli.curate_bindingdb_external --archive data/external/BindingDB_All_202607_tsv.zip --out-dir data/external/bindingdb_202607 --source-url https://www.bindingdb.org/rwd/bind/downloads/BindingDB_All_202607_tsv.zip --source-version BindingDB_All_202607`
+Run: `Set-Location BioInteract; python -m src.cli.curate_bindingdb_external --archive data/external/BindingDB_BindingDB_Articles_202607_tsv.zip --out-dir data/external/bindingdb_articles_202607 --source-url https://www.bindingdb.org/rwd/bind/downloads/BindingDB_BindingDB_Articles_202607_tsv.zip --source-version BindingDB_BindingDB_Articles_202607`
 
 Expected: curation JSON reports every exclusion class and the final strict pair/positive/negative counts.
 
-- [ ] **Step 3: Stop or extract ESM according to the gate**
+- [x] **Step 3: Stop or extract ESM according to the gate**
 
 If either class has fewer than 100 pairs, write the feasibility report and skip all remaining experiment/revision steps. Otherwise run:
 
-`Set-Location BioInteract; python -m src.tools.extract_esm2 --fasta data/external/bindingdb_202607/targets.fasta --output_dir data/external/bindingdb_202607/esm2_t30_150M --model esm2_t30_150M_UR50D --max_length 1200 --device auto --skip_existing`
+`Set-Location BioInteract; python -m src.tools.extract_esm2 --fasta data/external/bindingdb_articles_202607/targets.fasta --output_dir data/external/bindingdb_articles_202607/esm2_t30_150M --model esm2_t30_150M_UR50D --max_length 1200 --device cuda --skip_existing`
 
 Expected: one 640-dimensional tensor for every curated target.
 
-- [ ] **Step 4: Evaluate twice and compare complete artifacts**
+- [x] **Step 4: Evaluate twice and compare complete artifacts**
 
 Run twice with the same paths, using `--device auto`; compare the summary JSON and the SHA-256 of probability columns. Set `rerun_identical` only when both are identical.
 

@@ -148,9 +148,10 @@ either from Methods or a dedicated Code Availability section.''}
 \response We added a dedicated Code Availability section with direct links to
 the public source repository, \url{https://github.com/Liubo-520/bio-intelligence},
 and the immutable Zenodo software archive,
-\url{https://doi.org/10.5281/zenodo.21431147}. The archive contains the released
+\url{https://doi.org/10.5281/zenodo.21436351}. The archive contains the released
 code, pretrained weights, configuration files, canonical prediction CSVs,
-provenance hashes, figure-generation scripts, and reproduction instructions;
+provenance hashes, figure-generation scripts, strict BindingDB aggregate
+manifests and audit, and reproduction instructions;
 the Hugging Face Space provides the custom-prediction interface described in
 the revised manuscript.
 
@@ -526,15 +527,29 @@ recommend additional evaluation on larger and more diverse datasets, such as
 BindingDB, which contains a broader range of proteins and drug--target
 interactions.}
 
-\response We agree.  We retained Davis because it is the submitted controlled
-benchmark, but added strict within-Davis diagnostics and removed any
-protein-family-agnostic or broad-pocket generalisation claim.  The revision
-does not present those diagnostics as a substitute for BindingDB, KIBA, or other
-external datasets.  Broader, consistently preprocessed datasets are now an
-explicit requirement for future validation.
+\response We agree and added a pre-specified frozen external evaluation using
+the official BindingDB curated-articles snapshot
+\texttt{BindingDB\_BindingDB\_Articles\_202607}. We retained only exact,
+finite $K_d$ measurements, used the same $K_d<30$~nM label definition,
+excluded invalid or multi-chain records and threshold-conflicting replicate
+pairs, and then excluded every ligand whose canonical isomeric SMILES or target
+whose full normalised sequence occurred anywhere in Davis. The final strict
+double-novel cohort contains 1{,}932 pairs (516 positive and 1{,}416 negative)
+from 1{,}195 ligands and 396 targets.
 
-\change{Abstract; Methods, split audit; Results, strict tests and controls;
-Discussion, ``Scope of Cold-Start Evaluation'' and ``Future Directions''.}
+The released \texttt{best\_random} checkpoint was evaluated without retraining,
+fine-tuning, recalibration, checkpoint selection, or threshold tuning on
+BindingDB. At the frozen Davis random-validation threshold, it obtained AUROC
+$=0.560$ (95\% CI 0.531--0.589) and AUPRC $=0.340$ (95\% CI 0.314--0.372);
+F1, precision, and recall were 0.070, 0.731, and 0.037. The result does not support a broad DTI-transfer claim.
+Rather, it establishes the limited transfer of the frozen Davis-trained
+classifier to this broader exact-entity cohort. It leaves the within-Davis
+checkpoint reconstructions unchanged and is not used as evidence for the
+attention, attribution, structural, or mechanistic analyses.
+
+\change{Methods, ``Pre-specified External BindingDB Evaluation''; Results,
+``Strict External BindingDB Evaluation'' and Table~2; Supporting Information,
+Table~S14; Discussion and Conclusion.}
 
 \subsection*{R2.4. Baseline selection and recency}
 
@@ -612,13 +627,15 @@ the model has been validated on larger and more diverse datasets. Based on the
 current results, it is difficult to determine whether the proposed model truly
 provides reliable interpretability or mechanistic insight.}
 
-\response We agree that the cases are illustrative rather than validation.
-All case-study language now describes observed model behaviour or a
-failure-mode example, and the Conclusion does not use them to establish
-a mechanistic conclusion. Their evidential boundary is stated alongside the need
-for broader datasets and structural validation.
+\response We agree that the cases are illustrative rather than validation. The
+new BindingDB test supplies a strict external performance check, but its limited
+transfer result is not evidence for case-level interpretability or mechanism.
+All case-study language therefore describes observed model behaviour or a
+failure-mode example, and the Conclusion does not use the cases to establish a
+mechanistic conclusion. Structural validation remains necessary.
 
-\change{Results, all interpretability case studies; Discussion; Conclusion.}
+\change{Results, ``Strict External BindingDB Evaluation'' and all interpretability
+case studies; Discussion; Conclusion.}
 
 \subsection*{Reviewer 2 overall assessment}
 
@@ -627,13 +644,13 @@ would benefit from clearer novelty claims, fairer baseline comparisons,
 evaluation on larger-scale datasets, and more rigorous validation of the
 interpretability results.}
 
-\response We agree with these priorities. The revision narrows the novelty claim,
-labels baseline comparison limitations, treats Davis-only analysis as a
-within-benchmark study, and removes structural or mechanistic interpretation
-claims that are not independently validated.
+\response We agree with these priorities. The revision adds a strict external
+BindingDB evaluation, reports its limited transfer transparently, narrows the
+novelty claim, labels baseline comparison limitations, and removes structural or
+mechanistic interpretation claims that are not independently validated.
 
-\change{Related Work; Results, baseline comparison and split audit; Discussion;
-Conclusion.}
+\change{Related Work; Methods, external evaluation; Results, baseline comparison,
+split audit, and external test; Discussion; Conclusion.}
 
 \section*{Response to Reviewer 3}
 
@@ -726,8 +743,17 @@ literature and to better assess the ability of their model.}
 binding-pocket, or chemical-space generalisation. Davis was retained because it
 is the original submitted benchmark used for the reported baseline comparison;
 it was not selected as a demonstration of protein-family-agnostic performance.
-All such language has been removed. We add strict within-Davis tests and controls
-while making clear that they are not external validation.
+All such language has been removed. We now add a pre-specified frozen BindingDB
+external evaluation rather than treating the within-Davis controls as external
+validation. The official curated-articles snapshot was filtered to exact finite
+$K_d$ measurements and strict double novelty against all Davis ligands and full
+target sequences. The resulting cohort has 1{,}932 pairs (516 positive and
+1{,}416 negative). Without retraining, recalibration, or BindingDB threshold
+tuning, the released \texttt{best\_random} checkpoint produced AUROC $=0.560$
+(95\% CI 0.531--0.589) and AUPRC $=0.340$ (95\% CI 0.314--0.372). The result does not support a broad DTI-transfer claim.
+It instead documents limited transfer to a broader exact-entity cohort and is
+not used to support claims about binding pockets, attention maps, or
+protein-family-agnostic performance.
 
 During final reproducibility auditing, we also found that the released package
 contains no per-protein domain-annotation JSON files. The archived loader assigns
@@ -738,8 +764,9 @@ configured unknown-label embedding channel rather than a domain-enriched biologi
 input. This correction avoids attributing either performance or interpretability
 to annotations that are not present in the reproducible assets.
 
-\change{Abstract; Methods, ``Configured Domain-Label Channel and Availability'';
-Results, ablation interpretation; Supporting Information; Discussion and
+\change{Methods, ``Pre-specified External BindingDB Evaluation'' and ``Configured
+Domain-Label Channel and Availability''; Results, external evaluation and
+ablation interpretation; Supporting Information, Table~S14; Discussion and
 Conclusion.}
 
 \subsection*{R3.2. Cold-drug/cold-target definitions, similarity, and redundancy}
@@ -1207,8 +1234,10 @@ manuscript now provides direct access to the BioInteract source repository at
 \url{https://github.com/Liubo-520/bio-intelligence}, which contains the code,
 pretrained weights, configuration files, figure-generation scripts, and
 reproduction instructions, and to the immutable Zenodo archive,
-\url{https://doi.org/10.5281/zenodo.21431147}, which preserves the release
+\url{https://doi.org/10.5281/zenodo.21436351}, which preserves the release
 snapshot, canonical prediction artifacts, and provenance hashes. It also links
+to the strict BindingDB aggregate manifests, curation/evaluation code, and audit
+report while excluding the raw third-party archive and derived ESM cache. The manuscript also links
 to the public interactive interface at
 \url{https://huggingface.co/spaces/AI4deeperScience/BioInteract} for the
 custom-prediction workflow.
@@ -1222,6 +1251,9 @@ custom-prediction workflow.
   identity-stratified strict-test metrics.
   \item Added leakage-aware diagnostic controls that expose substantial
   drug-side signal in the Davis exact-sequence-grouped cold-target setting.
+  \item Added a pre-specified, strict double-novel BindingDB $K_d$-only external
+  evaluation using a frozen Davis checkpoint and threshold; the modest result is
+  reported as limited transfer rather than broad DTI generalisation.
   \item Rebuilt the original entity-split metrics from released checkpoints and
   inputs under a frozen validation-threshold protocol, retired unreproducible
   historical result artifacts, and withdrew numerical ablations lacking matching
