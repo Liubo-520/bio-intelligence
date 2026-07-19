@@ -346,7 +346,7 @@ with gr.Blocks(
             smiles_box = gr.Textbox(label="Drug SMILES", lines=2)
             sequence_box = gr.Textbox(label="Protein amino-acid sequence (single-letter code)", lines=4, max_lines=8)
             with gr.Row():
-                example_button = gr.Button("Load Imatinib / ABL1 example", variant="secondary", size="sm")
+                example_button = gr.Button("Load Aurora kinase C (Q9UQB9) example", variant="secondary", size="sm")
                 predict_button = gr.Button("Run prediction", variant="primary", size="lg")
             status_box = gr.Textbox(label="Status", interactive=False, lines=1, placeholder="Awaiting input")
             score_markdown = gr.Markdown(min_height=100)

@@ -69,7 +69,6 @@ python revision/promote_canonical_entity_metrics.py \
   --artifact revision/analysis/original_entity_split_metrics.json \
   --results-dir BioInteract/results
 cd BioInteract
-python -m src.analysis.generate_comparison_figures
 python -m src.analysis.generate_figures --device cuda
 ```
 

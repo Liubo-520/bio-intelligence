@@ -12,6 +12,7 @@
     },
     "counts": {
       "eligible_measurements_before_replicate_reconciliation": 2158,
+      "excluded_conflicting_measurements": 44,
       "excluded_censored_kd": 82988,
       "excluded_conflicting_pair": 15,
       "excluded_davis_ligand": 64,
@@ -21,10 +22,13 @@
       "excluded_multichain": 8261,
       "input_rows": 93712,
       "retained_negative_pairs": 1416,
+      "retained_pairs_with_replicates": 143,
       "retained_pairs": 1932,
       "retained_positive_pairs": 516,
       "retained_unique_drugs": 1195,
-      "retained_unique_targets": 396
+      "retained_unique_targets": 396,
+      "replicate_measurements_collapsed": 182,
+      "threshold_consistent_measurements": 2114
     },
     "curated_at_utc": "2026-07-19T03:08:40.981801+00:00",
     "davis_identity_reference": "data/raw/davis",

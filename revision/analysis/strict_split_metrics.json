@@ -12,7 +12,25 @@
       "test_positives": 208
     },
     "best_validation_auroc": 0.9115680474609428,
+    "best_epoch": 24,
     "epochs_completed": 39,
+    "training_provenance": {
+      "initialization": "new BioInteract model initialized under the protocol seed",
+      "optimizer": "AdamW",
+      "learning_rate": 0.0001,
+      "weight_decay": 0.00001,
+      "batch_size": 64,
+      "label_smoothing": 0.05,
+      "gradient_clip_norm": 1.0,
+      "warmup_epochs": 5,
+      "scheduler": "cosine",
+      "max_epochs": 100,
+      "early_stopping_patience": 15,
+      "model_selection_metric": "validation AUROC (maximum)",
+      "threshold_selection": "validation F1 (maximum), then frozen for the test set",
+      "checkpoint_path": "revision/analysis/sequence_grouped_cold_target.pt",
+      "checkpoint_sha256": "8ea58e1f056b5e33c309787880a811c797393510c459d9442b5dbe67e632fe5c"
+    },
     "metrics": {
       "AUROC": 0.8727751105369699,
       "AUPRC": 0.38347803063301483,
@@ -271,7 +289,25 @@
       "test_positives": 38
     },
     "best_validation_auroc": 0.9106299212598425,
+    "best_epoch": 6,
     "epochs_completed": 21,
+    "training_provenance": {
+      "initialization": "new BioInteract model initialized under the protocol seed",
+      "optimizer": "AdamW",
+      "learning_rate": 0.0001,
+      "weight_decay": 0.00001,
+      "batch_size": 64,
+      "label_smoothing": 0.05,
+      "gradient_clip_norm": 1.0,
+      "warmup_epochs": 5,
+      "scheduler": "cosine",
+      "max_epochs": 100,
+      "early_stopping_patience": 15,
+      "model_selection_metric": "validation AUROC (maximum)",
+      "threshold_selection": "validation F1 (maximum), then frozen for the test set",
+      "checkpoint_path": "revision/analysis/sequence_grouped_cold_both.pt",
+      "checkpoint_sha256": "8b7c0f374983a35163a7d3243c89732504a5a97ef4d10c557b2841a627873972"
+    },
     "metrics": {
       "AUROC": 0.55183449129152,
       "AUPRC": 0.03761945385776926,

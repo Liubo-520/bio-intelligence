@@ -235,12 +235,14 @@ def _reconcile_eligible_measurements(
         return pairs, audit
 
     pair_rows: list[dict[str, object]] = []
+    conflicting_measurements = 0
     for (canonical_smiles, sequence), group in eligible_frame.groupby(
         ["canonical_smiles", "sequence"], sort=True
     ):
         labels = (group["kd_nM"] < KD_THRESHOLD_NM).astype(int)
         if labels.nunique() != 1:
             audit["excluded_conflicting_pair"] += 1
+            conflicting_measurements += int(len(group))
             continue
         median_kd = float(group["kd_nM"].median())
         pair_rows.append(
@@ -269,6 +271,16 @@ def _reconcile_eligible_measurements(
         )
 
     audit["eligible_measurements_before_replicate_reconciliation"] = len(eligible_frame)
+    audit["excluded_conflicting_measurements"] = conflicting_measurements
+    audit["threshold_consistent_measurements"] = int(
+        len(eligible_frame) - conflicting_measurements
+    )
+    audit["retained_pairs_with_replicates"] = int(
+        (pairs["replicate_count"] > 1).sum()
+    )
+    audit["replicate_measurements_collapsed"] = int(
+        (pairs["replicate_count"] - 1).sum()
+    )
     audit["retained_pairs"] = len(pairs)
     audit["retained_positive_pairs"] = int(pairs["label"].sum())
     audit["retained_negative_pairs"] = int(len(pairs) - pairs["label"].sum())

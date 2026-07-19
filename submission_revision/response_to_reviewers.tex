@@ -20,7 +20,7 @@
 
 \title{Point-by-Point Response to the Editor and Reviewers}
 \author{Zhi Huang, on behalf of all authors}
-\date{18 July 2026}
+\date{19 July 2026}
 
 \begin{document}
 \maketitle
@@ -48,16 +48,15 @@ unperformed external-dataset, structural-contact, or matched resistance
 experiments as completed.
 
 \paragraph{Revision-location guide.}
-Page references below use the compiled clean manuscript dated 18 July 2026.
+Page references below use the compiled clean manuscript dated 19 July 2026.
 The Abstract and Introduction are on pp.~1--2; Related Work on pp.~2--3;
-Methods on pp.~3--7 (fixed-graph configuration p.~4, attribution definitions
-pp.~5--6, split audit and software details pp.~6--7); baseline comparison on
-pp.~7--8; ablation and split results on pp.~9--11; training and attribution
-results on pp.~12--14; Discussion and Conclusion on pp.~14--16; and availability
-statements on p.~17. In the Supporting Information, software/split details are on
-pp.~2--3, Table~S8 and the reproducibility protocol are on pp.~4--6, and the
-remaining input/case/parameter audits are on pp.~6--7. This guide supplements
-the section-level locations provided after each response.
+Methods on pp.~3--5; Experimental Setup on pp.~6--7; Results on pp.~7--12;
+Discussion on p.~13; Conclusion on pp.~14--16; and availability statements on
+p.~16. In the Supporting Information, model/training and environment details are
+on pp.~1--2, split summaries are on p.~3, reproducibility details are on p.~4,
+input/case/parameter audits are on pp.~5--6, and strict BindingDB provenance is
+on p.~7. This guide supplements the section-level locations provided after each
+response.
 
 \section*{Response to the Editor}
 
@@ -80,8 +79,8 @@ target-identifier-held-out result from sequence-novel transfer; (ii) adds exact
 sequence grouping, exact-sequence-grouped cold-target and
 exact-sequence-grouped cold-both tests; (iii) quantifies
 drug-side signal and target relatedness with controls and identity-stratified
-results; (iv) states that the historical comparison is not a matched-pretraining
-state-of-the-art comparison; and (v) redefines attention and Grad-CAM as
+  results; (iv) retains only a non-numerical representational contrast with
+  published baselines; and (v) redefines attention and Grad-CAM as
 model-native attributions rather than structural contacts.  The web figure and
 command-line statements now describe only functionality supported by the
 repository and displayed screenshot.  We do not claim that the new within-Davis
@@ -103,9 +102,10 @@ with the reconstructed full-model result.
 
 We also completed a final manuscript--code reconciliation and consistency audit:
 \begin{itemize}
-  \item Figure~1 now treats the two random-split metric plots jointly as Panel A
-  and the identifier-based heatmap as Panel B; the latter uses
-  ``Target-ID-held-out'' and ``Drug-ID-held-out'' consistently.
+  \item Figure~1 now presents the canonical entity-split reconstruction as Panel
+  A and the separately trained exact-sequence-grouped strict evaluations as
+  Panel B; the identifier-based protocols are named ``Target-ID-held-out'' and
+  ``Drug-ID-held-out'' consistently.
   \item The protein-side optional channel is named the ``domain-label channel''
   or, where its actual content matters, the ``unknown-label embedding channel.''
   We define ``biological prior knowledge'' as the frozen ESM-2 representation
@@ -116,11 +116,10 @@ We also completed a final manuscript--code reconciliation and consistency audit:
   were retired. Because no ablated-model checkpoint/prediction artifacts are
   available, the ablation table, figure, and component-effect conclusions have
   been withdrawn.
-  \item The baseline comparison is now explicitly descriptive: causal
-  ``Architectural Question'' wording, the gain row, relative-gain emphasis, and
-  winner formatting were removed. Supporting Information Table~S8 identifies the
-  original submitted comparison table as the numerical source and summarises the
-  protocol-compatibility limits of the retained comparison.
+  \item Cross-model baseline numbers, their figure, and their duplicated
+  Supporting Information table were removed because matched code, splits,
+  predictions, and evaluation artefacts are unavailable. Table~1 now provides
+  only a non-numerical representational contrast with the cited methods.
   \item The attention-sparsity Methods now give the normalisation and sparsity
   equations, checkpoint, sample scope, and residue-pooling rule. The unused
   arbitrary ``hotspot'' definition has been removed.
@@ -130,12 +129,12 @@ We also completed a final manuscript--code reconciliation and consistency audit:
   and the Grad-CAM layer and pre-sigmoid target.
 \end{itemize}
 
-\change{Abstract; Introduction; Related Work; Methods, ``Model Configuration and
-Training'', ``Attention Sparsity'', ``Grad-CAM Functional-Group Attribution'',
+\change{Abstract; Introduction; Related Work; Methods, ``Training Provenance and
+Evaluation Thresholds'', ``Attention Sparsity'', ``Grad-CAM Functional-Group Attribution'',
 and ``Data Splitting
 Protocols and Similarity Audit''; Results, ``Comparison with Baseline Methods''
 and ``Architecture scope and withheld historical ablations''; Discussion;
-Supporting Information Tables~S4, S6--S8; Figs.~1--7 and captions.}
+Supporting Information Tables~S3--S7 and S13; Figs.~1--5 and captions.}
 
 \subsection*{E.2. Archive code in a DOI-issuing repository}
 
@@ -148,7 +147,7 @@ either from Methods or a dedicated Code Availability section.''}
 \response We added a dedicated Code Availability section with direct links to
 the public source repository, \url{https://github.com/Liubo-520/bio-intelligence},
 and the immutable Zenodo software archive,
-\url{https://doi.org/10.5281/zenodo.21436351}. The archive contains the released
+\url{https://doi.org/10.5281/zenodo.21436919}. The archive contains the released
 code, pretrained weights, configuration files, canonical prediction CSVs,
 provenance hashes, figure-generation scripts, strict BindingDB aggregate
 manifests and audit, and reproduction instructions;
@@ -255,7 +254,7 @@ Label-shuffled drug-only & 0.407 & 0.029 \\
 \end{table}
 
 \change{Methods, ``Data Splitting Protocols and Similarity Audit''; Results,
-new Table ``Leakage-aware diagnostic controls'' and revised manuscript Fig.~4;
+new Table ``Leakage-aware diagnostic controls'' and revised manuscript Fig.~2;
 Discussion, new ``Diagnostic Controls and Remaining Dataset Bias''.}
 
 \subsection*{R1.2. Control cold-target performance for target homology}
@@ -301,7 +300,7 @@ full-length identity to a training target.}
 \end{figure}
 
 \change{Methods, ``Data Splitting Protocols and Similarity Audit''; Results,
-new diagnostic-control table and revised manuscript Fig.~4; Discussion,
+new diagnostic-control table and revised manuscript Fig.~2; Discussion,
 ``Scope of Cold-Start Evaluation''.}
 
 \subsection*{R1.3. Resistance-mutant analysis}
@@ -327,12 +326,12 @@ receives a sequence change that corresponds to the nominal variant label. We
 have removed the entire previous mutant-comparison analysis, including its
 tables, figures, case study, and all resistance-related conclusions, rather
 than reframe it as a stability result. The revised manuscript states this
-limitation transparently, and Supporting Information Table~S10 records every
+limitation transparently, and Supporting Information Table~S9 records every
 identifier, length, digest, and the associated D0010/D0017 Davis records.
 
 \change{Results, ``Audit of Nominal ABL1 Variant Inputs''; Discussion,
 ``Limitation of Nominal ABL1 Variant Records''; Supporting Information,
-Table~S10.}
+Table~S9.}
 
 \subsection*{R1.4. Validation of interpretability analyses}
 
@@ -402,14 +401,14 @@ training curves confirm absence of overfitting. Validation AUPRC, validation
 loss, and repeated-seed variability would make this point more convincing.}
 
 \response We agree. We removed the assertion that single-seed training curves
-confirm absence of overfitting. Following final log audit, Figure~4 was rebuilt
+confirm absence of overfitting. Following final log audit, Figure~3 was rebuilt
 from one contiguous trace per protocol whose peak validation AUROC matches its
 saved checkpoint; duplicated and restarted log segments were excluded. The
 revised text limits the figure to observed validation-AUROC and training-loss
 trajectories and explicitly states that they do not quantify validation loss or
 repeated-seed variability.
 
-\change{Results, ``Training Dynamics'' and Figure~4 caption.}
+\change{Results, ``Training Dynamics'' and Figure~3 caption.}
 
 \subsection*{R1.7. Binary classification and cautious cold-drug interpretation}
 
@@ -499,24 +498,20 @@ comparisons where the same pretrained protein features are used across competing
 architectures.}
 
 \response We agree that the historical comparison does not isolate the effect
-of ESM-2.  We therefore removed any claim that it is a fair comparison with all
-contemporary ESM-based methods. The six-method table and Fig.~1 now reproduce
-the values from the baseline comparison table in the originally submitted
-manuscript. Unequal target pretraining remains an explicit limitation. The
-historical internal ablations were withdrawn because matching ablated-model
-checkpoint/prediction artifacts are not available; we do not use them as
-architecture-specific evidence. No unperformed ESM baseline is claimed.
+of ESM-2. We therefore removed all cross-model numerical baseline values and
+the associated figure, rather than retain values without matched code, split
+files, predictions, and evaluation artefacts. Table~1 now gives only a neutral
+representational contrast with the cited methods. Unequal target pretraining
+remains an explicit limitation, and no unperformed ESM baseline is claimed.
 
-We further removed the ``Gain over best baseline'' row, relative-gain language,
-and bold/underlined winner formatting. Table~1 now uses the neutral header
-``Representational contrast with BioInteract.'' Supporting Information
-Table~S8 identifies the original submitted comparison table as the numerical
-source and records the reported split and threshold context,
-protein-representation mismatch, and the limits of the comparison.
+The historical internal ablations were likewise withdrawn because matching
+ablated-model checkpoint/prediction artifacts are unavailable. The revision
+therefore makes no architecture-specific performance claim from unreproducible
+comparisons; all reported numbers are traceable BioInteract evaluations or
+explicit diagnostic controls.
 
 \change{Results, ``Comparison with Baseline Methods'' and ``Architecture scope
-and withheld historical ablations''; Table~1 and Fig.~1; Supporting Information
-Table~S8; Discussion.}
+and withheld historical ablations''; Table~1; Discussion.}
 
 \subsection*{R2.3. Davis-only evaluation and dataset bias}
 
@@ -531,25 +526,32 @@ interactions.}
 the official BindingDB curated-articles snapshot
 \texttt{BindingDB\_BindingDB\_Articles\_202607}. We retained only exact,
 finite $K_d$ measurements, used the same $K_d<30$~nM label definition,
-excluded invalid or multi-chain records and threshold-conflicting replicate
-pairs, and then excluded every ligand whose canonical isomeric SMILES or target
+excluded invalid or multi-chain records, and then excluded every ligand whose canonical isomeric SMILES or target
 whose full normalised sequence occurred anywhere in Davis. The final strict
 double-novel cohort contains 1{,}932 pairs (516 positive and 1{,}416 negative)
 from 1{,}195 ligands and 396 targets.
+
+For complete curation accounting, the sequential row-level filters leave 2{,}158
+eligible measurements. The 15 threshold-conflicting ligand--target groups are
+counted at the pair level and comprise 44 measurement rows; 2{,}114
+threshold-consistent rows remain. For each consistent pair, we retain the median
+exact $K_d$; 182 repeated measurement rows across 143 retained pairs are thereby
+collapsed, yielding 1{,}932 final pairs. This procedure is now specified in the
+Methods and Table~S13.
 
 The released \texttt{best\_random} checkpoint was evaluated without retraining,
 fine-tuning, recalibration, checkpoint selection, or threshold tuning on
 BindingDB. At the frozen Davis random-validation threshold, it obtained AUROC
 $=0.560$ (95\% CI 0.531--0.589) and AUPRC $=0.340$ (95\% CI 0.314--0.372);
 F1, precision, and recall were 0.070, 0.731, and 0.037. The result does not support a broad DTI-transfer claim.
-Rather, it establishes the limited transfer of the frozen Davis-trained
-classifier to this broader exact-entity cohort. It leaves the within-Davis
+Rather, it documents limited transfer of the frozen Davis-trained classifier to
+this broader exact-entity cohort. It leaves the within-Davis
 checkpoint reconstructions unchanged and is not used as evidence for the
 attention, attribution, structural, or mechanistic analyses.
 
 \change{Methods, ``Pre-specified External BindingDB Evaluation''; Results,
-``Strict External BindingDB Evaluation'' and Table~2; Supporting Information,
-Table~S14; Discussion and Conclusion.}
+``Strict External BindingDB Evaluation'' and Table~5; Supporting Information,
+Table~S13; Discussion and Conclusion.}
 
 \subsection*{R2.4. Baseline selection and recency}
 
@@ -562,13 +564,12 @@ representations, the authors should include stronger and more up-to-date
 baselines.}
 
 \response We now cite verified examples of recent PLM, graph, and attention
-models.  We do not claim to have reproduced additional baselines without
-matching their task definition, preprocessing, and pretraining.
-
-The revised table is framed only as the submitted comparison set, not as a
-current state-of-the-art leaderboard.  A fair update requires a common protocol
-and matched pretrained target features, which are outside the evidence available
-in this revision.
+models. We do not claim to have reproduced additional baselines without matching
+their task definition, preprocessing, and pretraining. Because the historical
+cross-model values likewise lack matched executable artefacts, we removed them
+rather than frame them as a current state-of-the-art leaderboard. A fair
+comparison requires a common protocol and matched pretrained target features,
+which are outside the evidence available in this revision.
 
 \change{Related Work; Results, ``Comparison with Baseline Methods'';
 Discussion, ``Future Directions''.}
@@ -614,11 +615,11 @@ used by the model have an identical amino-acid sequence. We therefore removed
 the former mutation-pattern analysis in full and do not use it as evidence of a
 biological mechanism. The revised Results and Discussion state that these Davis
 records cannot support a mutation-effect or resistance analysis for BioInteract;
-the reproducible input audit is supplied in Table~S10.
+the reproducible input audit is supplied in Table~S9.
 
 \change{Results, ``Audit of Nominal ABL1 Variant Inputs''; Discussion,
 ``Limitation of Nominal ABL1 Variant Records''; Supporting Information,
-Table~S10.}
+Table~S9.}
 
 \subsection*{R2.7. Remaining case studies}
 
@@ -688,7 +689,7 @@ the resource without having to input potentially proprietary information into a
 web server.}
 
 \response We agree that the browser demonstration and the repository must not
-be conflated. Figure~6 is described as the
+be conflated. Figure~5 is described as the
 custom-prediction input/result state shown for human Aurora kinase C (UniProt
 Q9UQB9), including the generated atom--residue attention map and ``Top 10
 Residue Attributions'' chart visible in the lower portion of the screenshot.
@@ -712,7 +713,7 @@ general structure-based custom-ligand/pocket workflow, and no such functionality
 is claimed. This separates browser custom prediction from repository-based
 evaluation and attribution generation.
 
-\change{Data Availability; Figure~6 caption; Conclusion.}
+\change{Data Availability; Figure~5 caption; Conclusion.}
 
 \subsection*{R3.1. Rationale for Davis only and external validation}
 
@@ -741,14 +742,17 @@ literature and to better assess the ability of their model.}
 
 \response We agree that Davis-only evidence cannot establish broad protein-family,
 binding-pocket, or chemical-space generalisation. Davis was retained because it
-is the original submitted benchmark used for the reported baseline comparison;
+is the original submitted benchmark;
 it was not selected as a demonstration of protein-family-agnostic performance.
 All such language has been removed. We now add a pre-specified frozen BindingDB
 external evaluation rather than treating the within-Davis controls as external
 validation. The official curated-articles snapshot was filtered to exact finite
 $K_d$ measurements and strict double novelty against all Davis ligands and full
-target sequences. The resulting cohort has 1{,}932 pairs (516 positive and
-1{,}416 negative). Without retraining, recalibration, or BindingDB threshold
+target sequences. The sequential row-level filters leave 2{,}158 eligible
+measurements. The 15 threshold-conflicting groups are pair-level counts and
+comprise 44 measurement rows; the 2{,}114 remaining rows are aggregated by the
+within-pair median exact $K_d$, collapsing 182 repeated rows to the final 1{,}932
+pairs (516 positive and 1{,}416 negative). Without retraining, recalibration, or BindingDB threshold
 tuning, the released \texttt{best\_random} checkpoint produced AUROC $=0.560$
 (95\% CI 0.531--0.589) and AUPRC $=0.340$ (95\% CI 0.314--0.372). The result does not support a broad DTI-transfer claim.
 It instead documents limited transfer to a broader exact-entity cohort and is
@@ -766,7 +770,7 @@ to annotations that are not present in the reproducible assets.
 
 \change{Methods, ``Pre-specified External BindingDB Evaluation'' and ``Configured
 Domain-Label Channel and Availability''; Results, external evaluation and
-ablation interpretation; Supporting Information, Table~S14; Discussion and
+ablation interpretation; Supporting Information, Table~S13; Discussion and
 Conclusion.}
 
 \subsection*{R3.2. Cold-drug/cold-target definitions, similarity, and redundancy}
@@ -800,7 +804,7 @@ additionally provide the stricter full-length global-identity audit in R1.2; no
 sequence-novel claim is made.
 
 \change{Methods, ``Data Splitting Protocols and Similarity Audit''; Results,
-split-audit text and Fig.~3.}
+split-audit text and Fig.~2.}
 
 \subsection*{R3.3. Cold-both evaluation}
 
@@ -816,9 +820,16 @@ using this splitting method? Such results could potentially augment the findings
 of the manuscript and provide a stronger case for the true power of the
 BioInteract attention framework.}
 
-\response We agree that the omission was not justified.  We now report an
+\response We agree that the omission was not justified. We now report an
 exact-sequence-grouped cold-both test using the original records, preprocessing,
-architecture, and seed. The 70/10/20 ratios are applied independently to drug
+architecture, and seed. Unlike the historical identifier-split reconstructions,
+each strict-split model was trained from initialisation on its corresponding new
+training partition. Both use weighted BCE with 0.05 label smoothing, AdamW
+($10^{-4}$ learning rate; $10^{-5}$ weight decay), batch size 64, five-epoch
+warm-up plus cosine decay, and validation-AUROC selection with patience 15.
+The complete artifact paths, SHA-256 hashes, selected epochs, and frozen
+validation thresholds are reported in Supporting Information Table~S3. The
+70/10/20 ratios are applied independently to drug
 identifiers and exact target-sequence groups; only pairs in the corresponding
 train--train, validation--validation, and test--test blocks are retained. This
 produces 15,190/264/1,144 train/validation/test pairs and excludes 13,458
@@ -852,7 +863,7 @@ Exact-sequence-grouped cold-both & 1,144 & 38 & 0.552 & 0.038 & 0.000 & 0.000 \\
 \end{figure}
 
 \change{Methods, split protocols; Results, Table ``Strict within-Davis
-cold-start evaluation'' and revised Fig.~3.}
+cold-start evaluation'' and revised Fig.~1.}
 
 \subsection*{R3.4. Scope of interpretation and medicinal-chemistry claims}
 
@@ -940,7 +951,7 @@ low-confidence failure-mode example.  We do not attribute it specifically to
 out-of-distribution status, few-shot coverage, hydrogen-bond bias, or sparsity.
 
 \change{Results, attention-sparsity and functional-group sections; Discussion,
-``The 99.2\% Attention Sparsity''; Figure~5 and functional-group tables.}
+``The 99.2\% Attention Sparsity''; Figure~4 and functional-group tables.}
 
 \subsection*{R3.6. Scalability and implementation version}
 
@@ -1082,7 +1093,7 @@ threshold-dependent labels were removed; validation-threshold F1, precision,
 and recall are reported in Supporting Information Table~S5, and corresponding
 strict-split values are reported in Table~S7.
 
-\change{Revised Fig.~3 and caption.}
+\change{Revised Fig.~1 and caption.}
 
 \subsection*{R3.13. Minor comment 5: original Figure 4}
 
@@ -1090,13 +1101,13 @@ strict-split values are reported in Table~S7.
 authors should make sure to refer to the sub-panels by their labels (e.g., A)
 validation AUROC over training epochs. B) training loss).}
 
-\response Figure~4 now identifies Panel~A as validation AUROC and Panel~B as
+\response Figure~3 now identifies Panel~A as validation AUROC and Panel~B as
 training loss. Each line is a single contiguous archived trace selected by
 agreement between its peak validation AUROC and the saved checkpoint; no fitted
 or interpolated trend is displayed. The caption limits interpretation to
 observed single-seed trajectories.
 
-\change{Revised Figure~4 and caption.}
+\change{Revised Figure~3 and caption.}
 
 \subsection*{R3.14. Minor comment 6: original Figure 5}
 
@@ -1104,13 +1115,13 @@ observed single-seed trajectories.
 with the histogram plot. Shifting the figure legend to the right side would aid
 with clarity.}
 
-\response We rebuilt Figure~5 from the archived 1,301,380 pair-normalised
+\response We rebuilt Figure~4 from the archived 1,301,380 pair-normalised
 residue scores. Panel~A is their logarithmic-scale distribution and Panel~B is
 the cumulative attribution mass after sorting the same values; the figure has no
 overlapping legend. The caption defines the attribution-concentration statistic
 and does not present it as structural validation.
 
-\change{Revised Figure~5 and caption.}
+\change{Revised Figure~4 and caption.}
 
 \subsection*{R3.15. Minor comment 7: original Figure 6}
 
@@ -1143,7 +1154,7 @@ ABL1 variant labels whose model-input sequences are identical, so neither its
 correlation matrix nor its bar chart can support a variant-specific analysis.
 
 \change{Removed the former mutant-comparison figure; added the transparent
-ABL1 input-audit limitation and Supporting Information Table~S10.}
+ABL1 input-audit limitation and Supporting Information Table~S9.}
 
 \subsection*{R3.17. Minor comment 9: original Figure 9}
 
@@ -1211,15 +1222,15 @@ themselves.}
 
 \response The caption now accurately identifies the custom-prediction
 input/result state for human Aurora kinase C (Q9UQB9), including entered
-SMILES, protein sequence, high-affinity-class probability, and threshold-distance
-category.  The lower portion of the screenshot also shows the generated
+SMILES, protein sequence, and high-affinity-class classifier score (sigmoid
+output).  The lower portion of the screenshot also shows the generated
 atom--residue attention map and the ``Top 10 Residue Attributions'' chart.  The
 caption states that these are model-native attribution views rather than
-physical-contact or hotspot labels. Revised Fig.~6 now presents Panel A as the
+physical-contact or hotspot labels. Revised Fig.~5 now presents Panel A as the
 full interface and Panel B as an enlarged crop of the attribution region so that
 the heatmap and ranked-residue chart are legible in the manuscript.
 
-\change{Figure~6 and caption.}
+\change{Figure~5 and caption.}
 
 \subsection*{R3.21. Remarks on code availability}
 
@@ -1234,7 +1245,7 @@ manuscript now provides direct access to the BioInteract source repository at
 \url{https://github.com/Liubo-520/bio-intelligence}, which contains the code,
 pretrained weights, configuration files, figure-generation scripts, and
 reproduction instructions, and to the immutable Zenodo archive,
-\url{https://doi.org/10.5281/zenodo.21436351}, which preserves the release
+\url{https://doi.org/10.5281/zenodo.21436919}, which preserves the release
 snapshot, canonical prediction artifacts, and provenance hashes. It also links
 to the strict BindingDB aggregate manifests, curation/evaluation code, and audit
 report while excluding the raw third-party archive and derived ESM cache. The manuscript also links
@@ -1258,9 +1269,10 @@ custom-prediction workflow.
   inputs under a frozen validation-threshold protocol, retired unreproducible
   historical result artifacts, and withdrew numerical ablations lacking matching
   checkpoint/prediction artifacts.
-  \item Reframed the baseline table as a descriptive historical comparison and
-  added a Supporting Information Table~S8 that identifies the original submitted
-  comparison table as the source of the retained baseline values.
+  \item Removed all cross-model numerical baseline values, the associated figure,
+  and the duplicated Supporting Information table because their matched
+  executable artefacts are unavailable; retained only a non-numerical
+  representational contrast table.
   \item Completed attention-sparsity, bootstrap, sequence-similarity, fingerprint,
   software-version, and Grad-CAM reproducibility specifications.
   \item Restricted novelty, baseline, generalisation, binary-task, and

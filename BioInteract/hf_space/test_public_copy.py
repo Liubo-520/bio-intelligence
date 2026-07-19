@@ -109,7 +109,6 @@ def test_public_operational_sources_do_not_emit_unsupported_case_or_structure_cl
         PROJECT / "src" / "data" / "protein_feat.py",
         PROJECT / "src" / "data" / "split.py",
         PROJECT / "src" / "analysis" / "generate_figures.py",
-        PROJECT / "src" / "analysis" / "generate_comparison_figures.py",
     )
     public_source = "\n".join(_read(path) for path in files)
 

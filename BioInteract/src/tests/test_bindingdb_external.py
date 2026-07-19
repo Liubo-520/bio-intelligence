@@ -62,6 +62,10 @@ def test_curate_measurements_keeps_only_exact_kd_single_chain_double_novel_consi
         {"kd_nM": 15.0, "label": 1}
     ]
     assert audit["excluded_conflicting_pair"] == 1
+    assert audit["excluded_conflicting_measurements"] == 2
+    assert audit["threshold_consistent_measurements"] == 2
+    assert audit["retained_pairs_with_replicates"] == 1
+    assert audit["replicate_measurements_collapsed"] == 1
     assert audit["excluded_censored_kd"] == 1
     assert audit["excluded_multichain"] == 1
     assert audit["excluded_davis_ligand"] == 1

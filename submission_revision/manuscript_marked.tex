@@ -35,7 +35,7 @@
 \begin{abstract}
 \begingroup\color{red}
 \begingroup\color{red}
-\begingroup\color{red}Accurate prediction of drug--target interactions (DTIs) can support the prioritisation of candidate pairs, yet many deep-learning models provide little visibility into the features used for prediction. We present BioInteract, a DTI framework combining a chemistry-aware molecular graph encoder, an ESM-2/physicochemical protein residue encoder with a configured domain-label channel, and bidirectional cross-attention. The model produces atom--residue attention matrices and atom-level Grad-CAM scores as model-native attribution outputs. A full-precision reconstruction from the released random-split checkpoint and inputs achieved an AUROC of 0.904 on the Davis kinase inhibitor benchmark; the corresponding entity-held-out reconstructions are reported with their complete provenance. We additionally audit chemical and sequence similarity across these partitions and evaluate exact-sequence-grouped cold-start protocols. The attribution analyses generate hypotheses about model-relevant atoms and residues, but do not constitute predicted three-dimensional contacts or structural mechanisms. The released input package contains no curated per-protein domain annotations, so the domain-label channel uses its unknown label and is not treated as domain evidence. BioInteract therefore provides a transparent starting point for prioritisation and for experimentally testable hypotheses, subject to the dataset and structural-validation limitations stated below.\endgroup
+\begingroup\color{red}Accurate prediction of drug--target interactions (DTIs) can support the prioritisation of candidate pairs, yet many deep-learning models provide little visibility into the features used for prediction. We present BioInteract, a DTI framework combining a chemistry-aware molecular graph encoder, an ESM-2/physicochemical protein residue encoder with a configured domain-label channel, and bidirectional cross-attention. The model produces atom--residue attention matrices and atom-level Grad-CAM scores as model-native attribution outputs. A full-precision reconstruction from the released random-split checkpoint and inputs achieved an AUROC of 0.904 on the Davis kinase inhibitor benchmark; the corresponding entity-held-out reconstructions are reported with their complete provenance. We additionally audit chemical and sequence similarity across these partitions and evaluate exact-sequence-grouped cold-start protocols. On a strict exact-entity-novel BindingDB cohort, the frozen Davis checkpoint achieved an AUROC of 0.560 and an AUPRC of 0.340, indicating limited external transfer. The attribution analyses generate hypotheses about model-relevant atoms and residues, but do not constitute predicted three-dimensional contacts or structural mechanisms. The released input package contains no curated per-protein domain annotations, so the domain-label channel uses its unknown label and is not treated as domain evidence. BioInteract therefore provides a transparent starting point for prioritisation and for experimentally testable hypotheses, subject to the dataset and structural-validation limitations stated below.\endgroup
 \endgroup
 \endgroup
 \end{abstract}
@@ -127,17 +127,10 @@ InterPro, binding-site, or other protein-domain annotations.
 The ``AI for Science'' paradigm benefits from attribution mechanisms that are
 part of the prediction pathway rather than appended only after training.
 Attention visualisation and SHapley Additive exPlanations (SHAP) can nevertheless
-have faithfulness limitations.\cite{jain2019attention}  Recent successes in other scientific
-domains illustrate the power of built-in interpretability: attention-based
-models have elucidated environmental drivers of algal
-blooms,\cite{huang2025unveiling} discriminative cross-category attention
-networks capture fine-grained spatial--temporal correspondences in action
-recognition,\cite{wu2026cross} and uncertainty-guided spatial--temporal
-learning resolves subtle cross-modal dependencies in skeleton-based
-recognition.\cite{wu2025leveraging}  A unifying principle emerges:
-\emph{when attention constitutes an integral component of the prediction pathway,
-the resulting attributions can be examined consistently with model output, but
-still require external validation before mechanistic interpretation.}
+have faithfulness limitations.\cite{jain2019attention} \begingroup\color{red}A central principle is
+therefore that, when attention is an integral component of the prediction
+pathway, the resulting attributions can be examined consistently with model
+output but still require external validation before mechanistic interpretation.\endgroup
 
 Motivated by these observations, we present \textbf{BioInteract}, a framework
 \begingroup\color{red}that brings model-native attribution outputs to binary
@@ -463,11 +456,24 @@ checkpoint does not retain optimizer or loss state. We therefore do not
 retrospectively assert a single training recipe across all three historical
 checkpoints (Supporting Information, Training-provenance table).
 
-No model is retrained for the current-release metrics. The canonical
-reconstruction instantiates each released checkpoint from its embedded model
-configuration, performs full-precision inference, selects an F1 threshold once
-on the corresponding validation predictions, and applies that frozen threshold
-to test predictions. This separation prevents test-set threshold selection.
+No historical entity-split model is retrained for the current-release metrics.
+The canonical reconstruction instantiates each of those three released
+checkpoints from its embedded model configuration, performs full-precision
+inference, selects an F1 threshold once on the corresponding validation
+predictions, and applies that frozen threshold to test predictions. This
+separation prevents test-set threshold selection.
+
+In contrast, the two exact-sequence-grouped strict protocols were trained from
+initialisation on their respective new training partitions. They use seed 42,
+the same Davis preprocessing and architecture, weighted binary cross-entropy
+with 0.05 label smoothing, AdamW (learning rate $10^{-4}$; weight decay
+$10^{-5}$), batch size 64, gradient-norm clipping at 1.0, a five-epoch linear
+warm-up followed by cosine decay, and a maximum of 100 epochs. The checkpoint
+with the highest validation AUROC was selected with patience 15, after which an
+F1 threshold was selected on that protocol's validation predictions and frozen
+for its test evaluation. Complete strict-split training provenance, checkpoint
+paths, SHA-256 hashes, selected epochs, and thresholds are provided in the
+Supporting Information Training-provenance table.
 \endgroup
 
 \subsection{Interpretability Analysis}
@@ -546,14 +552,17 @@ protocol, we curated the official BindingDB curated-articles snapshot
 \texttt{BindingDB\_BindingDB\_Articles\_202607}\cite{gilson2016bindingdb}.
 We retained only finite, exact numerical $K_d$ measurements in nM for valid,
 single-chain proteins of at most 1{,}200 residues and RDKit-valid ligands.
-Inequality-qualified values and pairs with valid replicate $K_d$ measurements on
-opposite sides of the \SI{30}{nM} boundary were excluded. The positive label
-was $K_d<\SI{30}{nM}$, matching the Davis definition. Before replicate
-reconciliation, any external pair was excluded when its canonical isomeric
+Inequality-qualified values were excluded. Before replicate reconciliation, any
+external pair was excluded when its canonical isomeric
 SMILES occurred anywhere in Davis or when its full normalised amino-acid
 sequence occurred anywhere in Davis. The resulting cohort is therefore
 double-novel by exact ligand and target-sequence identity, although it is not a
-claim of scaffold or remote-homology novelty.
+claim of scaffold or remote-homology novelty. Measurements were then grouped by
+canonical ligand--sequence pair. A pair with replicate measurements on opposite
+sides of the \SI{30}{nM} boundary was removed (a pair-level conflict); for every
+remaining pair, the median exact $K_d$ was retained and binarised as
+$K_d<\SI{30}{nM}$. The complete row-to-pair accounting is reported in
+Table~S13.
 
 The released \texttt{best\_random} checkpoint was evaluated without retraining,
 fine-tuning, calibration, or threshold selection on BindingDB. We used the
@@ -562,7 +571,7 @@ existing random-validation threshold (0.5959881544), the same ESM-2 model
 external protein embeddings that passed dimension and sequence-length checks.
 AUROC and AUPRC confidence intervals use 600 pair-stratified bootstrap
 replicates with seed 42. Curation and frozen-inference provenance, including
-source and prediction hashes, are reported in Table~S14.
+source and prediction hashes, are reported in Table~S13.
 \endgroup
 
 \subsection{Data Splitting Protocols and Similarity Audit}
@@ -650,19 +659,17 @@ checkpoint's embedded architecture configuration.\endgroup
 
 \subsection{Comparison with Baseline Methods}
 
-We compare BioInteract against six baselines spanning sequence, graph,
-attention, transformer, and bilinear interaction models: DeepDTA,\cite{ozturk2018deepdta}
+\begingroup\color{red}We contextualise BioInteract against six published DTI
+baselines spanning sequence, graph, attention, transformer, and bilinear
+interaction models: DeepDTA,\cite{ozturk2018deepdta}
 GraphDTA,\cite{nguyen2021graphdta} AttentionDTA,\cite{zhao2022attentiondta}
 MolTrans,\cite{huang2021moltrans} TransformerCPI,\cite{chen2020transformercpi}
-and DrugBAN.\cite{bai2023drugban}
-\begingroup\color{red}Table~\ref{tab:baseline_questions} summarises
-representational contrasts with BioInteract without assigning causal credit to
-any single component. The six baseline values are reproduced from the comparison
-table in the originally submitted manuscript to document that submitted
-benchmark. This comparison is not a controlled state-of-the-art comparison: the baselines do not use a matched
-frozen ESM-2 representation and the methods differ in pretraining and original
-implementation choices. We therefore restrict comparative claims to the listed
-methods and report diagnostic controls separately.\endgroup
+and DrugBAN.\cite{bai2023drugban} Table~\ref{tab:baseline_questions} summarises
+representational contrasts without assigning causal credit to any component. We
+do not retain cross-model numerical comparisons because matched code, splits,
+predictions, and evaluation artefacts for the historical baselines are
+unavailable. Accordingly, all quantitative results in this revision are
+traceable BioInteract evaluations or explicit diagnostic controls.\endgroup
 
 \begin{table}[htbp]
 \centering
@@ -683,63 +690,6 @@ methods and report diagnostic controls separately.\endgroup
 \bottomrule
 \end{tabular}
 \end{table}
-
-\begingroup\color{red}Table~\ref{tab:comparison} and Fig.~\ref{fig:comparison}
-provide contextual comparison with the previously compiled benchmark table. The
-current-release BioInteract reconstruction yields random-split AUROC/AUPRC of
-0.904/0.560. These values do not separate the effect of ESM-2 pretraining from
-the remaining architecture and are not presented as a fair comparison or a rank
-claim against contemporary ESM-based models.\endgroup
-
-\begin{table}[htbp]
-\centering
-\caption{\begingroup\color{red}Baseline values reproduced from the original
-  submitted Davis comparison under three identifier-based splitting protocols.
-  The entries are descriptive rather than a matched-pretraining or common-code
-  benchmark.\endgroup$^\dagger$}
-\label{tab:comparison}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{@{}llcccccc@{}}
-\toprule
- & & \multicolumn{2}{c}{\textbf{Random}} &
-     \multicolumn{2}{c}{\textbf{Target-ID-held-out}} &
-     \multicolumn{2}{c}{\textbf{Drug-ID-held-out}} \\
-\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}
-\textbf{Method} & \textbf{Paradigm} & AUROC & AUPRC & AUROC & AUPRC & AUROC & AUPRC \\
-\midrule
-DeepDTA\cite{ozturk2018deepdta}             & Seq-CNN     & 0.878 & 0.352 & 0.783 & 0.247 & 0.592 & 0.089 \\
-GraphDTA\cite{nguyen2021graphdta}           & GNN+CNN     & 0.893 & 0.403 & 0.815 & 0.312 & 0.621 & \;0.102 \\
-AttentionDTA\cite{zhao2022attentiondta}     & Self-Attn   & 0.900 & 0.425 & 0.838 & 0.348 & 0.643 & 0.108 \\
-MolTrans\cite{huang2021moltrans}            & Transformer & 0.907 & 0.480 & 0.856 & 0.389 & 0.668 & 0.121 \\
-TransformerCPI\cite{chen2020transformercpi} & Transformer & 0.910 & 0.492 & 0.862 & 0.401 & 0.672 & 0.125 \\
-DrugBAN\cite{bai2023drugban}                & Bilinear    & 0.915 & 0.530 & 0.874 & 0.428 & 0.695 & 0.138 \\
-\midrule
-\begingroup\color{red}BioInteract\endgroup & Cross-Attn  & 0.904 & 0.560 & 0.930 & 0.525 & 0.733 & 0.167 \\
-\bottomrule
-\end{tabular}}
-\vspace{4pt}
-
-{\footnotesize \begingroup\color{red}$^\dagger$ Baseline values are reproduced
-from the comparison table in the originally submitted manuscript. Supporting
-Information Table~S8 summarises their source and protocol context. BioInteract
-values come from the canonical full-precision checkpoint reconstruction recorded
-in the DOI archive.\endgroup}
-\end{table}
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{figures/fig_comparison_random.pdf}\par\vspace{8pt}
-\includegraphics[width=\textwidth]{figures/fig_comparison_splits.pdf}
-\caption{\textbf{Baseline comparison.}
-  (A)~Random-split AUROC and AUPRC for all methods. \begingroup\color{red}Baseline
-  values are historical and unmatched; BioInteract values are from the canonical
-  current-release checkpoint reconstruction.\endgroup
-  (B)~AUROC across the three original entity-based splitting protocols.  The
-  \begingroup\color{red}Target-ID-held-out\endgroup{} column is shown for transparency, but is not interpreted
-  as sequence-novel generalisation because exact duplicate sequences crossed
-  the original training and test partitions.}
-\label{fig:comparison}
-\end{figure}
 
 \FloatBarrier
 
@@ -775,9 +725,10 @@ does not make a causal performance attribution to any component.\endgroup
 \begingroup\color{red}
 Table~\ref{tab:results} summarises detailed BioInteract metrics, and
 Fig.~\ref{fig:performance} visualises the canonical current-release and strict-split point
-estimates. Full split sizes, positive counts, thresholds, and separately
-computed bootstrap intervals are provided in Tables~S5--S7 of the Supporting
-Information.
+estimates. Full split sizes, positive counts, and thresholds are provided in
+Tables~S5 and S7. Bootstrap intervals are provided only for the three canonical
+entity-based partitions in Table~S6; the strict-split results in Table~S7 are
+point estimates.
 \endgroup
 
 \begin{table}[htbp]
@@ -803,7 +754,7 @@ Target-ID-held-out  & \textbf{0.930} & \textbf{0.525} \\
 \caption{Strict within-Davis cold-start evaluation after grouping target
   identifiers with identical amino-acid sequences before partitioning.  Both
   protocols use the original records, seed 42, and the same preprocessing and
-  architecture. \begingroup\color{red}For cold-both, 70/10/20 is applied
+  architecture, but are separately trained from initialisation. \begingroup\color{red}For cold-both, 70/10/20 is applied
   independently to drug IDs and target-sequence groups and only within-block
   pairs are retained.\endgroup{} AUROC and AUPRC are threshold-free test metrics.}
 \label{tab:strict_results}
@@ -1054,7 +1005,7 @@ A post-hoc audit of the exact Davis model inputs identified 15 target records
 whose nominal names begin with ABL1, including the wild-type and the named
 F317I, F317L, M351T, and E255K records. All 15 records have the same
 1,167-residue amino-acid sequence and SHA-256 digest in
-\texttt{target\_sequences.csv} (Supporting Information, Table~S10).
+\texttt{target\_sequences.csv} (Supporting Information, Table~S9).
 Several nominal ABL1 variant identifiers in the Davis records used here are
 associated with identical amino-acid sequences. Consequently, the present model
 inputs do not encode the corresponding mutation-specific sequence changes, and
@@ -1288,8 +1239,8 @@ outputs.
     \begingroup\color{red}Panel B enlarges the attribution region from the same screenshot.\endgroup{} The interface
     shows the custom-prediction input and prediction-result state
     for human Aurora kinase C (UniProt Q9UQB9).  It displays the entered SMILES,
-    protein sequence, high-affinity-class probability, and threshold-distance
-    category. The \begingroup\color{red}enlarged\endgroup{} lower portion displays the generated atom--residue attention
+    protein sequence, and high-affinity-class classifier score (sigmoid output).
+    The \begingroup\color{red}enlarged\endgroup{} lower portion displays the generated atom--residue attention
     map and the ``Top 10 Residue Attributions'' chart.  These are model-native
     attribution views, not physical-contact or hotspot labels.  Command-line
     instructions for generating the available attribution outputs are provided
@@ -1317,11 +1268,10 @@ cheminformatics toolkit.
 \begingroup\color{red}
 The Supporting Information contains: model hyperparameters and feature details
 (Tables~S1--S3); computational environment (Table~S4); dataset and split
-statistics (Tables~S5--S7); baseline scope (Table~S8); atom features (Table~S9);
-the Davis ABL1 nominal-variant input audit (Table~S10); non-mutant EGFR and BRAF
-case summaries (Tables~S11--S12); and complete model parameter counts
-(Table~S13); and strict BindingDB external-validation provenance and results
-(Table~S14).
+statistics (Tables~S5--S7); atom features (Table~S8); the Davis ABL1
+nominal-variant input audit (Table~S9); non-mutant EGFR and BRAF case summaries
+(Tables~S10--S11); complete model parameter counts (Table~S12); and strict
+BindingDB external-validation provenance and results (Table~S13).
 \endgroup
 This material is available free of charge.
 
@@ -1340,7 +1290,7 @@ deterministic curation and frozen evaluation scripts plus manifest hashes.\endgr
 The immutable release containing the
 released checkpoints, canonical prediction CSVs, provenance hashes, strict-split
 artifacts, and reproduction scripts is archived at Zenodo,
-\url{https://doi.org/10.5281/zenodo.21436351}. The BioInteract source repository
+\url{https://doi.org/10.5281/zenodo.21436919}. The BioInteract source repository
 is hosted on \href{https://github.com/Liubo-520/bio-intelligence}{GitHub}. An interactive web
 server for the custom-prediction workflow is available through the
 \href{https://huggingface.co/spaces/AI4deeperScience/BioInteract}{BioInteract Space}; the README
@@ -1352,7 +1302,7 @@ documents the command-line attribution workflow.
 The BioInteract source code, pretrained model weights, configuration files,
 canonical metric-reconstruction scripts, and figure-generation scripts are
 publicly available through \href{https://github.com/Liubo-520/bio-intelligence}{GitHub} and
-as the immutable Zenodo release, \url{https://doi.org/10.5281/zenodo.21436351}.
+as the immutable Zenodo release, \url{https://doi.org/10.5281/zenodo.21436919}.
 The interactive web
 application for the custom-prediction workflow is available through the
 \href{https://huggingface.co/spaces/AI4deeperScience/BioInteract}{BioInteract Space}.

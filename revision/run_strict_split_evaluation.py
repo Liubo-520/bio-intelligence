@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import random
 import sys
@@ -123,7 +124,7 @@ def train_one_protocol(protocol: str, interactions: pd.DataFrame, targets: pd.Da
 
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, schedule)
     scaler = GradScaler('cuda', enabled=device == 'cuda')
-    best_state, best_validation_auroc, waiting = None, -np.inf, 0
+    best_state, best_validation_auroc, best_epoch, waiting = None, -np.inf, None, 0
     patience = int(config['training']['patience'])
     history: list[dict[str, float]] = []
 
@@ -149,6 +150,7 @@ def train_one_protocol(protocol: str, interactions: pd.DataFrame, targets: pd.Da
         print(f'{protocol} epoch {epoch:03d}: loss={history[-1]["training_loss"]:.4f}; val_AUROC={validation_auroc:.4f}; val_AUPRC={history[-1]["validation_auprc"]:.4f}', flush=True)
         if validation_auroc > best_validation_auroc:
             best_validation_auroc = validation_auroc
+            best_epoch = epoch
             waiting = 0
             best_state = {name: parameter.detach().cpu().clone() for name, parameter in model.state_dict().items()}
         else:
@@ -164,14 +166,34 @@ def train_one_protocol(protocol: str, interactions: pd.DataFrame, targets: pd.Da
     threshold = float(thresholds[int(np.argmax(f1))])
     test_labels, test_probabilities, _ = collect_predictions(model, test_loader, device)
     metrics = metrics_from_validation_threshold(test_labels, test_probabilities, threshold)
-    torch.save({'model_state_dict': best_state, 'model_config': model_config, 'protocol': protocol, 'seed': seed, 'best_validation_auroc': best_validation_auroc}, output_dir / f'{protocol}.pt')
+    checkpoint_path = output_dir / f'{protocol}.pt'
+    torch.save({'model_state_dict': best_state, 'model_config': model_config, 'protocol': protocol, 'seed': seed, 'best_validation_auroc': best_validation_auroc}, checkpoint_path)
+    checkpoint_sha256 = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
     return {
         'protocol': protocol,
         'seed': seed,
         'device': device,
         'split_sizes': {'train_pairs': len(train_df), 'validation_pairs': len(val_df), 'test_pairs': len(test_df), 'train_positives': int(train_df['label'].sum()), 'validation_positives': int(val_df['label'].sum()), 'test_positives': int(test_df['label'].sum())},
         'best_validation_auroc': float(best_validation_auroc),
+        'best_epoch': int(best_epoch) if best_epoch is not None else None,
         'epochs_completed': len(history),
+        'training_provenance': {
+            'initialization': 'new BioInteract model initialized under the protocol seed',
+            'optimizer': 'AdamW',
+            'learning_rate': float(config['training']['lr']),
+            'weight_decay': float(config['training']['weight_decay']),
+            'batch_size': int(config['training']['batch_size']),
+            'label_smoothing': 0.05,
+            'gradient_clip_norm': 1.0,
+            'warmup_epochs': warmup_epochs,
+            'scheduler': 'cosine',
+            'max_epochs': total_epochs,
+            'early_stopping_patience': patience,
+            'model_selection_metric': 'validation AUROC (maximum)',
+            'threshold_selection': 'validation F1 (maximum), then frozen for the test set',
+            'checkpoint_path': str(checkpoint_path.relative_to(ROOT)).replace('\\', '/'),
+            'checkpoint_sha256': checkpoint_sha256,
+        },
         'metrics': metrics,
         'history': history,
     }

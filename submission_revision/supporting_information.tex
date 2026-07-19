@@ -65,18 +65,22 @@ Annotation availability & No \texttt{data/domain\_annotations/*.json} files are 
 
 \begin{table}[H]
 \centering
-\caption{Training provenance for the historical entity-split checkpoints.}
+\caption{Training provenance for the historical entity-split checkpoints and the
+separately trained exact-sequence-grouped strict models.}
 \small
 \begin{tabular}{p{0.31\linewidth}p{0.61\linewidth}}
 \toprule
 Setting & Value \\
 \midrule
-Checkpoint-embedded evidence & Model architecture only; the three entity-split checkpoints do not retain optimizer, scheduler, warmup, or loss state \\
-Random and Drug-ID logs & Final-run headers record weighted BCE, label smoothing 0.05, AdamW ($10^{-4}$, $10^{-5}$), and cosine warmup \\
-Target-ID log matched to its checkpoint & Older \texttt{run\_split.py} header; only loss and validation AUROC are logged, so optimizer, warmup, and smoothing are not recoverable from the artifact \\
-Shared data provenance & Davis binary high-affinity task; seed 42; archived 0.70/0.10/0.20 split proportions \\
-Current generic workflow & \texttt{src.cli.train} is a new-run entrypoint, not historical provenance for the released checkpoints \\
-Threshold protocol & Validation F1 threshold is frozen before each canonical test evaluation \\
+Historical entity-split scope & Model architecture only; the three historical entity-split checkpoints do not retain optimizer, scheduler, warmup, or loss state \\
+Historical Random and Drug-ID logs & Final-run headers record weighted BCE, label smoothing 0.05, AdamW ($10^{-4}$, $10^{-5}$), and cosine warmup \\
+Historical Target-ID trace & Older \texttt{run\_split.py} header; only loss and validation AUROC are logged, so optimizer, warmup, and smoothing are not recoverable from the artifact \\
+Historical threshold protocol & A validation F1 threshold is frozen before each canonical test evaluation \\
+Strict-model initialisation and data & Each exact-sequence-grouped model was newly initialised with seed 42 and trained only on its new Davis training partition, using the same preprocessing and architecture \\
+Strict-model optimisation & Weighted BCE with 0.05 label smoothing; AdamW (learning rate $10^{-4}$, weight decay $10^{-5}$); batch size 64; gradient-norm clipping 1.0; five-epoch linear warm-up followed by cosine decay; maximum 100 epochs \\
+Strict-model selection & Highest validation AUROC with patience 15; validation F1 threshold selected after loading that checkpoint and frozen for test evaluation \\
+Strict cold-target artifact & \texttt{revision/analysis/sequence\_grouped\_cold\_target.pt}; best epoch 24 of 39; validation AUROC 0.911568; threshold 0.837581; SHA-256 {\scriptsize\texttt{8ea58e1f056b5e33c309787880a811c797393510c459d9442b5dbe67e632fe5c}} \\
+Strict cold-both artifact & \texttt{revision/analysis/sequence\_grouped\_cold\_both.pt}; best epoch 6 of 21; validation AUROC 0.910630; threshold 0.935704; SHA-256 {\scriptsize\texttt{8b7c0f374983a35163a7d3243c89732504a5a97ef4d10c557b2841a627873972}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -97,7 +101,8 @@ Biopython and RapidFuzz & 1.87 and 3.14.5 \\
 CUDA availability during audit & Available \\
 Audit GPU & NVIDIA GeForce RTX 4080 \\
 Strict-split run record & \texttt{device: cuda} in \texttt{strict\_split\_metrics.json} \\
-Checkpoint files available & \texttt{best.pt}, \texttt{best\_random.pt}, \texttt{best\_cold\_target.pt}, \texttt{best\_cold\_drug.pt} \\
+Historical checkpoint files & \texttt{best.pt}, \texttt{best\_random.pt}, \texttt{best\_cold\_target.pt}, \texttt{best\_cold\_drug.pt} \\
+Strict-model checkpoint files & \texttt{revision/analysis/sequence\_grouped\_cold\_target.pt} and \texttt{revision/analysis/sequence\_grouped\_cold\_both.pt} (hashes in Table~S3) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -142,7 +147,11 @@ Drug-ID-held-out & [0.703, 0.763] & [0.129, 0.211] \\
 
 \begin{table}[H]
 \centering
-\caption{Exact-sequence-grouped strict within-Davis evaluations from \texttt{strict\_split\_metrics.json}. Threshold-dependent quantities use the corresponding validation-set threshold.}
+\caption{Exact-sequence-grouped strict within-Davis evaluations from
+\texttt{strict\_split\_metrics.json}. The two models were trained from
+initialisation under the protocol in Table~S3. Threshold-dependent quantities use
+the corresponding validation-set threshold; all strict-split entries are point
+estimates, not bootstrap confidence intervals.}
 \scriptsize
 \textbf{Pair accounting}\par\smallskip
 \begin{tabular}{lrrrrr}
@@ -172,31 +181,6 @@ the corresponding train--train, validation--validation, and test--test blocks
 are retained; the remaining cross-block pairs are excluded. The cold-both
 validation block contains 10 positive pairs.
 \end{table}
-
-\begin{landscape}
-\begin{table}[H]
-\centering
-\caption{Source and protocol context for baseline values reproduced from the
-comparison table in the originally submitted manuscript. The table identifies
-the numerical source, reported evaluation setting, protein-representation
-context, and the appropriate descriptive interpretation of the comparison.}
-\footnotesize
-\setlength{\tabcolsep}{2.8pt}
-\begin{tabular}{p{0.13\linewidth}p{0.19\linewidth}p{0.16\linewidth}p{0.16\linewidth}p{0.16\linewidth}p{0.15\linewidth}}
-\toprule
-Method & Numerical source & Original comparison protocol & Binary criterion & Protein representation & Interpretation in this revision \\
-\midrule
-DeepDTA & Original submitted comparison table & Random, Target-ID-held-out, and Drug-ID-held-out & \SI{30}{nM} Davis affinity criterion & Baseline-native representation; no matched frozen ESM-2 input & Descriptive contextual comparison; not a matched-pretraining or common-code benchmark \\
-GraphDTA & Original submitted comparison table & Random, Target-ID-held-out, and Drug-ID-held-out & \SI{30}{nM} Davis affinity criterion & Baseline-native representation; no matched frozen ESM-2 input & Descriptive contextual comparison; not a matched-pretraining or common-code benchmark \\
-AttentionDTA & Original submitted comparison table & Random, Target-ID-held-out, and Drug-ID-held-out & \SI{30}{nM} Davis affinity criterion & Baseline-native representation; no matched frozen ESM-2 input & Descriptive contextual comparison; not a matched-pretraining or common-code benchmark \\
-MolTrans & Original submitted comparison table & Random, Target-ID-held-out, and Drug-ID-held-out & \SI{30}{nM} Davis affinity criterion & Baseline-native representation; no matched frozen ESM-2 input & Descriptive contextual comparison; not a matched-pretraining or common-code benchmark \\
-TransformerCPI & Original submitted comparison table & Random, Target-ID-held-out, and Drug-ID-held-out & \SI{30}{nM} Davis affinity criterion & Baseline-native representation; no matched frozen ESM-2 input & Descriptive contextual comparison; not a matched-pretraining or common-code benchmark \\
-DrugBAN & Original submitted comparison table & Random, Target-ID-held-out, and Drug-ID-held-out & \SI{30}{nM} Davis affinity criterion & Baseline-native representation; no matched frozen ESM-2 input & Descriptive contextual comparison; not a matched-pretraining or common-code benchmark \\
-BioInteract & Archived prediction CSVs and result JSONs & Random, Target-ID-held-out, and Drug-ID-held-out & \SI{30}{nM} Davis affinity criterion & Frozen ESM-2 150M residue embeddings & Traceable within BioInteract; not a cross-method matched-encoder comparison \\
-\bottomrule
-\end{tabular}
-\end{table}
-\end{landscape}
 
 \section*{Reproducibility details for revision analyses}
 
@@ -241,11 +225,12 @@ concatenated; thus original training, validation, and test memberships are all
 included and longer targets contribute more residue-level observations.
 The archived flat-score array is
 \texttt{BioInteract/results/figure\_data/attention\_distribution.npz}; it is
-the sole source of the Figure~5 distribution and cumulative curve.
+the sole source of the attention-distribution figure and cumulative curve in the
+main text.
 
 \begin{center}
 \small
-\textbf{Exact summary of the archived pair-normalised residue-attribution array used for Figure~5.}\smallskip
+\textbf{Residue-attribution summary.}\par\smallskip
 \begin{tabular}{lr}
 \toprule
 Quantity & Value \\
@@ -377,7 +362,7 @@ Total trainable parameters & 2,442,083 \\
 \section*{Strict external BindingDB evaluation}
 
 % Source identifier: BindingDB_BindingDB_Articles_202607
-Table~S14 records the frozen external evaluation requested by the reviewers.
+Table~S13 records the frozen external evaluation requested by the reviewers.
 The official curated-articles snapshot was handled independently of Davis, then
 filtered under the pre-specified exact-$K_d$ and exact double-novel protocol.
 This is an external exact-entity test, not a claim of scaffold or remote-homology
@@ -393,18 +378,26 @@ result. The source archive was \texttt{BindingDB\_BindingDB\_Articles\_202607\_t
 Only finite exact $K_d$ measurements in nM for valid single-chain proteins
 (maximum 1,200 residues) and valid ligand structures were considered. Exact
 canonical-isomeric-SMILES and full-normalised-sequence matches to every Davis
-ligand or target were excluded. Confidence intervals are pair-stratified
-bootstrap 95\% intervals from 600 replicates (seed 42).}
+ligand or target were excluded. Eligible measurements were grouped by canonical
+ligand--sequence pair; threshold-conflicting groups were removed at the pair
+level, and every remaining pair retained its median exact $K_d$. Confidence
+intervals are pair-stratified bootstrap 95\% intervals from 600 replicates
+(seed 42).}
 \label{tab:bindingdb_external_si}
 \begin{tabular}{p{0.42\linewidth}p{0.49\linewidth}}
 \toprule
 Item & Value \\
 \midrule
 Source snapshot & \texttt{BindingDB\_BindingDB\_Articles\_202607} (official BindingDB curated articles TSV) \\
-Source rows / final pairs & 93,712 / 1,932 \\
+Source rows & 93,712 \\
 Final positives / negatives & 516 / 1,416 \\
 Unique ligands / targets & 1,195 / 396 \\
-Exclusions & 82,988 censored/non-exact $K_d$; 8,261 multi-chain; 139 invalid sequences; 8 invalid SMILES; 64 Davis-ligand matches; 94 Davis-sequence matches; 15 threshold-conflicting pairs \\
+Sequential row-level exclusions & 82,988 censored/non-exact $K_d$; 8,261 multi-chain; 139 invalid sequences; 8 invalid SMILES; 64 Davis-ligand matches; 94 Davis-sequence matches \\
+Eligible measurements before pair reconciliation & 2,158 \\
+Threshold-conflicting replicate groups & 15 ligand--target pairs, comprising 44 measurement rows; conflicts are counted at the pair level \\
+Threshold-consistent measurement rows & 2,114 \\
+Median replicate aggregation & 143 retained pairs had $\geq2$ consistent measurements; 182 repeated measurement rows were collapsed by the within-pair median $K_d$ \\
+Final external pairs & 1,932 \\
 Frozen model and threshold & \texttt{checkpoints/best\_random.pt}; 0.5959881544 (existing Davis random-validation threshold) \\
 Protein features & Newly extracted \texttt{fair-esm} 2.0.0 \texttt{esm2\_t30\_150M\_UR50D}; all 396 caches passed 640-dimensional and length checks \\
 AUROC (95\% CI) & 0.5597 [0.5313, 0.5885] \\

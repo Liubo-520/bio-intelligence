@@ -1,3 +1,25 @@
+# BioInteract v1.0.3
+
+This immutable final-audit release supersedes v1.0.2 for the revised manuscript.
+
+- Documents that the exact-sequence-grouped cold-target and cold-both models
+  were trained from initialization, with their optimization settings,
+  early-stopping selections, checkpoint paths, and SHA-256 digests recorded in
+  the Supporting Information and strict-split metrics artifact.
+- Removes unsupported cross-model numerical baselines, their figure, and their
+  duplicated SI table. The release retains only a non-numerical representational
+  contrast and BioInteract results that map to released artifacts.
+- Closes the BindingDB audit trail with sequential row accounting, pair-level
+  threshold-conflict removal, and within-pair median aggregation of consistent
+  replicate measurements.
+- Ships the claim-safe custom-prediction Space source, including the labelled
+  Aurora kinase C (Q9UQB9) demonstration, rather than retired fixed case-study
+  views.
+
+Use the repository and Zenodo archive together: the `v1.0.3` tag identifies the
+executable source, while [DOI: 10.5281/zenodo.21436919](https://doi.org/10.5281/zenodo.21436919)
+identifies the immutable deposited record.
+
 # BioInteract v1.0.2
 
 This immutable reproducibility release accompanies the revised BioInteract manuscript.

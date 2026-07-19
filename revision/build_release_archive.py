@@ -1,4 +1,4 @@
-"""Build the portable BioInteract v1.0.2 Zenodo archive.
+"""Build the portable BioInteract Zenodo archive.
 
 The archive deliberately includes the released source, configurations,
 checkpoints, Davis inputs/ESM cache, canonical metrics, strict-split artifacts,
@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARCHIVE_PREFIX = "biointeract-v1.0.2"
+ARCHIVE_PREFIX = "biointeract-v1.0.3"
 
 FILES = (
     "LICENSE",
@@ -30,7 +30,6 @@ FILES = (
     "BioInteract/hf_space/requirements.txt",
     "BioInteract/hf_space/test_public_copy.py",
     "BioInteract/hf_space/configs/default.yaml",
-    "BioInteract/hf_space/checkpoints/best.pt",
     "BioInteract/src/analysis/bindingdb_external.py",
     "BioInteract/src/cli/curate_bindingdb_external.py",
     "BioInteract/src/cli/evaluate_bindingdb_external.py",
@@ -64,11 +63,6 @@ FILES = (
     "revision/analysis/bindingdb_external_validation_report.md",
     "revision/analysis/test_bindingdb_submission_claims.py",
     "BioInteract/src/tests/test_public_figure_provenance.py",
-    "submission_revision/FINAL_PRE_SUBMISSION_AUDIT.md",
-    "submission_revision/CODE_RECONCILIATION_REPORT.md",
-    "submission_revision/NUMERICAL_CONSISTENCY_REPORT.md",
-    "submission_revision/consistency_audit_report.md",
-    "submission_revision/submission_checklist.md",
     "submission_revision/manuscript_clean.tex",
     "submission_revision/manuscript_clean.pdf",
     "submission_revision/manuscript_marked.tex",
@@ -106,8 +100,6 @@ SELECTED_RESULTS = (
     "BioInteract/results/figure_data/fig2_performance.json",
     "BioInteract/results/figure_data/fig4_training.json",
     "BioInteract/results/figure_data/fig5_attention_sparsity.json",
-    "BioInteract/results/figure_data/fig_comparison_random.json",
-    "BioInteract/results/figure_data/fig_comparison_splits.json",
     "BioInteract/results/figure_data/prediction_summary.json",
     "BioInteract/results/figure_data/predictions_random.csv",
     "BioInteract/results/figure_data/predictions_cold_target.csv",
@@ -171,8 +163,8 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=Path,
-        default=ROOT / "tmp" / "zenodo_release" / "biointeract-v1.0.2.zip",
-        help="Output ZIP path (default: tmp/zenodo_release/biointeract-v1.0.2.zip).",
+        default=ROOT / "tmp" / "zenodo_release" / "biointeract-v1.0.3.zip",
+        help="Output ZIP path (default: tmp/zenodo_release/biointeract-v1.0.3.zip).",
     )
     parser.add_argument(
         "--omit-esm-cache",

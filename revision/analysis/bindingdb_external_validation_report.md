@@ -34,15 +34,23 @@ the entire released Davis collection.
 | Invalid SMILES excluded | 8 |
 | Davis ligand overlaps excluded | 64 |
 | Davis sequence overlaps excluded | 94 |
-| Threshold-conflicting replicate pairs excluded | 15 |
 | Eligible measurements before reconciliation | 2,158 |
+| Threshold-conflicting replicate pairs excluded | 15 pairs / 44 measurement rows |
+| Threshold-consistent measurement rows | 2,114 |
+| Retained pairs with two or more consistent measurements | 143 |
+| Repeated measurement rows collapsed by within-pair median $K_d$ | 182 |
 | Final external pairs | 1,932 |
 | High-affinity pairs (Kd <30 nM) | 516 |
 | Low-affinity pairs (Kd >=30 nM) | 1,416 |
 | Unique ligands | 1,195 |
 | Unique targets | 396 |
 
-The predeclared minimum of 100 pairs in each class was met.
+The 15 threshold-conflicting entries are a emph{pair-level} count, not a row
+count. Thus the correct closure is $2{,}158-44=2{,}114$ consistent measurement
+rows, followed by $2{,}114-182=1{,}932$ final ligand--target pairs. For each
+threshold-consistent pair, the exact $K_d$ used for the final label is the median
+of its replicate measurements. The predeclared minimum of 100 pairs in each
+class was met.
 
 ## Frozen inference and reproducibility
 

@@ -1,15 +1,15 @@
 ---
 title: BioInteract Drug-Target Interaction
-emoji: molecule
+emoji: 🧬
 colorFrom: blue
 colorTo: green
 sdk: gradio
-sdk_version: 5.0.0
+sdk_version: 5.20.0
 python_version: "3.11"
 app_file: app.py
 pinned: false
 license: mit
-short_description: Binary high-affinity interaction classification with model-native attribution
+short_description: Binary high-affinity DTI with model-native attribution
 ---
 
 # BioInteract
