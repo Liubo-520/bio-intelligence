@@ -1,6 +1,7 @@
 .env
 .history/
 .vscode/
+.worktrees/
 __pycache__/
 *.py[cod]
 *.aux
