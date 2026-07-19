@@ -4,7 +4,10 @@ from pathlib import Path
 import sys
 import zipfile
 
+import numpy as np
 import pandas as pd
+import pytest
+import torch
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -12,9 +15,14 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.analysis.bindingdb_external import (  # noqa: E402
     canonicalize_smiles,
+    checkpoint_model_config,
     curate_archive,
     curate_measurements,
+    external_metrics,
     load_davis_entity_sets,
+    passes_primary_gate,
+    run_frozen_inference,
+    validate_esm_cache,
 )
 
 
@@ -130,3 +138,94 @@ def test_curation_cli_requires_fixed_source_provenance_arguments():
 
     assert args.chunksize == 200_000
     assert args.davis_dir == "data/raw/davis"
+
+
+def test_validate_esm_cache_rejects_missing_or_wrong_dimensional_embeddings(tmp_path):
+    pairs = pd.DataFrame({"target_id": ["BDBT_A"], "sequence": ["AAAA"]})
+
+    with pytest.raises(FileNotFoundError):
+        validate_esm_cache(pairs, tmp_path)
+
+    torch.save(torch.zeros(4, 639), tmp_path / "BDBT_A.pt")
+    with pytest.raises(ValueError, match="640"):
+        validate_esm_cache(pairs, tmp_path)
+
+    torch.save(torch.zeros(4, 640), tmp_path / "BDBT_A.pt")
+    assert validate_esm_cache(pairs, tmp_path) == {"checked_targets": 1}
+
+
+def test_external_metrics_uses_frozen_threshold_and_deterministic_bootstrap():
+    labels = np.array([0, 0, 1, 1])
+    probabilities = np.array([0.1, 0.6, 0.7, 0.9])
+
+    first = external_metrics(
+        labels, probabilities, 0.5959881544, bootstrap_replicates=20
+    )
+    second = external_metrics(
+        labels, probabilities, 0.5959881544, bootstrap_replicates=20
+    )
+
+    assert first == second
+    assert first["threshold"] == 0.5959881544
+    assert first["F1"] == pytest.approx(0.8)
+    assert first["AUROC_95CI"] == [1.0, 1.0]
+    assert first["AUPRC_95CI"] == [1.0, 1.0]
+
+
+def test_primary_gate_requires_counts_manifest_esm_and_deterministic_rerun():
+    summary = {
+        "positive_pairs": 100,
+        "negative_pairs": 100,
+        "all_esm_valid": True,
+        "manifest_complete": True,
+        "rerun_identical": True,
+    }
+
+    assert passes_primary_gate(summary)
+    summary["negative_pairs"] = 99
+    assert not passes_primary_gate(summary)
+
+
+def test_checkpoint_model_config_is_loaded_without_external_reselection(tmp_path):
+    expected = {"predictor": {"task": "classification"}}
+    checkpoint = {"config": {"model": expected}}
+    path = tmp_path / "checkpoint.pt"
+    torch.save(checkpoint, path)
+
+    assert checkpoint_model_config(path) == expected
+
+
+def test_run_frozen_inference_uses_checkpoint_and_emits_probabilities(tmp_path):
+    pairs = pd.DataFrame(
+        {
+            "drug_id": ["BDBD_test"],
+            "target_id": ["BDBT_test"],
+            "canonical_smiles": ["CCO"],
+            "sequence": ["AAAA"],
+            "label": [1],
+        }
+    )
+    torch.save(torch.zeros(4, 640), tmp_path / "BDBT_test.pt")
+    checkpoint = PROJECT_ROOT / "checkpoints" / "best_random.pt"
+
+    predictions = run_frozen_inference(
+        pairs, tmp_path, checkpoint, device="cpu", batch_size=1
+    )
+
+    assert predictions["probability"].between(0.0, 1.0).all()
+    assert predictions["frozen_prediction"].tolist() in ([0], [1])
+
+
+def test_evaluation_cli_pins_the_random_checkpoint_and_validation_threshold():
+    from src.cli.evaluate_bindingdb_external import build_parser
+
+    args = build_parser().parse_args(
+        [
+            "--pairs", "data/external/curated/pairs.csv",
+            "--esm-cache", "data/external/curated/esm2",
+            "--out-dir", "data/external/curated",
+        ]
+    )
+
+    assert args.checkpoint == "checkpoints/best_random.pt"
+    assert args.threshold == pytest.approx(0.5959881544113159)

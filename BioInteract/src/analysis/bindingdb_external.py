@@ -17,8 +17,16 @@ from pathlib import Path
 from typing import Iterable
 import zipfile
 
+import numpy as np
 import pandas as pd
 from rdkit import Chem, RDLogger
+from sklearn.metrics import average_precision_score, roc_auc_score
+import torch
+from torch.utils.data import DataLoader
+
+from src.data.dataset import DTIDataset, collate_dti
+from src.models.biointeract import BioInteract
+from src.utils.metrics import classification_metrics
 
 
 REQUIRED_BINDINGDB_COLUMNS = (
@@ -30,6 +38,7 @@ REQUIRED_BINDINGDB_COLUMNS = (
 )
 STANDARD_AMINO_ACIDS = frozenset("ACDEFGHIKLMNPQRSTVWY")
 KD_THRESHOLD_NM = 30.0
+FROZEN_RANDOM_THRESHOLD = 0.5959881544113159
 
 
 def canonicalize_smiles(smiles: object) -> tuple[str, str] | None:
@@ -341,3 +350,201 @@ def curate_archive(
     }
     audit_path.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
     return manifest
+
+
+def validate_esm_cache(
+    pairs: pd.DataFrame,
+    cache_dir: str | Path,
+    esm2_dim: int = 640,
+) -> dict[str, int]:
+    """Require a real, model-compatible ESM tensor for every external target."""
+    required = {"target_id", "sequence"}
+    if not required.issubset(pairs.columns):
+        raise ValueError(f"pairs must contain {sorted(required)}")
+    root = Path(cache_dir)
+    unique_targets = pairs.loc[:, ["target_id", "sequence"]].drop_duplicates()
+    for target in unique_targets.itertuples(index=False):
+        tensor_path = root / f"{target.target_id}.pt"
+        if not tensor_path.is_file():
+            raise FileNotFoundError(f"Missing ESM-2 embedding for {target.target_id}: {tensor_path}")
+        tensor = torch.load(tensor_path, map_location="cpu", weights_only=True)
+        if not isinstance(tensor, torch.Tensor) or tensor.ndim != 2:
+            raise ValueError(f"ESM-2 embedding for {target.target_id} must be a rank-2 tensor")
+        if tensor.shape[1] != esm2_dim:
+            raise ValueError(
+                f"ESM-2 embedding for {target.target_id} has feature dimension "
+                f"{tensor.shape[1]}, expected {esm2_dim}"
+            )
+        if tensor.shape[0] < len(target.sequence):
+            raise ValueError(
+                f"ESM-2 embedding for {target.target_id} has {tensor.shape[0]} residues, "
+                f"but the curated sequence has {len(target.sequence)}"
+            )
+    return {"checked_targets": int(len(unique_targets))}
+
+
+def _validate_binary_arrays(labels: np.ndarray, probabilities: np.ndarray) -> None:
+    if labels.ndim != 1 or probabilities.ndim != 1 or labels.size != probabilities.size:
+        raise ValueError("labels and probabilities must be one-dimensional arrays of equal length")
+    if labels.size == 0 or set(np.unique(labels)) != {0, 1}:
+        raise ValueError("external metrics require both binary outcome classes")
+    if not np.isfinite(probabilities).all():
+        raise ValueError("probabilities must be finite")
+
+
+def external_metrics(
+    labels: np.ndarray,
+    probabilities: np.ndarray,
+    threshold: float,
+    bootstrap_seed: int = 42,
+    bootstrap_replicates: int = 600,
+) -> dict[str, object]:
+    """Compute external metrics using a frozen threshold and stratified bootstrap."""
+    y_true = np.asarray(labels, dtype=int).reshape(-1)
+    y_probability = np.asarray(probabilities, dtype=float).reshape(-1)
+    _validate_binary_arrays(y_true, y_probability)
+    if not 0.0 <= threshold <= 1.0:
+        raise ValueError("threshold must be in [0, 1]")
+    if bootstrap_replicates < 1:
+        raise ValueError("bootstrap_replicates must be positive")
+
+    point = classification_metrics(y_true, y_probability, threshold=threshold)
+    positive_indices = np.flatnonzero(y_true == 1)
+    negative_indices = np.flatnonzero(y_true == 0)
+    generator = np.random.default_rng(bootstrap_seed)
+    auroc_samples: list[float] = []
+    auprc_samples: list[float] = []
+    for _ in range(bootstrap_replicates):
+        sample_indices = np.concatenate(
+            [
+                generator.choice(positive_indices, size=len(positive_indices), replace=True),
+                generator.choice(negative_indices, size=len(negative_indices), replace=True),
+            ]
+        )
+        sample_labels = y_true[sample_indices]
+        sample_probabilities = y_probability[sample_indices]
+        auroc_samples.append(float(roc_auc_score(sample_labels, sample_probabilities)))
+        auprc_samples.append(float(average_precision_score(sample_labels, sample_probabilities)))
+
+    return {
+        "AUROC": float(point["AUROC"]),
+        "AUPRC": float(point["AUPRC"]),
+        "F1": float(point["F1"]),
+        "Precision": float(point["Precision"]),
+        "Recall": float(point["Recall"]),
+        "threshold": float(threshold),
+        "bootstrap_seed": int(bootstrap_seed),
+        "bootstrap_replicates": int(bootstrap_replicates),
+        "AUROC_95CI": [float(value) for value in np.percentile(auroc_samples, [2.5, 97.5])],
+        "AUPRC_95CI": [float(value) for value in np.percentile(auprc_samples, [2.5, 97.5])],
+    }
+
+
+def passes_primary_gate(summary: dict[str, object]) -> bool:
+    """Return whether every prespecified condition permits manuscript inclusion."""
+    return (
+        int(summary.get("positive_pairs", 0)) >= 100
+        and int(summary.get("negative_pairs", 0)) >= 100
+        and summary.get("all_esm_valid") is True
+        and summary.get("manifest_complete") is True
+        and summary.get("rerun_identical") is True
+    )
+
+
+def checkpoint_model_config(checkpoint_path: str | Path) -> dict:
+    """Read the frozen model configuration embedded in a released checkpoint."""
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    config = checkpoint.get("config")
+    if not isinstance(config, dict):
+        raise ValueError("checkpoint does not contain an embedded model configuration")
+    model_config = config.get("model", config)
+    if not isinstance(model_config, dict) or not model_config:
+        raise ValueError("checkpoint model configuration is empty")
+    return model_config
+
+
+def _resolve_device(device: str) -> str:
+    if device == "auto":
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    if device == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested but is unavailable")
+    if device not in {"cpu", "cuda"}:
+        raise ValueError("device must be 'auto', 'cpu', or 'cuda'")
+    return device
+
+
+def _configure_deterministic_inference(device: str) -> None:
+    """Set deterministic flags before reconstructing a frozen inference model."""
+    torch.use_deterministic_algorithms(True)
+    if device == "cuda":
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+
+
+def run_frozen_inference(
+    pairs: pd.DataFrame,
+    esm_cache_dir: str | Path,
+    checkpoint_path: str | Path,
+    device: str = "auto",
+    batch_size: int = 64,
+    threshold: float = FROZEN_RANDOM_THRESHOLD,
+) -> pd.DataFrame:
+    """Return full-precision probabilities from a fixed checkpoint and threshold."""
+    required = {"drug_id", "target_id", "canonical_smiles", "sequence", "label"}
+    missing = sorted(required - set(pairs.columns))
+    if missing:
+        raise ValueError(f"curated pairs are missing required columns: {missing}")
+    if pairs.empty:
+        raise ValueError("cannot run frozen inference on an empty cohort")
+    if batch_size < 1:
+        raise ValueError("batch_size must be positive")
+
+    resolved_device = _resolve_device(device)
+    _configure_deterministic_inference(resolved_device)
+    validate_esm_cache(pairs, esm_cache_dir)
+    model_config = checkpoint_model_config(checkpoint_path)
+    checkpoint = torch.load(checkpoint_path, map_location=resolved_device, weights_only=False)
+    if "model_state_dict" not in checkpoint:
+        raise ValueError("checkpoint does not contain model_state_dict")
+
+    dataset_frame = pairs.loc[:, ["drug_id", "target_id", "label"]].copy()
+    dataset = DTIDataset(
+        dataset_frame,
+        drug_smiles=dict(zip(pairs["drug_id"], pairs["canonical_smiles"])),
+        target_sequences=dict(zip(pairs["target_id"], pairs["sequence"])),
+        esm2_cache_dir=str(esm_cache_dir),
+        max_protein_len=1200,
+        use_domain_features=model_config.get("target_encoder", {}).get(
+            "use_domain_features", True
+        ),
+        esm2_dim=model_config.get("target_encoder", {}).get("esm2_dim", 640),
+        task=model_config.get("predictor", {}).get("task", "classification"),
+    )
+    loader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        collate_fn=collate_dti,
+        num_workers=0,
+    )
+    model = BioInteract(model_config).to(resolved_device)
+    model.load_state_dict(checkpoint["model_state_dict"])
+    model.eval()
+
+    probabilities: list[float] = []
+    with torch.inference_mode():
+        for batch in loader:
+            probability = model.predict_proba(
+                batch["drug_batch"].to(resolved_device),
+                batch["esm2_embedding"].to(resolved_device),
+                batch["physicochemical"].to(resolved_device),
+                batch["domain_labels"].to(resolved_device),
+                batch["protein_mask"].to(resolved_device),
+                morgan_fp=batch["morgan_fp"].to(resolved_device),
+            )
+            probabilities.extend(probability.detach().cpu().numpy().reshape(-1).astype(float))
+
+    output = pairs.copy().reset_index(drop=True)
+    output["probability"] = probabilities
+    output["frozen_prediction"] = (output["probability"] >= threshold).astype(int)
+    return output
