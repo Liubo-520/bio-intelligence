@@ -1,0 +1,36 @@
+{
+  "title": "Baseline comparison on the random split",
+  "methods": [
+    "DeepDTA\n(2018)",
+    "GraphDTA\n(2021)",
+    "AttentionDTA\n(2019)",
+    "MolTrans\n(2021)",
+    "TransformerCPI\n(2020)",
+    "DrugBAN\n(2023)",
+    "BioInteract\n(Ours)"
+  ],
+  "metrics": {
+    "AUROC": [
+      0.878,
+      0.893,
+      0.9,
+      0.907,
+      0.91,
+      0.915,
+      0.904
+    ],
+    "AUPRC": [
+      0.352,
+      0.403,
+      0.425,
+      0.48,
+      0.492,
+      0.53,
+      0.56
+    ]
+  },
+  "outputs": {
+    "pdf": "submission_revision/figures/fig_comparison_random.pdf",
+    "png": "submission_revision/figures/fig_comparison_random.png"
+  }
+}

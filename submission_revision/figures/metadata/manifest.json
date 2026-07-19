@@ -1,8 +1,11 @@
 {
   "figures": [
+    "fig_ablation",
     "fig2_performance",
     "fig4_training",
-    "fig5_attention_sparsity"
+    "fig5_attention_sparsity",
+    "fig_comparison_random",
+    "fig_comparison_splits"
   ],
   "metadata_dir": "submission_revision/figures/metadata",
   "data_dir": "BioInteract/results/figure_data"

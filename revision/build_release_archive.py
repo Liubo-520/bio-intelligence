@@ -2,8 +2,8 @@
 
 The archive deliberately includes the released source, configurations,
 checkpoints, Davis inputs/ESM cache, canonical metrics, strict-split artifacts,
-and final reproducibility documents.  It excludes local environments,
-credentials, cache directories, and retired pair-specific/ablation artifacts.
+and final reproducibility documents. It excludes local environments,
+credentials, cache directories, and restricted pair-level external artifacts.
 """
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARCHIVE_PREFIX = "biointeract-v1.0.3"
+ARCHIVE_PREFIX = "biointeract-v1.0.4"
 
 FILES = (
     "LICENSE",
@@ -40,6 +40,8 @@ FILES = (
     "revision/run_strict_split_evaluation.py",
     "revision/reviewer_controls.py",
     "revision/revision_analysis.py",
+    "revision/analysis/revision_figures.py",
+    "revision/analysis/test_revision_figures.py",
     "revision/analysis/original_entity_split_metrics.json",
     "revision/analysis/random_validation_predictions.csv",
     "revision/analysis/random_test_predictions.csv",
@@ -98,6 +100,9 @@ SELECTED_RESULTS = (
     "BioInteract/results/figure_data/attention_distribution.json",
     "BioInteract/results/figure_data/attention_distribution.npz",
     "BioInteract/results/figure_data/fig2_performance.json",
+    "BioInteract/results/figure_data/fig_ablation.json",
+    "BioInteract/results/figure_data/fig_comparison_random.json",
+    "BioInteract/results/figure_data/fig_comparison_splits.json",
     "BioInteract/results/figure_data/fig4_training.json",
     "BioInteract/results/figure_data/fig5_attention_sparsity.json",
     "BioInteract/results/figure_data/prediction_summary.json",
@@ -163,8 +168,8 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=Path,
-        default=ROOT / "tmp" / "zenodo_release" / "biointeract-v1.0.3.zip",
-        help="Output ZIP path (default: tmp/zenodo_release/biointeract-v1.0.3.zip).",
+        default=ROOT / "tmp" / "zenodo_release" / "biointeract-v1.0.4.zip",
+        help="Output ZIP path (default: tmp/zenodo_release/biointeract-v1.0.4.zip).",
     )
     parser.add_argument(
         "--omit-esm-cache",

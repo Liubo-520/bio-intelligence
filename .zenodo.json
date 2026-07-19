@@ -1,6 +1,6 @@
 {
   "title": "BioInteract: Interpretable Drug--Target Interaction Prediction via Residue-Level Cross-Attention with Biological Prior Knowledge",
-  "description": "Final reproducibility-audit release for the BioInteract Davis-benchmark binary high-affinity interaction classifier. The release includes source code, frozen configuration files, archived checkpoints, canonical full-precision entity-split predictions and metrics, strict split artifacts, figure-generation scripts, and reproducibility manifests. It records the training provenance, early-stopping selections, paths, and SHA-256 digests for exact-sequence-grouped cold-target and cold-both checkpoints trained from initialization. Unsupported numerical cross-model baselines and their figure artifacts have been removed. It also provides the code, aggregate manifests, and closed pair-level curation audit for a prespecified strict BindingDB Kd-only exact-double-novel external evaluation performed with a frozen Davis checkpoint and threshold. That external result shows limited transfer and is not evidence for broad DTI generalisation, structural contacts, binding pockets, or mechanisms.",
+  "description": "Final resubmission release for the BioInteract Davis-benchmark binary high-affinity interaction classifier. The release includes source code, frozen configurations, archived checkpoints, canonical full-precision entity-split predictions and metrics, strict split artifacts, figure-generation scripts, and reproducibility manifests. It documents the initialization-trained exact-sequence-grouped cold-target and cold-both checkpoints. It restores the original Davis baseline-comparison and component-removal tables/figures; the BioInteract full-model rows use current canonical entity-split metrics, while the component-removed values remain the original submitted numerical results. Accordingly, the component-removal differences are descriptive rather than controlled matched-retraining effect estimates. It also provides code, aggregate manifests, and closed pair-level curation accounting for a prespecified strict BindingDB Kd-only exact-double-novel external evaluation with a frozen Davis checkpoint and threshold. The external result indicates limited transfer and is not evidence for broad DTI generalisation, structural contacts, binding pockets, or mechanisms.",
   "creators": [
     {"name": "Wang, Shengnan"},
     {"name": "Zhang, Qi"},
@@ -18,6 +18,6 @@
     "reproducibility"
   ],
   "upload_type": "software",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "access_right": "open"
 }

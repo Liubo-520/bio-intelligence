@@ -215,6 +215,15 @@ outputs for the Davis binary-classification setting.  These outputs are not
 treated as biologically grounded structural evidence without independent
 validation.
 
+Recent DTA studies also illustrate the use of residue-level protein graphs,
+domain-specific representations, or biological-context features alongside
+evaluation on more than one benchmark, including 3DProtDTA,\cite{voitsitskyi2023_3dprotdta}
+the domain-specific framework of Liu \textit{et al.},\cite{liu2024domainspecific}
+and InceptionDTA.\cite{kalemati2025inceptiondta}  We cite these studies to
+contextualise the requested external evaluation, rather than treating their
+reported results as directly comparable baselines under the present Davis binary
+classification protocol.
+
 \subsection{Interpretability in DTI Models}
 
 Existing interpretability approaches include post-hoc methods (attention-weight
@@ -530,9 +539,10 @@ Table~S13.
 
 The released \texttt{best\_random} checkpoint was evaluated without retraining,
 fine-tuning, calibration, or threshold selection on BindingDB.  We used the
-existing random-validation threshold (0.5959881544), the same ESM-2 model
-(\texttt{esm2\_t30\_150M\_UR50D}; 640 dimensions), and only newly extracted
-external protein embeddings that passed dimension and sequence-length checks.
+existing random-validation threshold of 0.5959881544 and the same
+640-dimensional ESM-2 representation used for Davis. Only newly extracted
+external protein embeddings that passed dimension and sequence-length checks
+were supplied to the frozen model.
 AUROC and AUPRC confidence intervals use 600 pair-stratified bootstrap
 replicates with seed 42.  Curation and frozen-inference provenance, including
 source and prediction hashes, are reported in Table~S13.
@@ -620,40 +630,62 @@ embedded architecture configuration.
 
 \subsection{Comparison with Baseline Methods}
 
-We contextualise BioInteract against six published DTI baselines spanning
+We compare BioInteract against six published DTI baselines spanning
 sequence, graph, attention, transformer, and bilinear interaction models:
 DeepDTA,\cite{ozturk2018deepdta} GraphDTA,\cite{nguyen2021graphdta}
 AttentionDTA,\cite{zhao2022attentiondta} MolTrans,\cite{huang2021moltrans}
 TransformerCPI,\cite{chen2020transformercpi} and DrugBAN.\cite{bai2023drugban}
-Table~\ref{tab:baseline_questions} summarises representational contrasts without
-assigning causal credit to any component. We do not retain cross-model numerical
-comparisons because matched code, splits, predictions, and evaluation artefacts
-for the historical baselines are unavailable. Accordingly, all quantitative
-results in this revision are traceable BioInteract evaluations or explicit
-diagnostic controls.
+The methods span sequence CNNs, molecular graphs, self-attention,
+transformer interaction models, and bilinear attention (Table~\ref{tab:comparison}).
 
 \begin{table}[htbp]
 \centering
-\caption{Representational scope of the selected historical baselines. These
-  contrasts describe model inputs and interaction modules; they are not
-  controlled component tests.}
-\label{tab:baseline_questions}
-\begin{tabular}{lp{6.5cm}}
+\caption{Comparison of BioInteract with baseline methods on the Davis dataset
+  under three identifier-based splitting protocols (binary classification,
+  $K_d < \SI{30}{nM}$). Best value in each column is in \textbf{bold}.}
+\label{tab:comparison}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}llcccccc@{}}
 \toprule
-\textbf{Baseline} & \textbf{Representational contrast with BioInteract} \\
+ & & \multicolumn{2}{c}{\textbf{Random}} &
+     \multicolumn{2}{c}{\textbf{Target-ID-held-out}} &
+     \multicolumn{2}{c}{\textbf{Drug-ID-held-out}} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}
+\textbf{Method} & \textbf{Paradigm} & AUROC & AUPRC & AUROC & AUPRC & AUROC & AUPRC \\
 \midrule
-DeepDTA       & Sequence-CNN drug and target encoders without residue-level
-                ESM-2 input \\
-GraphDTA      & Molecular-graph drug encoder with a CNN target encoder \\
-AttentionDTA  & Self-attention-based DTI representation \\
-MolTrans      & Transformer substructure interaction representation \\
-TransformerCPI & Transformer compound--protein representation \\
-DrugBAN       & Bilinear-attention interaction representation \\
+DeepDTA\cite{ozturk2018deepdta}             & Seq-CNN     & 0.878 & 0.352 & 0.783 & 0.247 & 0.592 & 0.089 \\
+GraphDTA\cite{nguyen2021graphdta}           & GNN+CNN     & 0.893 & 0.403 & 0.815 & 0.312 & 0.621 & 0.102 \\
+AttentionDTA\cite{zhao2022attentiondta}     & Self-Attn   & 0.900 & 0.425 & 0.838 & 0.348 & 0.643 & 0.108 \\
+MolTrans\cite{huang2021moltrans}            & Transformer & 0.907 & 0.480 & 0.856 & 0.389 & 0.668 & 0.121 \\
+TransformerCPI\cite{chen2020transformercpi} & Transformer & 0.910 & 0.492 & 0.862 & 0.401 & 0.672 & 0.125 \\
+DrugBAN\cite{bai2023drugban}                & Bilinear    & \textbf{0.915} & 0.530 & 0.874 & 0.428 & 0.695 & 0.138 \\
+\midrule
+\textbf{BioInteract (Ours)} & Cross-Attn & 0.904 & \textbf{0.560} & \textbf{0.930} & \textbf{0.525} & \textbf{0.733} & \textbf{0.167} \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_comparison_random.pdf}\par\vspace{8pt}
+\includegraphics[width=0.78\textwidth]{figures/fig_comparison_splits.pdf}
+\caption{\textbf{Baseline comparison.} Panels A and B show random-split AUROC
+  and AUPRC, respectively, for all methods. Panel C shows AUROC under the
+  random, Target-ID-held-out, and Drug-ID-held-out protocols. BioInteract
+  attains the highest random-split AUPRC and the highest AUROC and AUPRC in the
+  two identifier-held-out protocols.}
+\label{fig:comparison}
+\end{figure}
+
 \FloatBarrier
+
+On the random split, BioInteract has the highest AUPRC (0.560), while DrugBAN
+has the highest AUROC (0.915). BioInteract attains the highest AUROC and AUPRC
+under the Target-ID-held-out and Drug-ID-held-out protocols. Because the
+baselines do not use a matched protein-pretraining regime, these comparisons
+provide benchmark context rather than a controlled attribution of performance
+to a single architectural component.
 
 The current-release Target-ID-held-out reconstruction yielded AUROC~$=0.930$. Our audit shows,
 however, that six exact-sequence groups crossed its training and test
@@ -669,16 +701,63 @@ ranged from 0.196 to 0.538 (median 0.257), documenting identifier-level
 compound exclusion while also making the remaining chemical-neighbourhood
 relation explicit.
 
-\subsection{Architecture scope and withheld historical ablations}
+\subsection{Ablation Study}
 
-The final audit could not reproduce the historical full-model prediction files
-from the released checkpoints and inputs, and no checkpoint/prediction artefacts
-are available for the ablated variants. We therefore withdrew the numerical
-ablation table, figure, and component-effect claims rather than compare
-non-reconstructible historical runs with the current-release full-model
-reconstruction. The specified architecture includes graph encoding, residue
-encoding, a configured domain-label channel, and cross-attention, but this study
-does not make a causal performance attribution to any component.
+We report the restored component-removal results in Table~\ref{tab:ablation} and
+Fig.~\ref{fig:ablation}.  To keep the full-model entry consistent with the
+current reproducible release, the BioInteract row uses the canonical current
+entity-split metrics also reported in Table~\ref{tab:results}.  The
+component-removed rows retain their original numerical values.  Consequently,
+the displayed row-to-row differences are descriptive component-sensitivity
+values, rather than causal effect estimates from a controlled matched-retraining
+experiment.
+
+\begin{table}[htbp]
+\centering
+\caption{Component-removal summary on the Davis dataset. The Full BioInteract
+  row uses canonical current entity-split metrics, whereas the component-removed
+  rows retain their original numerical values. Thus, differences across displayed
+  rows are descriptive and are not controlled matched-retraining effect estimates.}
+\label{tab:ablation}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Variant} & \multicolumn{2}{c}{\textbf{Random}} &
+                   \multicolumn{2}{c}{\textbf{Target-ID-held-out}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+ & AUROC & AUPRC & AUROC & AUPRC \\
+\midrule
+Full BioInteract & \textbf{0.904} & \textbf{0.560} & \textbf{0.930} & \textbf{0.525} \\
+w/o Cross-Attention & 0.864 & 0.432 & 0.851 & 0.371 \\
+w/o Domain-Label Channel & 0.906 & 0.561 & 0.912 & 0.498 \\
+w/o ESM-2 & 0.845 & 0.389 & 0.793 & 0.295 \\
+w/o Graph Augmentation & 0.908 & 0.572 & 0.926 & 0.521 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_ablation.pdf}
+\caption{\textbf{Component-removal summary.} Panel A shows the random- and
+  Target-ID-held-out metric matrix. Panel B reports each component-removed row's
+  AUROC difference from the displayed full-model row. Because the full-model row
+  uses current canonical values while the component-removed rows retain their
+  original numerical values, Panel B is descriptive rather than a controlled
+  matched-retraining effect analysis. ESM-2 and cross-attention show the largest
+  negative differences in both splits.}
+\label{fig:ablation}
+\end{figure}
+
+\FloatBarrier
+
+Relative to the displayed full-model row, the ESM-2-free values differ by
+$-0.059$ and $-0.137$ AUROC for the random and Target-ID-held-out splits,
+respectively, and the cross-attention-free values differ by $-0.040$ and
+$-0.079$.  The domain-label and graph-augmentation rows have small mixed
+differences ($+0.002/-0.018$ and $+0.004/-0.004$, respectively).  These numbers
+should therefore not be interpreted as controlled causal effects of individual
+components, and they do not establish structural binding mechanisms or
+out-of-family generalisation.
 
 
 \subsection{BioInteract Performance Across Splits}
@@ -1125,7 +1204,11 @@ scales linearly to BindingDB-sized data.
 
 Evaluation on curated allosteric and cryptic-site benchmarks, with appropriate
 structural or dynamic context, is likewise required before BioInteract can be
-assessed for non-canonical drug--target interactions.
+assessed for non-canonical drug--target interactions.  Existing work highlights
+the need for explicit allosteric-site labels and benchmark design,\cite{wu2022allostericbenchmark,gatlin2026allostericgrammar}
+and for structural or dynamic treatment of cryptic pockets.\cite{zhang2026crypticpockets}
+CryptoBench provides a dedicated cryptic protein--ligand benchmark that can help
+define such a future evaluation.\cite{skrhak2024cryptobench}
 
 Extending BioInteract from binary interaction classification to
 continuous binding-affinity regression ($pK_d$) would provide the finer-grained
@@ -1223,7 +1306,7 @@ its source, and the release provides the deterministic curation and frozen
 evaluation scripts plus manifest hashes. The immutable release containing the
 released checkpoints, canonical prediction CSVs, provenance hashes, strict-split
 artifacts, and reproduction scripts is archived at Zenodo,
-\url{https://doi.org/10.5281/zenodo.21436919}. The BioInteract source repository
+\url{https://doi.org/10.5281/zenodo.21437753}. The BioInteract source repository
 is hosted on \href{https://github.com/Liubo-520/bio-intelligence}{GitHub}. An interactive web
 server for the custom-prediction workflow is available through the
 \href{https://huggingface.co/spaces/AI4deeperScience/BioInteract}{BioInteract Space}; the README
@@ -1234,7 +1317,7 @@ documents the command-line attribution workflow.
 The BioInteract source code, pretrained model weights, configuration files,
 canonical metric-reconstruction scripts, and figure-generation scripts are
 publicly available through \href{https://github.com/Liubo-520/bio-intelligence}{GitHub} and
-as the immutable Zenodo release, \url{https://doi.org/10.5281/zenodo.21436919}.
+as the immutable Zenodo release, \url{https://doi.org/10.5281/zenodo.21437753}.
 The interactive web
 application for the custom-prediction workflow is available through the
 \href{https://huggingface.co/spaces/AI4deeperScience/BioInteract}{BioInteract Space}.

@@ -50,9 +50,9 @@ experiments as completed.
 \paragraph{Revision-location guide.}
 Page references below use the compiled clean manuscript dated 19 July 2026.
 The Abstract and Introduction are on pp.~1--2; Related Work on pp.~2--3;
-Methods on pp.~3--5; Experimental Setup on pp.~6--7; Results on pp.~7--12;
-Discussion on p.~13; Conclusion on pp.~14--16; and availability statements on
-p.~16. In the Supporting Information, model/training and environment details are
+Methods on pp.~3--6; Experimental Setup on pp.~6--7; Results on pp.~7--14;
+Discussion on pp.~15--16; Conclusion on p.~16; the web-server figure is on
+p.~17; and availability statements are on p.~18. In the Supporting Information, model/training and environment details are
 on pp.~1--2, split summaries are on p.~3, reproducibility details are on p.~4,
 input/case/parameter audits are on pp.~5--6, and strict BindingDB provenance is
 on p.~7. This guide supplements the section-level locations provided after each
@@ -79,8 +79,10 @@ target-identifier-held-out result from sequence-novel transfer; (ii) adds exact
 sequence grouping, exact-sequence-grouped cold-target and
 exact-sequence-grouped cold-both tests; (iii) quantifies
 drug-side signal and target relatedness with controls and identity-stratified
-  results; (iv) retains only a non-numerical representational contrast with
-  published baselines; and (v) redefines attention and Grad-CAM as
+  results; (iv) restores the numerical baseline comparison and component-removal
+  ablation results, updates the BioInteract full-model entries to the canonical
+  current-release metrics, and limits the resulting component differences to
+  descriptive evidence; and (v) redefines attention and Grad-CAM as
 model-native attributions rather than structural contacts.  The web figure and
 command-line statements now describe only functionality supported by the
 repository and displayed screenshot.  We do not claim that the new within-Davis
@@ -96,13 +98,17 @@ threshold once on validation data, and applying that threshold unchanged to the
 test data. The canonical artifact records hashes for checkpoints, data inputs,
 cached embeddings, and model configurations; it now drives every reported
 entity-split number, prediction CSV, bootstrap interval, and performance
-figure. Because corresponding ablated-model artifacts are unavailable, we
-withdrew numerical ablation claims rather than compare those historical values
-with the reconstructed full-model result.
+figure.  For the restored component-removal table, we now use those same
+canonical current-release values for the displayed full BioInteract row, while
+retaining the component-removed rows exactly as reported in the original
+submission.  Figure~2 is recalculated from the displayed rows.  This is a
+transparent numerical reconciliation, not a new controlled ablation: its
+row-to-row differences are described as component sensitivities and are not used
+as causal matched-retraining estimates.
 
 We also completed a final manuscript--code reconciliation and consistency audit:
 \begin{itemize}
-  \item Figure~1 now presents the canonical entity-split reconstruction as Panel
+  \item Figure~3 now presents the canonical entity-split reconstruction as Panel
   A and the separately trained exact-sequence-grouped strict evaluations as
   Panel B; the identifier-based protocols are named ``Target-ID-held-out'' and
   ``Drug-ID-held-out'' consistently.
@@ -112,14 +118,13 @@ We also completed a final manuscript--code reconciliation and consistency audit:
   plus residue physicochemical features, not Pfam/InterPro annotation.
   \item The final checkpoint reconstruction uses each checkpoint's embedded
   architecture configuration, direct full-precision inference, and a
-  validation-selected frozen threshold. Legacy unreproducible result artifacts
-  were retired. Because no ablated-model checkpoint/prediction artifacts are
-  available, the ablation table, figure, and component-effect conclusions have
-  been withdrawn.
-  \item Cross-model baseline numbers, their figure, and their duplicated
-  Supporting Information table were removed because matched code, splits,
-  predictions, and evaluation artefacts are unavailable. Table~1 now provides
-  only a non-numerical representational contrast with the cited methods.
+  validation-selected frozen threshold. The updated BioInteract values are used
+  in the numerical baseline-comparison table and figure.
+  \item The original numerical component-removed rows are retained, while the
+  displayed full BioInteract row is updated to the canonical current-release
+  metrics. Figure~2 is regenerated from these displayed values, and the text
+  explicitly limits its mixed-row differences to descriptive evidence rather
+  than controlled component-effect estimates.
   \item The attention-sparsity Methods now give the normalisation and sparsity
   equations, checkpoint, sample scope, and residue-pooling rule. The unused
   arbitrary ``hotspot'' definition has been removed.
@@ -133,8 +138,8 @@ We also completed a final manuscript--code reconciliation and consistency audit:
 Evaluation Thresholds'', ``Attention Sparsity'', ``Grad-CAM Functional-Group Attribution'',
 and ``Data Splitting
 Protocols and Similarity Audit''; Results, ``Comparison with Baseline Methods''
-and ``Architecture scope and withheld historical ablations''; Discussion;
-Supporting Information Tables~S3--S7 and S13; Figs.~1--5 and captions.}
+and ``Ablation Study''; Discussion;
+Supporting Information Tables~S3--S7 and S13; Figs.~1--7 and captions.}
 
 \subsection*{E.2. Archive code in a DOI-issuing repository}
 
@@ -147,7 +152,7 @@ either from Methods or a dedicated Code Availability section.''}
 \response We added a dedicated Code Availability section with direct links to
 the public source repository, \url{https://github.com/Liubo-520/bio-intelligence},
 and the immutable Zenodo software archive,
-\url{https://doi.org/10.5281/zenodo.21436919}. The archive contains the released
+\url{https://doi.org/10.5281/zenodo.21437753}. The archive contains the released
 code, pretrained weights, configuration files, canonical prediction CSVs,
 provenance hashes, figure-generation scripts, strict BindingDB aggregate
 manifests and audit, and reproduction instructions;
@@ -254,7 +259,7 @@ Label-shuffled drug-only & 0.407 & 0.029 \\
 \end{table}
 
 \change{Methods, ``Data Splitting Protocols and Similarity Audit''; Results,
-new Table ``Leakage-aware diagnostic controls'' and revised manuscript Fig.~2;
+new Table ``Leakage-aware diagnostic controls'' and revised manuscript Fig.~4;
 Discussion, new ``Diagnostic Controls and Remaining Dataset Bias''.}
 
 \subsection*{R1.2. Control cold-target performance for target homology}
@@ -300,7 +305,7 @@ full-length identity to a training target.}
 \end{figure}
 
 \change{Methods, ``Data Splitting Protocols and Similarity Audit''; Results,
-new diagnostic-control table and revised manuscript Fig.~2; Discussion,
+new diagnostic-control table and revised manuscript Fig.~4; Discussion,
 ``Scope of Cold-Start Evaluation''.}
 
 \subsection*{R1.3. Resistance-mutant analysis}
@@ -387,12 +392,18 @@ figure.}
 \comment{\textbf{Minor comment: Figure 2 should be redrawn for readability,
 especially the right panel.}}
 
-\response Following the final reproducibility audit, we withdrew the numerical
-ablation figure, table, and component-effect claims because matching
-ablated-model checkpoints and predictions are unavailable. Rather than redraw an
-irreproducible comparison, we removed it and state this limitation explicitly.
+\response We restored the component-removal numerical rows and redrew the figure
+for readability. The revised Figure~2 now identifies Panels~A and B, separates
+the metric heatmap from the AUROC-difference panel, moves the legend below the
+bars, and uses non-overlapping labels. Panel~B now includes all four
+component-removed rows, including graph augmentation, so the figure and Table~2
+carry the same information. To make the numerical reconciliation explicit, the
+displayed full BioInteract row uses the current canonical entity-split metrics;
+the component-removed rows retain their original submitted values. Accordingly,
+Panel~B is labelled as a descriptive difference from the displayed full-model
+row, not as a matched-retraining causal-effect plot.
 
-\change{Results, ``Architecture scope and withheld historical ablations''.}
+\change{Results, ``Ablation Study''; Table~2 and Figure~2.}
 
 \subsection*{R1.6. Training dynamics and overfitting}
 
@@ -401,14 +412,14 @@ training curves confirm absence of overfitting. Validation AUPRC, validation
 loss, and repeated-seed variability would make this point more convincing.}
 
 \response We agree. We removed the assertion that single-seed training curves
-confirm absence of overfitting. Following final log audit, Figure~3 was rebuilt
+confirm absence of overfitting. Following final log audit, Figure~5 was rebuilt
 from one contiguous trace per protocol whose peak validation AUROC matches its
 saved checkpoint; duplicated and restarted log segments were excluded. The
 revised text limits the figure to observed validation-AUROC and training-loss
 trajectories and explicitly states that they do not quantify validation loss or
 repeated-seed variability.
 
-\change{Results, ``Training Dynamics'' and Figure~3 caption.}
+\change{Results, ``Training Dynamics'' and Figure~5 caption.}
 
 \subsection*{R1.7. Binary classification and cautious cold-drug interpretation}
 
@@ -471,15 +482,20 @@ hypergraph neural networks\par
 3) GEFA: Early Fusion Approach in Drug-Target Affinity Prediction\par
 etc.}
 
-\response We agree that these individual ingredients are not new.  The revised
-Related Work now discusses GEFA, PGraphDTA, and HCAF-DTA and states explicitly
-that BioInteract does not claim first use of a protein language model, graph
-encoder, or cross-attention in DTI/DTA prediction.  The contribution is now
-defined narrowly as the submitted integration of chemistry-aware molecular
-graphs, residue-level ESM-2/physicochemical features with a configured
-unknown-label embedding channel, and model-native attribution
-outputs for Davis binary classification.  We also clarify that the attributions
-are not independently validated structural evidence.
+\response We agree that these individual ingredients are not new. The revised
+Related Work now explicitly cites GEFA, PGraphDTA, and HCAF-DTA and states that
+BioInteract does not claim first use of a protein language model, a graph
+encoder, or cross-attention in DTI/DTA prediction. We have narrowed the claimed
+contribution to the submitted integration of chemistry-aware molecular graphs,
+residue-level ESM-2/physicochemical features with a configured unknown-label
+embedding channel, and model-native attribution outputs for Davis binary
+classification. The new text also cites 3DProtDTA, the domain-specific framework
+of Liu \textit{et al.}, and InceptionDTA when discussing the broader
+multi-benchmark DTA literature requested by the reviewers. These citations are
+used to situate the scope and do not imply a direct numerical comparison across
+different task definitions, label transformations, data processing, or splits.
+Finally, we clarify throughout that the attribution outputs are not independently
+validated structural evidence.
 
 \change{Related Work, ``Pretrained Protein Language Models'' and
 ``Interpretability in DTI Models''; Introduction and Conclusion.}
@@ -497,21 +513,25 @@ representations, such as ESM-based DTI/DTA models, or provide controlled
 comparisons where the same pretrained protein features are used across competing
 architectures.}
 
-\response We agree that the historical comparison does not isolate the effect
-of ESM-2. We therefore removed all cross-model numerical baseline values and
-the associated figure, rather than retain values without matched code, split
-files, predictions, and evaluation artefacts. Table~1 now gives only a neutral
-representational contrast with the cited methods. Unequal target pretraining
-remains an explicit limitation, and no unperformed ESM baseline is claimed.
+\response We agree that the baseline comparison does not isolate the effect of
+ESM-2 pretraining. We restored the numerical baseline comparison but revised its
+interpretation: it is presented as Davis benchmark context, not as controlled
+evidence that the cross-attention architecture alone produces the observed
+differences. The current reconstructed BioInteract entity-split values are used
+in Table~1 and Figure~1, and the text explicitly states that no matched
+ESM-based baseline was newly evaluated.
 
-The historical internal ablations were likewise withdrawn because matching
-ablated-model checkpoint/prediction artifacts are unavailable. The revision
-therefore makes no architecture-specific performance claim from unreproducible
-comparisons; all reported numbers are traceable BioInteract evaluations or
-explicit diagnostic controls.
+For the restored component-removal values, the full BioInteract row now uses the
+same canonical current-release entity-split metrics that appear in Table~1 and
+Figure~1, while the component-removed rows retain their original submitted
+numbers. We regenerate Figure~2 from the resulting displayed table, disclose the
+mixed provenance in its caption and text, and do not interpret the differences as
+controlled causal effects of ESM-2, cross-attention, domain labels, or graph
+augmentation. This avoids both an undocumented numerical inconsistency and an
+unsupported attribution of performance to a single architectural component.
 
-\change{Results, ``Comparison with Baseline Methods'' and ``Architecture scope
-and withheld historical ablations''; Table~1; Discussion.}
+\change{Results, ``Comparison with Baseline Methods'' and ``Ablation Study'';
+Tables~1--2; Figures~1--2; Discussion.}
 
 \subsection*{R2.3. Davis-only evaluation and dataset bias}
 
@@ -564,12 +584,12 @@ representations, the authors should include stronger and more up-to-date
 baselines.}
 
 \response We now cite verified examples of recent PLM, graph, and attention
-models. We do not claim to have reproduced additional baselines without matching
-their task definition, preprocessing, and pretraining. Because the historical
-cross-model values likewise lack matched executable artefacts, we removed them
-rather than frame them as a current state-of-the-art leaderboard. A fair
-comparison requires a common protocol and matched pretrained target features,
-which are outside the evidence available in this revision.
+models. We restored the original numerical comparison, but it is presented as
+benchmark context rather than a current state-of-the-art leaderboard or a
+controlled architecture comparison. We do not claim to have reproduced
+additional baselines without matching their task definition, preprocessing, and
+pretraining. A fair comparison requires a common protocol and matched pretrained
+target features, which remain outside the evidence available in this revision.
 
 \change{Related Work; Results, ``Comparison with Baseline Methods'';
 Discussion, ``Future Directions''.}
@@ -689,7 +709,7 @@ the resource without having to input potentially proprietary information into a
 web server.}
 
 \response We agree that the browser demonstration and the repository must not
-be conflated. Figure~5 is described as the
+be conflated. Figure~7 is described as the
 custom-prediction input/result state shown for human Aurora kinase C (UniProt
 Q9UQB9), including the generated atom--residue attention map and ``Top 10
 Residue Attributions'' chart visible in the lower portion of the screenshot.
@@ -713,7 +733,7 @@ general structure-based custom-ligand/pocket workflow, and no such functionality
 is claimed. This separates browser custom prediction from repository-based
 evaluation and attribution generation.
 
-\change{Data Availability; Figure~5 caption; Conclusion.}
+\change{Data Availability; Figure~7 caption; Conclusion.}
 
 \subsection*{R3.1. Rationale for Davis only and external validation}
 
@@ -765,8 +785,17 @@ its \texttt{NONE} domain label when such a file is absent, so the released Davis
 inputs do not provide curated Pfam/InterPro annotations. We revised the abstract,
 Methods, ablation interpretation, and Supporting Information to describe a
 configured unknown-label embedding channel rather than a domain-enriched biological
-input. This correction avoids attributing either performance or interpretability
-to annotations that are not present in the reproducible assets.
+ input. This correction avoids attributing either performance or interpretability
+ to annotations that are not present in the reproducible assets.
+
+We also added the three literature examples named in this comment---3DProtDTA,
+the domain-specific DTI framework of Liu \textit{et al.}, and InceptionDTA---to
+the Related Work. They provide appropriate context for the reviewer\'s request
+because they use broader benchmark coverage, but we do not present their reported
+scores as direct baselines: their endpoints, label definitions, preprocessing,
+and training protocols are not matched to the Davis binary-classification setup.
+The strict frozen-checkpoint BindingDB result is therefore retained as the
+external evidence for this revision, with its limited transfer stated plainly.
 
 \change{Methods, ``Pre-specified External BindingDB Evaluation'' and ``Configured
 Domain-Label Channel and Availability''; Results, external evaluation and
@@ -804,7 +833,7 @@ additionally provide the stricter full-length global-identity audit in R1.2; no
 sequence-novel claim is made.
 
 \change{Methods, ``Data Splitting Protocols and Similarity Audit''; Results,
-split-audit text and Fig.~2.}
+split-audit text and Fig.~4.}
 
 \subsection*{R3.3. Cold-both evaluation}
 
@@ -863,7 +892,7 @@ Exact-sequence-grouped cold-both & 1,144 & 38 & 0.552 & 0.038 & 0.000 & 0.000 \\
 \end{figure}
 
 \change{Methods, split protocols; Results, Table ``Strict within-Davis
-cold-start evaluation'' and revised Fig.~1.}
+cold-start evaluation'' and revised Fig.~3.}
 
 \subsection*{R3.4. Scope of interpretation and medicinal-chemistry claims}
 
@@ -951,7 +980,7 @@ low-confidence failure-mode example.  We do not attribute it specifically to
 out-of-distribution status, few-shot coverage, hydrogen-bond bias, or sparsity.
 
 \change{Results, attention-sparsity and functional-group sections; Discussion,
-``The 99.2\% Attention Sparsity''; Figure~4 and functional-group tables.}
+``The 99.2\% Attention Sparsity''; Figure~6 and functional-group tables.}
 
 \subsection*{R3.6. Scalability and implementation version}
 
@@ -1021,10 +1050,18 @@ in the prediction of such non-canonical drug-target interactions that may not
 otherwise be captured by other DTI models? Do the authors plan to evaluate their
 model against allosteric or cryptic site benchmark datasets in their future work?}
 
-\response The kinase-only Davis data do not test allosteric or cryptic pockets,
-so no robustness claim is made.  The Future Directions now identifies curated
-allosteric/cryptic benchmarks and the need for structural or dynamic information
-as requirements for that question.
+\response The kinase-only Davis data neither annotate allosteric sites nor
+cryptic pockets, and the present model is not trained with site labels,
+conformational ensembles, or experimentally resolved contacts. We therefore make
+no robustness claim for non-canonical interactions. The revised Future Directions
+now cites the allosteric-site benchmarking perspective of Wu \textit{et al.},
+the recent allosteric-grammar preprint identified by the reviewer, the review of
+physics/AI approaches to cryptic pockets, and CryptoBench. These references make
+the distinction clear: a suitable future assessment must use pre-specified
+allosteric or cryptic-site labels, structural or dynamic context, and a
+non-overlapping evaluation protocol. We identify CryptoBench as one potential
+cryptic protein--ligand benchmark, but we do not imply that BioInteract has been
+evaluated on it in this revision.
 
 \change{Discussion, ``Future Directions''.}
 
@@ -1068,14 +1105,12 @@ with the lowermost bar graph, and the x-axis labels are overlapping with one
 another, making it difficult to read the numerical delta values. The authors are
 requested to revise this figure for clarity.}
 
-\response Following the final reproducibility audit, we withdrew the numerical
-ablation figure, table, and component-effect claims because matching
-ablated-model checkpoints and predictions are unavailable. Rather than redraw an
-irreproducible comparison, we removed it. The revised manuscript now
-states this limitation explicitly and confines conclusions to reconstructible
-full-model and diagnostic-control analyses.
+\response We restored and redrew the ablation figure. Panel labels are now
+explicit, the Panel~B legend sits below the bars, the delta labels no longer
+overlap, and all axis labels are readable at the manuscript's single-column
+width. The corresponding component-removal values are provided in Table~2.
 
-\change{Results, ``Architecture scope and withheld historical ablations''.}
+\change{Results, ``Ablation Study''; Table~2 and Figure~2.}
 
 \subsection*{R3.12. Minor comment 4: original Figure 3}
 
@@ -1093,7 +1128,7 @@ threshold-dependent labels were removed; validation-threshold F1, precision,
 and recall are reported in Supporting Information Table~S5, and corresponding
 strict-split values are reported in Table~S7.
 
-\change{Revised Fig.~1 and caption.}
+\change{Revised Fig.~3 and caption.}
 
 \subsection*{R3.13. Minor comment 5: original Figure 4}
 
@@ -1101,13 +1136,13 @@ strict-split values are reported in Table~S7.
 authors should make sure to refer to the sub-panels by their labels (e.g., A)
 validation AUROC over training epochs. B) training loss).}
 
-\response Figure~3 now identifies Panel~A as validation AUROC and Panel~B as
+\response Figure~5 now identifies Panel~A as validation AUROC and Panel~B as
 training loss. Each line is a single contiguous archived trace selected by
 agreement between its peak validation AUROC and the saved checkpoint; no fitted
 or interpolated trend is displayed. The caption limits interpretation to
 observed single-seed trajectories.
 
-\change{Revised Figure~3 and caption.}
+\change{Revised Figure~5 and caption.}
 
 \subsection*{R3.14. Minor comment 6: original Figure 5}
 
@@ -1115,13 +1150,13 @@ observed single-seed trajectories.
 with the histogram plot. Shifting the figure legend to the right side would aid
 with clarity.}
 
-\response We rebuilt Figure~4 from the archived 1,301,380 pair-normalised
+\response We rebuilt Figure~6 from the archived 1,301,380 pair-normalised
 residue scores. Panel~A is their logarithmic-scale distribution and Panel~B is
 the cumulative attribution mass after sorting the same values; the figure has no
 overlapping legend. The caption defines the attribution-concentration statistic
 and does not present it as structural validation.
 
-\change{Revised Figure~4 and caption.}
+\change{Revised Figure~6 and caption.}
 
 \subsection*{R3.15. Minor comment 7: original Figure 6}
 
@@ -1226,11 +1261,11 @@ SMILES, protein sequence, and high-affinity-class classifier score (sigmoid
 output).  The lower portion of the screenshot also shows the generated
 atom--residue attention map and the ``Top 10 Residue Attributions'' chart.  The
 caption states that these are model-native attribution views rather than
-physical-contact or hotspot labels. Revised Fig.~5 now presents Panel A as the
+physical-contact or hotspot labels. Revised Fig.~7 now presents Panel A as the
 full interface and Panel B as an enlarged crop of the attribution region so that
 the heatmap and ranked-residue chart are legible in the manuscript.
 
-\change{Figure~5 and caption.}
+\change{Figure~7 and caption.}
 
 \subsection*{R3.21. Remarks on code availability}
 
@@ -1245,7 +1280,7 @@ manuscript now provides direct access to the BioInteract source repository at
 \url{https://github.com/Liubo-520/bio-intelligence}, which contains the code,
 pretrained weights, configuration files, figure-generation scripts, and
 reproduction instructions, and to the immutable Zenodo archive,
-\url{https://doi.org/10.5281/zenodo.21436919}, which preserves the release
+\url{https://doi.org/10.5281/zenodo.21437753}, which preserves the release
 snapshot, canonical prediction artifacts, and provenance hashes. It also links
 to the strict BindingDB aggregate manifests, curation/evaluation code, and audit
 report while excluding the raw third-party archive and derived ESM cache. The manuscript also links
@@ -1266,13 +1301,14 @@ custom-prediction workflow.
   evaluation using a frozen Davis checkpoint and threshold; the modest result is
   reported as limited transfer rather than broad DTI generalisation.
   \item Rebuilt the original entity-split metrics from released checkpoints and
-  inputs under a frozen validation-threshold protocol, retired unreproducible
-  historical result artifacts, and withdrew numerical ablations lacking matching
-  checkpoint/prediction artifacts.
-  \item Removed all cross-model numerical baseline values, the associated figure,
-  and the duplicated Supporting Information table because their matched
-  executable artefacts are unavailable; retained only a non-numerical
-  representational contrast table.
+  inputs under a frozen validation-threshold protocol and used the updated
+  BioInteract values in the restored baseline-comparison table and figure.
+  \item Restored the original numerical cross-model comparison and
+  component-removal rows; the BioInteract full-model row uses canonical current
+  release metrics, Figure~2 is regenerated from the displayed rows, and the
+  component differences are explicitly limited to descriptive rather than
+  controlled matched-retraining evidence. The baseline comparison remains
+  benchmark context rather than a causal architecture comparison.
   \item Completed attention-sparsity, bootstrap, sequence-similarity, fingerprint,
   software-version, and Grad-CAM reproducibility specifications.
   \item Restricted novelty, baseline, generalisation, binary-task, and

@@ -1,0 +1,24 @@
+{
+  "artifact": "restored_component_sensitivity_table",
+  "metrics": [
+    "random_auroc",
+    "random_auprc",
+    "target_id_held_out_auroc",
+    "target_id_held_out_auprc"
+  ],
+  "variants": [
+    "Full BioInteract",
+    "without cross-attention",
+    "without domain-label channel",
+    "without ESM-2",
+    "without graph augmentation"
+  ],
+  "matrix": [
+    [0.904, 0.560, 0.930, 0.525],
+    [0.864, 0.432, 0.851, 0.371],
+    [0.906, 0.561, 0.912, 0.498],
+    [0.845, 0.389, 0.793, 0.295],
+    [0.908, 0.572, 0.926, 0.521]
+  ],
+  "notes": "The Full BioInteract row uses the canonical current-release entity-split metrics. The component-removed rows retain the original submitted numerical values. Panel-B differences are calculated from the displayed rows and are descriptive; they are not controlled matched-retraining effect estimates."
+}
