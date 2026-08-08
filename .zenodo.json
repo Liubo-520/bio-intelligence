@@ -1,13 +1,25 @@
 {
-  "title": "BioInteract: Interpretable Drug--Target Interaction Prediction via Residue-Level Cross-Attention with Biological Prior Knowledge",
-  "description": "Final resubmission release for the BioInteract Davis-benchmark binary high-affinity interaction classifier. The release includes source code, frozen configurations, archived checkpoints, canonical full-precision entity-split predictions and metrics, strict split artifacts, figure-generation scripts, and reproducibility manifests. It documents the initialization-trained exact-sequence-grouped cold-target and cold-both checkpoints and restores the Davis baseline-comparison and component-removal tables and figures. It also provides code, aggregate manifests, and closed pair-level curation accounting for a prespecified strict BindingDB Kd-only exact-double-novel external evaluation with a frozen Davis checkpoint and threshold. The external result indicates limited transfer and is not evidence for broad DTI generalisation, structural contacts, binding pockets, or mechanisms.",
+  "title": "BioInteract: Interpretable Drug--Target Interaction Prediction via Residue-Level Cross-Attention with Protein-Language and Physicochemical Priors",
+  "description": "Second-revision release for the BioInteract Davis-benchmark binary high-affinity interaction classifier. It adds the matched-protocol comparison harness, in which every architecture is trained under one shared partition, seed, optimiser, schedule, loss and validation-selected threshold; the ordered row-level BindingDB filtering audit, applied both to the pre-specified curated-articles snapshot and to the complete BindingDB release; the frozen external evaluation on the larger full-release cohort; and the applicability-domain analysis that places every external ligand and target relative to the Davis training distribution. The interactive web application now reports the same two nearest-neighbour scores for each submitted pair. The release also contains source code, frozen configurations, archived checkpoints, canonical full-precision entity-split predictions and metrics, strict-split artifacts, figure-generation scripts, and reproducibility manifests. External transfer remains limited; the release is not evidence for broad DTI generalisation, structural contacts, binding pockets, or mechanisms. Peer-review correspondence is not included.",
   "creators": [
-    {"name": "Wang, Shengnan"},
-    {"name": "Zhang, Qi"},
-    {"name": "Liu, Xucheng"},
-    {"name": "Wang, Zixuan"},
-    {"name": "Cheng, Jiangke"},
-    {"name": "Huang, Zhi"}
+    {
+      "name": "Wang, Shengnan"
+    },
+    {
+      "name": "Zhang, Qi"
+    },
+    {
+      "name": "Liu, Xucheng"
+    },
+    {
+      "name": "Wang, Zixuan"
+    },
+    {
+      "name": "Cheng, Jiangke"
+    },
+    {
+      "name": "Huang, Zhi"
+    }
   ],
   "license": "MIT",
   "keywords": [
@@ -18,6 +30,6 @@
     "reproducibility"
   ],
   "upload_type": "software",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "access_right": "open"
 }

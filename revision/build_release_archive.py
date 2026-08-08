@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARCHIVE_PREFIX = "biointeract-v1.0.4"
+ARCHIVE_PREFIX = "biointeract-v1.0.5"
 
 FILES = (
     "LICENSE",
@@ -65,20 +65,37 @@ FILES = (
     "revision/analysis/bindingdb_external_validation_report.md",
     "revision/analysis/test_bindingdb_submission_claims.py",
     "BioInteract/src/tests/test_public_figure_provenance.py",
-    "submission_revision/manuscript_clean.tex",
-    "submission_revision/manuscript_clean.pdf",
-    "submission_revision/manuscript_marked.tex",
-    "submission_revision/manuscript_marked.pdf",
-    "submission_revision/supporting_information.tex",
-    "submission_revision/supporting_information.pdf",
-    "submission_revision/response_to_reviewers.tex",
-    "submission_revision/response_to_reviewers.pdf",
-    "submission_revision/references.bib",
-    "submission_revision/wlscirep.cls",
-    "submission_revision/jabbrv.sty",
-    "submission_revision/jabbrv-ltwa-all.ldf",
-    "submission_revision/jabbrv-ltwa-en.ldf",
-    "submission_revision/naturemag-doi.bst",
+    "submission_revision_v2/manuscript_clean.tex",
+    "submission_revision_v2/manuscript_clean.pdf",
+    "submission_revision_v2/manuscript_marked.tex",
+    "submission_revision_v2/manuscript_marked.pdf",
+    "submission_revision_v2/supporting_information.tex",
+    "submission_revision_v2/supporting_information.pdf",
+    "submission_revision_v2/references.bib",
+    "submission_revision_v2/wlscirep.cls",
+    "submission_revision_v2/jabbrv.sty",
+    "submission_revision_v2/jabbrv-ltwa-all.ldf",
+    "submission_revision_v2/jabbrv-ltwa-en.ldf",
+    "submission_revision_v2/naturemag-doi.bst",
+    "revision_v2/run_baseline_suite.py",
+    "revision_v2/baseline_models.py",
+    "revision_v2/bindingdb_waterfall.py",
+    "revision_v2/applicability_domain.py",
+    "revision_v2/build_applicability_reference.py",
+    "revision_v2/capture_webserver.py",
+    "revision_v2/figures_v2.py",
+    "revision_v2/render_matched_table.py",
+    "revision_v2/render_fulldb_result.py",
+    "revision_v2/build_tools/build_manuscripts.py",
+    "revision_v2/build_tools/manuscript_source.tex",
+    "revision_v2/analysis/baseline_suite.json",
+    "revision_v2/analysis/bindingdb_waterfall.json",
+    "revision_v2/analysis/applicability_domain.json",
+    "revision_v2/analysis/applicability_domain_pairs.csv",
+    "revision_v2/analysis/webserver_attribution.json",
+    "BioInteract/hf_space/examples/davis_applicability_reference.json",
+    "BioInteract/results/external_validation/bindingdb_all_202608_manifest.json",
+    "BioInteract/results/external_validation/bindingdb_all_202608_summary.json",
     "docs/superpowers/specs/2026-07-19-bindingdb-external-validation-design.md",
     "docs/superpowers/plans/2026-07-19-bindingdb-external-validation.md",
 )
@@ -90,7 +107,7 @@ TREES = (
     "BioInteract/data/esm2_embeddings",
     "BioInteract/checkpoints",
     "BioInteract/hf_space/src",
-    "submission_revision/figures",
+    "submission_revision_v2/figures",
 )
 
 SELECTED_RESULTS = (

@@ -10,7 +10,7 @@ This immutable resubmission release supersedes v1.0.3.
   audit, and claim-safe Q9UQB9 hosted-Space workflow.
 
 Use the repository and Zenodo archive together: the `v1.0.4` tag identifies the
-executable source, while [DOI: 10.5281/zenodo.21437753](https://doi.org/10.5281/zenodo.21437753)
+executable source, while [DOI: 10.5281/zenodo.21845772](https://doi.org/10.5281/zenodo.21845772)
 identifies the immutable deposited record.
 
 # BioInteract v1.0.3
