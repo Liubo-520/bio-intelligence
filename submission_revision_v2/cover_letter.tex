@@ -1,0 +1,86 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{parskip}
+\setlength{\emergencystretch}{2em}
+\pagenumbering{gobble}
+
+\begin{document}
+
+\begin{flushright}
+Zhi Huang\\
+Department of Environmental Science and Engineering\\
+College of Architecture and Environment, Sichuan University\\
+Chengdu 610065, P.R. China\\
+Institute of New Energy and Low Carbon Technology, Sichuan University\\
+Chengdu 610065, P.R. China\\
+Email: 525514353@qq.com
+\end{flushright}
+
+\vspace{1em}
+\noindent To the Editor, \textit{Scientific Reports}
+
+\vspace{1em}
+\noindent Dear Dr Zoete and Ms Agnihotri,
+
+Please find the second revision of our manuscript, now titled ``BioInteract:
+Interpretable Drug--Target Interaction Prediction via Residue-Level
+Cross-Attention with Protein-Language and Physicochemical Priors'' (Submission ID
+56f53c41-a86e-4948-8cfd-a3c11b83fd1b), for reconsideration in
+\textit{Scientific Reports}.  The revision comprises a clean manuscript, a
+marked manuscript in which new and substantively revised material is shown in
+red, Supporting Information, and a point-by-point response.
+
+Your decision letter asked us to address methodological novelty, the need for an
+appropriate ESM-2 baseline, the reproducibility of the BindingDB filtering
+procedure, comparison with recent models, the claimed biological meaning of the
+attention maps, the purpose of the mutation experiments, and the remaining
+presentation issues.  We have run new experiments for the first four of these
+rather than only rewriting text.
+
+The most consequential addition is a matched-protocol benchmark in which
+BioInteract and re-implemented baselines are trained by a single harness under
+one partition, seed, optimiser, schedule, loss and threshold rule.  The main
+text keeps a minimal three-model ladder that changes one component at a time and
+whose middle row consumes exactly the frozen ESM-2 representation BioInteract
+uses, which provides the controlled comparison Reviewer~2 requested; three
+further architecture families evaluated in our own setting are reported in the
+Supporting Information.  The main comparison table no longer contains any value
+quoted from another publication.  Within the controlled ladder each component earns its
+place, and cross-attention contributes most under the entity-held-out protocols
+(0.201 AUPRC over concatenation on Target-ID-held-out, against 0.067 on the
+random split).  The random split itself separates the tested architectures only
+weakly, so we rest no conclusion on it.  The Abstract, Discussion and Conclusion
+have been rewritten so that the claims match the controlled evidence.  The paper is now positioned as an
+audited, reproducible and applicability-domain-aware reference point for the
+Davis binary classification task rather than as a new architectural principle.
+
+We have also reported the BindingDB curation as a complete ordered filtering
+waterfall, which shows that 97.2\,\% of the rows in the pre-specified snapshot
+report no $K_d$ at all, and we applied the identical pipeline to the complete
+BindingDB release to demonstrate that the criteria scale as expected.  A new
+applicability-domain analysis explains the limited external transfer
+quantitatively, and the released web server now reports the same two
+nearest-neighbour scores for every user-submitted pair, so that a user is warned
+when a query lies in the regime where our external evaluation showed
+chance-level ranking.  While preparing the revised web-server figure we found
+and corrected a mislabelled example in the previous version, which is described
+in the response letter.
+
+Every presentation change requested by Reviewer~3 has been implemented.  Three
+tables and one figure were deleted, one figure was merged, and one was replaced
+by a more informative version, so the manuscript contains fewer floats than
+before despite the three new analyses.
+
+All code, checkpoints, curation and audit scripts, and the analyses added in this
+round are available through the project GitHub repository and the immutable
+Zenodo release cited in the Code Availability section.
+
+Thank you for considering our revision.
+
+\vspace{1em}
+\noindent Sincerely,\\
+Zhi Huang, on behalf of all authors
+
+\end{document}

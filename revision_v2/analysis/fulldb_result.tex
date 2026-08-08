@@ -1,0 +1,21 @@
+The frozen checkpoint achieved AUROC $=0.533$ (95\% CI 0.526--0.539) and AUPRC $=0.383$ (95\% CI 0.378--0.390) on this cohort, against a positive prevalence of 0.347.  At the frozen Davis threshold, F1 was 0.044, precision was 0.513 and recall was 0.023.  A cohort twenty times larger therefore confirms the conclusion drawn from the pre-specified evaluation: this Davis-trained classifier retains only weak ranking information outside its training distribution, and its transferred decision threshold is not usable without recalibration.
+
+\begin{table}[htbp]
+\centering
+\caption{Frozen external evaluation on both BindingDB cohorts. Both use the same
+  \texttt{best\_random} checkpoint, the same frozen Davis threshold of
+  0.5959881544, and the same exact-$K_d$ double-novel protocol; they differ only
+  in the source snapshot. Intervals are 600-replicate pair-stratified bootstrap
+  95\% confidence intervals with seed 42.}
+\label{tab:bindingdb_external}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Cohort} & \textbf{Pairs / positives} & \textbf{AUROC} & \textbf{AUPRC} & \textbf{F1} & \textbf{Recall} \\
+\midrule
+Curated articles, 202607 (pre-specified) & 1{,}932 / 516 & 0.560 [0.531, 0.589] & 0.340 [0.314, 0.372] & 0.070 & 0.037 \\
+Complete release, 202608 (verification) & 38{,}193 / 13{,}264 & 0.533 [0.526, 0.539] & 0.383 [0.378, 0.390] & 0.044 & 0.023 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}

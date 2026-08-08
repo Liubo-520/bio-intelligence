@@ -1,0 +1,1789 @@
+%%====================================================================
+%% Single source for manuscript_clean.tex and manuscript_marked.tex.
+%% Blocks between %%REV-START and %%REV-END are new or substantively
+%% revised in this round; build_manuscripts.py strips the markers for the
+%% clean file and colours the blocks red for the marked file.
+%%====================================================================
+\documentclass[fleqn,10pt]{wlscirep}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{siunitx}
+\usepackage{placeins}
+\graphicspath{{figures/}}
+%%REV-START
+\title{BioInteract: Interpretable Drug--Target Interaction Prediction via
+  Residue-Level Cross-Attention with Protein-Language and Physicochemical Priors}
+%%REV-END
+
+\author[1,+]{Shengnan Wang}
+\author[2,+]{Qi Zhang}
+\author[2]{Xucheng Liu}
+\author[2]{Zixuan Wang}
+\author[2]{Jiangke Cheng}
+\author[3,4]{Zhi Huang*}
+\affil[1]{School of Biological and Chemical Engineering,
+  Panzhihua University, Panzhihua 617000, P.R.\ China}
+\affil[2]{School of Mathematics and Computer Science,
+  Panzhihua University, Panzhihua 617000, P.R.\ China}
+\affil[3]{Department of Environmental Science and Engineering,
+  College of Architecture and Environment,
+  Sichuan University, Chengdu 610065, P.R.\ China}
+\affil[4]{Institute of New Energy and Low Carbon Technology,
+  Sichuan University, Chengdu 610065, P.R.\ China}
+
+\affil[*]{corresponding.author. E-mail: 525514353@qq.com}
+
+\affil[+]{these authors contributed equally to this work}
+
+\begin{abstract}
+%%REV-START
+Accurate prediction of drug--target interactions (DTIs) can support the
+prioritisation of candidate pairs, yet published models are usually compared
+through numbers quoted across papers whose protocols differ, and their
+attribution outputs are rarely accompanied by an explicit statement of where
+the model may be trusted. We present BioInteract, a DTI framework combining a
+chemistry-aware molecular graph encoder, an ESM-2/physicochemical protein
+residue encoder with a configured domain-label channel, and bidirectional
+cross-attention, and we evaluate it inside a matched-protocol benchmark on the
+Davis kinase inhibitor dataset in which every model is trained with one shared
+partition, seed, optimiser, schedule and threshold rule. The comparison is a
+three-model ladder that changes one component at a time, so that adding the
+frozen ESM-2 representation and then replacing concatenation with
+cross-attention can be read separately. Both steps help, but by
+protocol-dependent amounts: the protein language model adds 0.120 and 0.063
+AUPRC under the random and Target-ID-held-out protocols, whereas cross-attention
+adds 0.067 and 0.201 AUPRC under the same two protocols. A breadth check across two
+further architecture families places these differences in context: on the random
+split the five architectures tested fall within a narrow band, so the
+entity-held-out protocols carry the informative contrasts. We audit chemical and
+sequence similarity across all partitions, evaluate exact-sequence-grouped
+cold-start protocols, and report leakage-aware diagnostic controls. On a strict
+exact-entity-novel BindingDB cohort, whose construction is documented as a
+complete row-level filtering waterfall for both the curated-articles snapshot
+and the full BindingDB release, the frozen Davis checkpoint achieved an AUROC of
+0.560 and an AUPRC of 0.340; an applicability-domain analysis attributes this
+limited transfer principally to ligand and target novelty relative to Davis.
+The attribution analyses generate hypotheses about model-relevant atoms and
+residues, but, in line with evidence from models trained with explicit
+non-covalent interaction supervision, unsupervised attention is not treated
+here as a recovered interaction mechanism. BioInteract therefore contributes an
+audited, reproducible and domain-of-applicability-aware DTI reference rather
+than a new architectural principle.
+%%REV-END
+\end{abstract}
+\begin{document}
+
+\flushbottom
+\maketitle
+\thispagestyle{empty}
+\section*{Keywords}
+
+Drug--target interaction; interpretable deep learning; cross-attention; graph
+neural network; protein language model; model attribution
+%%====================================================================
+\section{Introduction}
+\label{sec:introduction}
+%%====================================================================
+
+The emergence of ``AI for Science'' has increased expectations that
+computational models should not merely maximise predictive accuracy, but should
+also expose the evidence and uncertainty needed for scientific hypothesis
+generation.\cite{schneider2020rethinking}  This expectation is especially
+important in drug discovery, where identifying drug--target interactions (DTIs)
+requires reliable prioritisation together with inspectable outputs that can
+guide, but not replace, mechanistic follow-up.
+
+Experimental profiling of binding affinities through surface plasmon resonance,
+isothermal titration calorimetry, or kinase activity assays is laborious and
+prohibitively expensive.  The Davis kinase inhibitor
+dataset\cite{davis2011comprehensive} alone required systematic measurement
+of 72 inhibitors against 442 kinases---a campaign spanning only a fraction of
+the druggable proteome.  Computational DTI prediction can ease this bottleneck
+by prioritising the most promising candidates and thereby reducing cost and
+attrition in development
+pipelines.\cite{chen2016drug,yamanishi2008prediction}  Yet the field has
+largely remained trapped in a \emph{predictive-accuracy race}: successive deep
+learning architectures---DeepDTA,\cite{ozturk2018deepdta}
+GraphDTA,\cite{nguyen2021graphdta}
+MolTrans,\cite{huang2021moltrans}
+DrugBAN\cite{bai2023drugban}---have incrementally improved benchmark metrics
+while leaving an important modelling question only partly addressed:
+\emph{which input features drive a given prediction?}
+
+%%REV-START
+Pairwise DTI modelling is only one of several complementary routes to the same
+practical decision.  Ligand-based affinity and selectivity profiling can
+prioritise modulators of a receptor family while explicitly delimiting the
+applicability domain of the resulting models and validating them on external
+compounds, as illustrated by ALPACA for cannabinoid receptor
+modulators;\cite{delre2023alpaca} unified frameworks such as DTIAM additionally
+couple interaction prediction with affinity regression and mechanism-of-action
+assignment.\cite{lu2025dtiam}  These examples are cited here for context: they
+indicate that applicability-domain assessment and external validation, rather
+than benchmark ranking alone, determine whether a predictive model is usable,
+and the present study adopts that emphasis for a pairwise DTI classifier.
+%%REV-END
+
+This question lies at the heart of the broader ``AI for Science'' agenda.  A
+prediction with no interpretable output is, at best, a hypothesis generator.
+Moving from \emph{prediction} to hypothesis generation therefore benefits from
+models that expose internal attribution patterns---for example, attention
+distributed across drug atoms and protein residues and gradient-based atom
+scores---rather than returning only a scalar probability.  These outputs can
+prioritise follow-up experiments, but they are not direct measurements of
+physical contacts or pocket geometry.
+
+Classical DTI methods illuminate the fundamental tension between interpretability
+and accuracy.  Structure-based approaches (molecular docking, molecular dynamics)
+provide structural inference anchored in three-dimensional protein
+geometry,\cite{kitchen2004docking} yet are constrained by the availability of
+high-quality crystal structures and the steep computational cost of free-energy
+calculations.  Ligand-based methods (QSAR, molecular
+fingerprints)\cite{cherkasov2014qsar} circumvent structural requirements at
+the expense of mechanistic transparency.  Neither paradigm fully satisfies the
+twin demands of modern drug discovery.
+
+Deep learning has transformed predictive capabilities in this domain.
+Pretrained protein language models such as ESM-2\cite{lin2023evolutionary}
+encode evolutionary and structural information at residue resolution, while
+graph neural networks faithfully capture molecular topology.  Concurrently,
+chemical language models have demonstrated that pretrained molecular
+representations support accurate and interpretable prediction of reactivity and
+toxicity,\cite{huang2025large} and chemistry-enhanced transformer
+architectures such as Radical-Net recover atom-level reaction
+mechanisms.\cite{huang2025radical}  Together, these advances underscore
+the importance of domain-specific pretraining and chemistry-aware inductive
+biases in molecular AI.\cite{huang2024ai}
+
+In this study, ``prior knowledge'' refers specifically to the
+sequence information encoded by frozen ESM-2 pretraining together with explicit
+per-residue physicochemical descriptors. It does not denote curated Pfam,
+InterPro, binding-site, or other protein-domain annotations, and the manuscript
+title has been narrowed accordingly.
+
+The ``AI for Science'' paradigm benefits from attribution mechanisms that are
+part of the prediction pathway rather than appended only after training.
+Attention visualisation and SHapley Additive exPlanations (SHAP) can nevertheless
+have faithfulness limitations.\cite{jain2019attention} A central principle is
+therefore that, when attention is an integral component of the prediction
+pathway, the resulting attributions can be examined consistently with model
+output but still require external validation before mechanistic interpretation.
+
+%%REV-START
+\subsection*{Scope of the present contribution}
+
+The individual components used here are established.  Chemistry-aware molecular
+graph encoders, residue-level protein language-model features, and cross-modal
+attention have each been explored extensively, and combinations of them have
+been published for DTI and drug--target affinity (DTA)
+prediction.\cite{nguyen2022gefa,bal2023pgraphdta,li2025hcafdta}  We therefore do
+not claim that any single element of BioInteract, or their combination, is
+methodologically new.  Nor do we claim that its attention maps recover binding
+mechanisms: as discussed in Section~\ref{sec:related}, prior work using explicit
+non-covalent interaction supervision indicates that attention learned only from
+interaction labels need not be biologically
+meaningful.\cite{li2020monn,gim2023arkdta,seo2024blendnet}
+
+What this study contributes is an audited reference point for the Davis binary
+high-affinity classification task, comprising four elements.  First, a
+matched-protocol benchmark (Section~\ref{sec:matched}) in which BioInteract is
+compared against re-implemented baselines trained under a single shared
+partition, seed, optimiser, schedule, loss and threshold rule.  Its primary form
+is a three-model ladder that changes one component at a time---molecular graph
+without a protein language model, then with one, then with cross-attention in
+place of concatenation---so that each difference has a single cause rather than
+reflecting a difference in training recipe or reporting convention.  Second, a leakage audit of the identifier-based
+splits together with exact-sequence-grouped cold-start protocols and
+leakage-aware diagnostic controls.  Third, a strict external evaluation on
+BindingDB whose construction is reported as a complete row-level filtering
+waterfall for both the curated-articles snapshot and the full database release,
+accompanied by an applicability-domain analysis that quantifies why transfer is
+limited.  Fourth, model-native attribution outputs released with an explicit
+statement of what they do and do not establish.  Several of these analyses
+reduce, rather than support, the apparent strength of the model; we report them
+because a reference point is only useful if its boundaries are visible.
+%%REV-END
+
+BioInteract rests on three architectural components:
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Chemistry-aware molecular graph encoding.}  Drug molecules are
+  represented as attributed graphs encoding functional-group-relevant properties
+  (H-bond donor/acceptor status, hydrophobicity, partial charges) that
+  are available to the learned molecular representation.
+
+\item \textbf{Protein residue encoding with a disclosed domain-label limit.}
+  Protein representations fuse ESM-2 residue embeddings with per-residue
+  physicochemical properties and a configured domain-label channel. No curated
+  per-protein domain-annotation files are present in the released Davis input
+  package; the channel therefore receives the unknown label at every position
+  and is not interpreted as Pfam/InterPro information.
+
+\item \textbf{Bidirectional cross-attention attribution module.}  A multi-head
+  cross-attention mechanism computes a matrix
+  $\mathbf{M} \in \mathbb{R}^{n_\text{atoms} \times n_\text{residues}}$ of
+  learned attention weights between drug-atom and protein-residue
+  representations.  The matrix is an integral component of the forward pass;
+  it is used here as a model-native attribution output, not as a predicted
+  atom-level structural contact map.
+\end{enumerate}
+
+We evaluate BioInteract on the Davis kinase inhibitor
+dataset\cite{davis2011comprehensive} under a random pair split and two
+entity-held-out protocols: Drug-ID-held-out and Target-ID-held-out. We report
+chemical and sequence-similarity
+diagnostics for these partitions, because identifier-level exclusion alone does
+not guarantee scaffold- or sequence-level novelty.  We also add
+exact-sequence-grouped cold-target and exact-sequence-grouped cold-both
+evaluations.  The attribution
+analyses---cross-attention maps, Grad-CAM scores, attention-concentration
+summaries, and case studies---are interpreted as model behaviour rather than as
+independent evidence of molecular recognition mechanisms.
+
+%%====================================================================
+\section{Related Work}
+\label{sec:related}
+%%====================================================================
+
+\subsection{Deep Learning for DTI Prediction}
+
+Deep learning approaches to DTI prediction have evolved through several
+generations.\cite{wen2017deep}  \emph{Sequence-based} models encode both
+drug SMILES and protein amino acid sequences as one-dimensional strings.
+DeepDTA\cite{ozturk2018deepdta} employs parallel one-dimensional convolutional
+neural networks (CNNs) for drug and
+protein encoding; WideDTA\cite{ozturk2019widedta} extends this framework
+with additional molecular descriptors.  Although computationally efficient, these
+models discard molecular topology and are limited in their capacity to model
+long-range intramolecular interactions.
+
+\emph{Graph-based} models overcome this limitation by representing drugs as
+attributed molecular graphs.  GraphDTA\cite{nguyen2021graphdta} benchmarks a
+graph convolutional network (GCN), graph attention network (GAT), graph
+isomorphism network (GIN), and hybrid GAT--GCN encoder while retaining a CNN
+for proteins.  MolTrans\cite{huang2021moltrans} introduces mutual
+interaction learning between molecular substructure representations and protein
+subsequences.
+
+\emph{Attention-based} models include architectures that learn local or
+cross-modal representations for DTI/DTA prediction.
+TransformerCPI\cite{chen2020transformercpi} applies transformer attention to
+drug--protein interaction patterns.  DrugBAN\cite{bai2023drugban} introduces
+a dual bilinear attention network for fine-grained local interaction modelling.
+AttentionDTA\cite{zhao2022attentiondta} employs multi-head self-attention for
+both drug and protein representations.
+%%REV-START
+Because these models were published under different splits, binarisation rules,
+thresholds and reporting conventions, values quoted across their papers are not
+directly comparable.  Section~\ref{sec:matched} therefore re-implements
+representatives of the sequence-CNN, molecular-graph and bilinear-attention
+families and trains them under one shared protocol.
+%%REV-END
+
+\subsection{Pretrained Protein Language Models}
+
+ESM-2,\cite{lin2023evolutionary} trained on millions of protein sequences
+via masked language modelling, produces residue-level embeddings that encode
+evolutionary conservation, secondary structure propensity, and contact
+information.  These pretrained representations substantially outperform
+hand-crafted features on downstream tasks.\cite{rives2021biological}  In DTI
+prediction, pretrained representations have already been combined with graph
+drug encoders and interaction modules.  For example, GEFA uses pretrained
+protein representations in an early-fusion graph architecture,\cite{nguyen2022gefa}
+PGraphDTA replaces a CNN target encoder with protein language-model features,
+\cite{bal2023pgraphdta} and HCAF-DTA combines protein representations with
+bidirectional cross-attention.\cite{li2025hcafdta}  BioInteract therefore does
+not claim to be the first application of a protein language model, a graph
+encoder, or cross-attention to DTI/DTA prediction.
+%%REV-START
+Because the effect of protein language-model pretraining cannot be separated
+from architectural choices by comparing against models that lack it, the
+matched-protocol benchmark in Section~\ref{sec:matched} includes three
+baselines that consume the identical frozen \texttt{esm2\_t30\_150M\_UR50D}
+representation used by BioInteract and differ only in how drug and protein
+representations are combined.
+%%REV-END
+
+Recent DTA studies also illustrate the use of residue-level protein graphs,
+domain-specific representations, or biological-context features alongside
+evaluation on more than one benchmark, including 3DProtDTA,\cite{voitsitskyi2023_3dprotdta}
+the domain-specific framework of Liu \textit{et al.},\cite{liu2024domainspecific}
+and InceptionDTA.\cite{kalemati2025inceptiondta}
+%%REV-START
+These studies, while not directly comparable to the present Davis binary
+classification protocol, provide further context for alternative approaches to
+the DTA problem.
+%%REV-END
+
+\subsection{Interpretability in DTI Models}
+
+Existing interpretability approaches include post-hoc methods (attention-weight
+visualisation, gradient-based attribution, and SHAP values\cite{jimenez2020drug})
+and model-native attribution mechanisms.  Attention weights do not necessarily
+equal feature importance.\cite{jain2019attention}
+%%REV-START
+This general caution has a specific and well-documented form in DTI modelling.
+MONN showed that jointly supervising non-covalent interaction labels derived
+from structural complexes is needed to obtain pairwise interaction predictions
+that agree with those complexes;\cite{li2020monn} ArkDTA reached the same
+conclusion by regularising protein--ligand attention towards non-covalent
+interaction annotations;\cite{gim2023arkdta} and BlendNet reported that
+interaction-level supervision is what allows a complex-structure-free model to
+produce attributions consistent with known binding
+behaviour.\cite{seo2024blendnet}  We do not treat these studies as a separate
+category of work that lies outside the scope of comparison.  We read them as
+direct evidence about conventional attention-based models, including
+BioInteract: absent explicit interaction supervision, there is no reason to
+expect attention weights to identify the residues that actually contact a
+ligand, and a small number of qualitative visualisations cannot establish that
+they do.  BioInteract accordingly uses its cross-attention matrix as a
+model-native attribution that contributes to the prediction and can be inspected
+alongside it, and we make no claim that this attribution recovers atom-level
+contacts, binding modes, or physical interaction types.  Section~\ref{sec:interpretability}
+reports the attribution outputs as descriptions of model behaviour, and
+Section~\ref{sec:discussion} states the structural evaluation that would be
+required before any mechanistic reading.
+%%REV-END
+
+\subsection{Cold-Start Evaluation}
+
+Random-split evaluation permits information leakage through shared drugs or
+targets between training and test sets, yielding inflated
+estimates.\cite{huang2021therapeutics}  Cold-start protocols address this by
+ensuring that test identifiers are absent from training data. We report the
+original Drug-ID-held-out and Target-ID-held-out protocols alongside the random
+split, and separately use exact-sequence grouping for stricter within-Davis
+stress tests.
+
+%%====================================================================
+\section{Methods}
+\label{sec:methods}
+%%====================================================================
+
+\subsection{Problem Formulation}
+
+Given a drug molecule $d$ represented by its SMILES string and a target protein
+$t$ represented by its amino acid sequence, we formulate DTI prediction as
+binary classification: predict whether $d$ binds $t$ with high affinity.
+Following the established protocol for the Davis
+dataset,\cite{davis2011comprehensive} continuous $K_d$ values are binarised
+at \SI{30}{nM} ($pK_d > 7.52$), classifying pairs with $K_d < \SI{30}{nM}$ as
+positive interactions.
+
+\subsection{Architecture Overview}
+
+BioInteract comprises five sequential modules:
+(1)~a graph isomorphism network with edge features (GINE)-based drug encoder producing per-atom representations,
+(2)~a target encoder combining ESM-2 embeddings with physicochemical features
+and a configured domain-label channel,
+(3)~a bidirectional cross-attention module computing attention matrices between
+ligand-atom and protein-residue representations,
+(4)~gated attention pooling to aggregate variable-length representations, and
+(5)~a multilayer perceptron (MLP) prediction head.
+The full model contains 2{,}442{,}083 trainable parameters.
+
+\subsection{Drug Molecular Graph Encoder}
+
+\subsubsection{Chemistry-Aware Atom Featurisation}
+
+Each atom is represented by a 52-dimensional feature vector encoding:
+\begin{itemize}[leftmargin=*]
+\item \textbf{Topological features} (38 dimensions): atom type (one-hot,
+  20 types), hybridisation state (6), formal charge (6), number of
+  attached hydrogens (6).
+\item \textbf{Structural features} (9 dimensions): degree, aromaticity, ring
+  membership, and ring size membership (3--8).
+\item \textbf{Functional features} (5 dimensions): hydrogen-bond donor and
+  acceptor status, Crippen logP contribution, molar refractivity, and Gasteiger
+  partial charge.
+\end{itemize}
+Bond features (16 dimensions) encode bond type, conjugation, ring membership,
+and stereochemistry.
+
+\subsubsection{GINE Message Passing}
+
+We employ a 3-layer GINE
+architecture:\cite{hu2020strategies}
+\begin{equation}
+\widetilde{\mathbf{e}}_{vu}=\mathbf{W}_e\mathbf{e}_{vu}+\mathbf{b}_e
+\in\mathbb{R}^{256},\qquad \mathbf{e}_{vu}\in\mathbb{R}^{16},
+\label{eq:edge_projection}
+\end{equation}
+\begin{equation}
+\mathbf{h}_v^{(\ell+1)} = \mathrm{MLP}^{(\ell)}\!\left(
+  \mathbf{h}_v^{(\ell)} +
+  \sum_{u\in\mathcal{N}(v)}
+  \mathrm{ReLU}\!\left(\mathbf{h}_u^{(\ell)} + \widetilde{\mathbf{e}}_{vu}\right)
+\right)
+\end{equation}
+where $\mathbf{h}_v^{(\ell)}$ is the representation of atom $v$ at layer $\ell$,
+$\mathbf{e}_{vu}$ denotes the raw 16-dimensional edge feature vector, and
+$\widetilde{\mathbf{e}}_{vu}$ is its learned 16-to-256 projection before message
+passing. The released \texttt{GINEConv} instantiation uses the default fixed
+$\epsilon=0$. Each layer incorporates batch normalisation, ReLU activation,
+dropout ($p=0.2$), and a residual connection; the hidden dimension is $D=256$.
+Global graph pooling is \emph{not} applied at this stage, preserving individual
+atom representations for the subsequent cross-attention step.
+
+The archived checkpoints use the stated molecular featurisation; public
+checkpoint reconstruction applies no stochastic graph augmentation.
+
+\subsection{Protein Target Encoder}
+
+\subsubsection{ESM-2 Residue Embeddings}
+
+Residue-level representations are extracted from ESM-2 (150\,M parameters,
+\texttt{esm2\_t30\_150M\_UR50D}),\cite{lin2023evolutionary} yielding
+640-dimensional embeddings for each amino acid.  These embeddings encode
+evolutionary conservation, secondary structure propensity, and long-range contact
+information learned from 65 million protein sequences.  ESM-2 parameters are
+frozen throughout training.
+
+\subsubsection{Physicochemical Property Encoding}
+
+Each residue is augmented with a 4-dimensional physicochemical vector:
+\begin{equation}
+\mathbf{p}_i = \bigl[\text{hydrophobicity}_i,\;\text{mol.\ weight}_i,\;
+  \text{charge}_i,\;\text{polarity}_i\bigr]
+\end{equation}
+Hydrophobicity follows the Kyte--Doolittle scale.\cite{kyte1982simple}
+These values provide residue-level physicochemical descriptors; by themselves,
+they do not identify pocket membership, solvent exposure, or interaction
+partners.
+
+\subsubsection{Configured Domain-Label Channel and Availability}
+
+The implementation contains a learnable domain-label embedding layer:
+\begin{equation}
+\mathbf{d}_i = \mathrm{DomainEmbed}(\text{domain\_type}_i) \in \mathbb{R}^{32}
+\end{equation}
+The label builder assigns the unknown \texttt{NONE} type when a per-protein
+annotation file is unavailable. The released Davis package contains no such
+annotation files, so all archived input positions use this unknown label. We
+therefore do not represent this channel as curated Pfam/InterPro context, as a
+binding-site label, or as evidence for a domain-specific conclusion.
+
+\subsubsection{Feature Fusion}
+
+The three feature sources are concatenated and projected through a shared linear
+transformation:
+\begin{equation}
+\mathbf{r}_i = \mathrm{Proj}\!\left(
+  [\mathbf{e}_i \,\|\, \mathbf{p}_i \,\|\, \mathbf{d}_i]
+\right) \in \mathbb{R}^{D}
+\end{equation}
+where $\mathbf{e}_i \in \mathbb{R}^{640}$ is the ESM-2 embedding and Proj is a
+two-layer MLP with layer normalisation and Gaussian error linear unit (GELU)
+activation. In the released configuration, $\mathbf{d}_i$ is the shared unknown
+domain-label embedding rather than a curated per-residue annotation. The projected
+dimension $D=256$ matches the drug encoder output.
+
+\subsection{Cross-Attention Interaction Module}
+
+The cross-attention module produces the model-native attribution used in this
+study. It computes bidirectional attention between ligand-atom and
+protein-residue representations, producing an explicit atom--residue attention
+matrix.
+
+\subsubsection{Drug-to-Protein Attention}
+
+\begin{equation}
+\mathrm{Attn}(\mathbf{Q}_d,\mathbf{K}_p,\mathbf{V}_p) =
+  \mathrm{softmax}\!\left(\frac{\mathbf{Q}_d\mathbf{K}_p^\top}{\sqrt{d_k}}\right)
+  \mathbf{V}_p
+\end{equation}
+where $\mathbf{Q}_d = \mathbf{H}_d\mathbf{W}_Q^d$,
+$\mathbf{K}_p = \mathbf{R}\mathbf{W}_K^p$,
+$\mathbf{V}_p = \mathbf{R}\mathbf{W}_V^p$, with $H=8$ heads and head
+dimension $d_k = D/H = 32$.
+
+\subsubsection{Protein-to-Drug Attention}
+
+Symmetrically, protein residues attend over drug atoms:
+\begin{equation}
+\mathrm{Attn}(\mathbf{Q}_p,\mathbf{K}_d,\mathbf{V}_d) =
+  \mathrm{softmax}\!\left(\frac{\mathbf{Q}_p\mathbf{K}_d^\top}{\sqrt{d_k}}\right)
+  \mathbf{V}_d
+\end{equation}
+
+\subsubsection{Attribution Map Extraction}
+
+The atom--residue attribution map is obtained by averaging drug-to-protein
+attention weights across all heads:
+\begin{equation}
+\mathbf{M} = \frac{1}{H}\sum_{h=1}^{H}
+  \mathrm{Attn}_h(\mathbf{Q}_d,\mathbf{K}_p)
+  \;\in\;\mathbb{R}^{n\times L}
+\label{eq:interaction_map}
+\end{equation}
+Because $\mathbf{M}$ is computed within the forward pass rather than post-hoc,
+it is a model-native attribution matrix.  It is not interpreted as a physical
+contact map or as an assignment of a specific interaction type to an atom pair.
+
+\subsection{Gated Pooling and Prediction}
+
+Variable-length representations are aggregated via gated attention pooling:
+\begin{equation}
+\mathbf{z} = \sum_{i}\alpha_i\cdot g(\mathbf{x}_i),\qquad
+\alpha_i = \frac{\exp(f(\mathbf{x}_i))}{\sum_j\exp(f(\mathbf{x}_j))}
+\end{equation}
+where $f\colon\mathbb{R}^D\to\mathbb{R}$ and
+$g\colon\mathbb{R}^D\to\mathbb{R}^D$ are learned two-layer MLPs with Tanh
+activation.  The pooled drug and protein representations are concatenated and
+passed through a two-hidden-layer MLP (256\,$\to$\,128; ReLU; dropout $p=0.3$)
+followed by sigmoid activation to produce the binding probability.
+
+%%REV-START
+\subsection{Matched-Protocol Comparison Models}
+\label{sec:matched_methods}
+
+To compare architectures without importing values measured under other
+protocols, we re-implemented a set of baselines and trained each of them,
+together with BioInteract, inside one harness.  Every run uses the same Davis records,
+the same partition for a given protocol, seed 42, weighted binary cross-entropy
+with 0.05 label smoothing, AdamW (learning rate $10^{-4}$, weight decay
+$10^{-5}$), an effective batch size of 64 formed from micro-batches of 16 with
+gradient accumulation, automatic mixed precision, gradient-norm clipping at 1.0,
+a five-epoch linear warm-up followed by cosine decay, a maximum of 30 epochs
+with early stopping at patience 6 on validation AUROC, and a decision threshold
+selected once on that protocol's validation predictions.  Cross-attention
+models allocate one atom--residue map per pair, so the micro-batch and
+mixed-precision settings bound accelerator memory; validation and test
+inference are run in full precision so that reported metrics do not depend on
+the mixed-precision training path.
+
+The primary comparison is a three-model ladder in which exactly one component
+changes at each step, so that each difference has a single cause:
+
+\begin{itemize}[leftmargin=*]
+\item \textbf{GraphDTA}\cite{nguyen2021graphdta} --- the molecular graph
+  encoder with a character convolutional protein encoder.  Molecular graph but
+  no protein language model.
+\item \textbf{ESM2-GraphConcat} --- the same GINE atom encoder, with the
+  convolutional protein encoder replaced by BioInteract's
+  ESM-2/physicochemical residue encoder; the two representations are pooled
+  independently and concatenated.  It differs from GraphDTA only by the protein
+  language model.
+\item \textbf{BioInteract} --- identical encoders to ESM2-GraphConcat, with
+  concatenation replaced by bidirectional cross-attention.  It differs from
+  ESM2-GraphConcat only by the interaction module.
+\end{itemize}
+
+The second and third rows share BioInteract's frozen protein representation
+exactly.  The first-to-second step therefore isolates the contribution of ESM-2
+pretraining under a fixed training recipe and a fixed drug encoder, and the
+second-to-third step isolates the contribution of the cross-modal interaction
+module.  Because GraphDTA is a re-implementation from its published
+architecture description rather than a run of the authors' released code, it
+should be read as a controlled reference for its architecture family rather
+than as a reproduction of the specific numbers reported in that paper.  Every
+comparison reported in this manuscript was measured in this study under the
+protocol described above; no value is carried over from another publication.
+
+Two further architectures---a sequence convolutional model in the DeepDTA
+family\cite{ozturk2018deepdta} and the low-rank bilinear attention and bilinear
+pooling introduced by DrugBAN\cite{bai2023drugban} applied to the same two
+encoders---were trained by the same harness on the random split as a breadth
+check across model families.  They are reported in Supporting Information
+Table~S14 and are discussed in Section~\ref{sec:matched}.
+%%REV-END
+
+\subsection{Training Provenance and Evaluation Thresholds}
+
+The archived entity-split checkpoints preserve model architecture but do not
+store a uniform optimizer, scheduler, warmup, or label-smoothing record. The
+Random and Drug-ID-held-out logs explicitly record weighted binary
+cross-entropy, label smoothing of 0.05, AdamW, and a final-run header, whereas
+the checkpoint-matched Target-ID-held-out trace has the older
+\texttt{run\_split.py} header and records only loss and validation AUROC. Its
+checkpoint does not retain optimizer or loss state. We therefore do not
+retrospectively assert a single training recipe across all three historical
+checkpoints (Supporting Information, Training-provenance table).
+
+No historical entity-split model is retrained for the current-release metrics.
+The canonical reconstruction instantiates each of those three released
+checkpoints from its embedded model configuration, performs full-precision
+inference, selects an F1 threshold once on the corresponding validation
+predictions, and applies that frozen threshold to test predictions. This
+separation prevents test-set threshold selection.
+%%REV-START
+These archived checkpoints are the source of the ablation results in
+Section~\ref{sec:ablation} only.  All architecture comparisons in
+Section~\ref{sec:matched} come from the matched-protocol harness described
+above and are independent of the archived training histories.
+%%REV-END
+
+In contrast, the two exact-sequence-grouped strict protocols were trained from
+initialisation on their respective new training partitions. They use seed 42,
+the same Davis preprocessing and architecture, weighted binary cross-entropy
+with 0.05 label smoothing, AdamW (learning rate $10^{-4}$; weight decay
+$10^{-5}$), batch size 64, gradient-norm clipping at 1.0, a five-epoch linear
+warm-up followed by cosine decay, and a maximum of 100 epochs. The checkpoint
+with the highest validation AUROC was selected with patience 15, after which an
+F1 threshold was selected on that protocol's validation predictions and frozen
+for its test evaluation. Complete strict-split training provenance, checkpoint
+paths, SHA-256 hashes, selected epochs, and thresholds are provided in the
+Supporting Information Training-provenance table.
+
+\subsection{Interpretability Analysis}
+
+\subsubsection{Residue-Level Attention Profiling}
+
+For a given drug--target pair, per-residue attention scores are obtained by
+summing the interaction map over all drug atoms:
+\begin{equation}
+s_j = \sum_{i=1}^{n} M_{ij},\quad j=1,\ldots,L
+\end{equation}
+These values are model-attribution scores and are not assigned a biological
+hotspot label.
+
+\subsubsection{Grad-CAM Functional-Group Attribution}
+
+Grad-CAM\cite{selvaraju2017grad} is adapted to the graph-neural-network (GNN)
+setting:
+\begin{equation}
+\mathrm{CAM}_v = \mathrm{ReLU}\!\left(\sum_k w_k\cdot A_v^k\right),\quad
+w_k = \frac{1}{|\mathcal{V}|}\sum_v\frac{\partial z}{\partial A_v^k}
+\end{equation}
+where $A_v^k$ is channel $k$ of the third (final) GINE message-passing layer
+and $z$ is the pre-sigmoid positive-class logit. Gradients are therefore taken
+with respect to the logit, not the post-sigmoid probability.
+Functional groups are detected with predefined SMARTS patterns (aromatic ring,
+hydroxyl, amino, amide, carboxyl, sulfonyl, halogen, ether, heterocycle N, and
+carbonyl). For each group, all RDKit substructure matches are merged into a
+deduplicated atom set and the group score is the mean of the normalised
+atom-level scores over that set. An atom can match more than one group pattern.
+These scores indicate sensitivity of the prediction to the learned
+representation and do not identify chemical bonds or contacts in a
+three-dimensional complex.
+
+\subsubsection{Attention Sparsity}
+
+For each drug--target pair, residue scores are normalised by that pair's maximum:
+\begin{equation}
+\widetilde{s}_j = \frac{s_j}{\max_k s_k}.
+\end{equation}
+Pair-level sparsity is then
+\begin{equation}
+\mathrm{Sparsity} = \frac{|\{j : \widetilde{s}_j < 0.1\}|}{L}.
+\end{equation}
+The reported global value uses all 1{,}506 positive Davis records, rather than a
+single test partition, evaluated with the archived \texttt{checkpoints/best.pt}
+checkpoint. Each pair is normalised separately; the 1{,}301{,}380 valid-residue
+scores are then concatenated before the global distribution and fraction are
+computed. Consequently, all original train/validation/test memberships are
+represented and longer valid target sequences contribute more residue-level
+observations.
+
+%%====================================================================
+\section{Experimental Setup}
+\label{sec:experiments}
+%%====================================================================
+
+\subsection{Dataset}
+
+The Davis kinase inhibitor
+dataset\cite{davis2011comprehensive} comprises 68 drugs (kinase inhibitors)
+and 442 targets (protein kinases) forming 30{,}056 drug--target pairs.  Binding
+affinities ($K_d$) are binarised at \SI{30}{nM}, yielding approximately
+\SI{5}{\percent} positive interactions.
+
+\subsection{Pre-specified External BindingDB Evaluation}
+\label{sec:bindingdb_methods}
+
+To test exact-entity transfer without changing the submitted Davis training
+protocol, we curated the official BindingDB curated-articles snapshot
+\texttt{BindingDB\_BindingDB\_Articles\_202607}.\cite{gilson2016bindingdb}
+%%REV-START
+This snapshot is the subset of BindingDB curated in-house from the primary
+literature, and it contains 93{,}712 measurement rows rather than the millions
+of rows in the complete release.  Table~\ref{tab:bindingdb_curation} reports the
+full row-level accounting for both this snapshot and, as an independent
+verification requested during review, the complete
+\texttt{BindingDB\_All\_202608} release.  Filters are applied in a fixed order
+to a shrinking row set, so the removals and the retained count sum exactly to
+the input total.
+%%REV-END
+We retained only finite, exact numerical $K_d$ measurements in nM for valid,
+single-chain proteins of at most 1{,}200 residues and RDKit-valid ligands.
+Inequality-qualified values were excluded.
+%%REV-START
+The dominant reduction is a measurement-type filter rather than a novelty
+filter: the great majority of BindingDB rows report $K_i$, $\mathrm{IC}_{50}$ or
+$\mathrm{EC}_{50}$ and carry no $K_d$ value at all, and are removed by the first
+step.  The Davis-overlap exclusions, by contrast, remove only a small number of
+rows.
+%%REV-END
+Before replicate reconciliation, any
+external pair was excluded when its canonical isomeric
+SMILES occurred anywhere in Davis or when its full normalised amino-acid
+sequence occurred anywhere in Davis.  The resulting cohort is therefore
+double-novel by exact ligand and target-sequence identity, although it is not a
+claim of scaffold or remote-homology novelty. Measurements were then grouped by
+canonical ligand--sequence pair. A pair with replicate measurements on opposite
+sides of the \SI{30}{nM} boundary was removed (a pair-level conflict); for every
+remaining pair, the median exact $K_d$ was retained and binarised as
+$K_d<\SI{30}{nM}$. The complete row-to-pair accounting is reported in
+Table~S13.
+
+The released \texttt{best\_random} checkpoint was evaluated without retraining,
+fine-tuning, calibration, or threshold selection on BindingDB.  We used the
+existing random-validation threshold of 0.5959881544 and the same
+640-dimensional ESM-2 representation used for Davis. Only newly extracted
+external protein embeddings that passed dimension and sequence-length checks
+were supplied to the frozen model.
+AUROC and AUPRC confidence intervals use 600 pair-stratified bootstrap
+replicates with seed 42.  Curation and frozen-inference provenance, including
+source and prediction hashes, are reported in Table~S13.
+
+%%REV-START
+\subsection{Applicability-Domain Analysis}
+\label{sec:ad_methods}
+
+To interpret the external result, each curated BindingDB entity is placed
+relative to the Davis training distribution on two axes.  On the ligand axis we
+compute the maximum Tanimoto similarity between the non-chiral radius-2,
+1024-bit Morgan fingerprint of the external compound and those of all 68 Davis
+compounds.  On the target axis we align each external sequence against all 442
+Davis sequences with the Biopython \texttt{Align.PairwiseAligner} in global mode
+(match $=1$, mismatch $=0$, gap opening $=-1$, gap extension $=-0.5$) and retain
+the maximum identity, defined as exact-residue matches divided by full alignment
+length.  This is the same identity definition used for the within-Davis
+cold-target audit, so the internal and external analyses are directly
+comparable.  External pairs are then stratified by each axis, and AUROC, AUPRC,
+positive counts and mean predicted probability are reported per stratum.  A pair
+is treated as jointly inside the Davis domain when both scores are at least
+0.30.  Calibration is assessed by comparing the frozen-threshold exceedance rate
+and the predicted-probability distribution with the observed positive
+prevalence.  The same two nearest-neighbour scores are computed live by the
+interactive web server for each user-submitted pair.
+%%REV-END
+
+\subsection{Data Splitting Protocols and Similarity Audit}
+
+\begin{itemize}[leftmargin=*]
+\item \textbf{Random split} (70/10/20): drug--target pairs are assigned randomly;
+  shared entities may appear across splits.
+\item \textbf{Drug-ID-held-out split}: drugs are partitioned such that all interactions
+  of a given compound identifier appear in exactly one split.  This prevents
+  drug-identifier overlap but does not impose a scaffold-similarity threshold.
+\item \textbf{Target-ID-held-out split}: targets are partitioned analogously; test
+  target identifiers are absent from training.  This initial entity-held-out
+  protocol does not impose a sequence-similarity threshold.
+\end{itemize}
+
+For the Drug-ID-held-out audit, we computed non-chiral radius-2, 1024-bit Morgan
+fingerprints with RDKit and
+reported the maximum Tanimoto similarity between each test compound and the
+training compounds. For the Target-ID-held-out audit, we used RapidFuzz
+\texttt{fuzz.ratio}, divided by 100, where normalised Indel similarity is
+$1-d_\mathrm{Indel}/(|x|+|y|)$ and substitutions are represented by one
+deletion plus one insertion. We computed the maximum value between each test
+sequence and all training sequences and separately identified exact duplicate
+sequences. The original
+Target-ID-held-out partition contained six exact-sequence groups crossing the
+training and test sets. We additionally constructed exact-sequence-grouped cold-target
+and exact-sequence-grouped cold-both partitions, assigning all target identifiers with an identical
+amino-acid sequence to the same split.
+%%REV-START
+These protocols use the same Davis records, 70/10/20 partition ratios, and
+seed 42.  Grouping identical sequences removes exact duplicates only; it does
+not cluster homologues, and Section~\ref{sec:discussion} states explicitly that
+the resulting partitions are not a homology-reduced benchmark.
+%%REV-END
+
+For the strict cold-both protocol, the 70/10/20 ratios are applied independently
+to drug identifiers and exact target-sequence groups. Only pairs for which both
+entities belong to the same train, validation, or test block are retained;
+cross-block combinations are excluded to prevent either entity from crossing a
+partition. Consequently, the retained pair counts are 15{,}190/264/1{,}144,
+and the pair-level proportions are not 70/10/20. Of the 30{,}056 Davis pairs,
+13{,}458 cross-block pairs are not used in this cold-both evaluation.
+
+To quantify residual target relatedness after exact-sequence grouping, we used
+Biopython \texttt{Align.PairwiseAligner} in global mode (match $=1$, mismatch
+$=0$, gap opening $=-1$, gap extension $=-0.5$) to align each
+exact-sequence-grouped cold-target
+test sequence against every training sequence. Identity is the number of
+exact-residue matches divided by full alignment length; the maximum is retained
+for each test target. We also implemented leakage-aware diagnostic controls on
+this same exact-sequence-grouped cold-target partition. A drug-only control uses non-chiral
+radius-2, 1024-bit
+Morgan fingerprints in a logistic-regression classifier; a drug-promiscuity
+control uses each drug's positive prevalence estimated only from training
+targets; and a label-shuffled drug-only control permutes training labels while
+leaving test labels unchanged.  Because every target identifier in this split
+is unseen, a target-specific degree computed from its full label column would
+leak test labels; the only target-only control that avoids that leakage assigns
+the training positive prevalence uniformly.  These controls are diagnostic
+rather than capacity-matched replacements for BioInteract.
+
+\subsection{Evaluation Metrics}
+
+For binary classification under severe class imbalance, we report AUROC and
+AUPRC as primary metrics---AUPRC is particularly informative because it measures
+positive-class precision across all recall levels. For every reported protocol,
+F1, precision, and recall use a decision threshold selected once on the
+corresponding validation precision--recall curve; AUROC and AUPRC remain
+threshold-free.
+
+\subsection{Implementation}
+
+BioInteract is implemented in Python~3.10.14 using PyTorch~2.4.0+cu121 and
+PyTorch Geometric~2.6.1.\cite{fey2019fast} Protein embeddings are extracted using
+ESM-2\cite{lin2023evolutionary} (\texttt{esm2\_t30\_150M\_UR50D}, 640
+dimensions; \texttt{fair-esm}~2.0.0). Molecular featurisation is performed with
+RDKit~2025.03.6.\cite{rdkit} Revision diagnostics additionally use
+Biopython~1.87 and RapidFuzz~3.14.5. Training employs automatic mixed precision (AMP) for
+memory efficiency on a single NVIDIA GPU. Final checkpoint evaluation is run
+under \texttt{torch.inference\_mode()} in full precision, using each checkpoint's
+embedded architecture configuration.
+
+%%====================================================================
+\section{Results}
+\label{sec:results}
+%%====================================================================
+
+%%REV-START
+\subsection{Matched-Protocol Comparison with Baseline Methods}
+\label{sec:matched}
+
+Table~\ref{tab:comparison} and Fig.~\ref{fig:comparison} report the
+three-model ladder of Section~\ref{sec:matched_methods}, each row trained by the
+same harness on the same partitions.  All values in the table were produced in
+this study; none is quoted from another publication.  Supporting Information
+Table~S14 places the same ladder alongside two further architecture families
+evaluated by the same harness on the random split.
+
+\begin{table}[htbp]
+\centering
+\caption{Matched-protocol comparison on the Davis dataset (binary
+  classification, $K_d < \SI{30}{nM}$).  Every model was trained in this study
+  under one shared partition, seed, optimiser, schedule, loss and
+  validation-selected threshold; no value is quoted from another publication.
+  ``PLM'' indicates whether the model consumes the frozen
+  \texttt{esm2\_t30\_150M\_UR50D} residue representation used by BioInteract.
+  Best value in each column is in \textbf{bold}.  The Drug-ID-held-out columns
+  are shown for completeness but are not used to rank the models: the shared
+  early-stopping patience halted every run on that protocol at a first-epoch
+  checkpoint (Section~\ref{sec:matched}).  Per-run provenance is given in
+  Supporting Information Table~S16.}
+\label{tab:comparison}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}llccccccc@{}}
+\toprule
+ & & & \multicolumn{2}{c}{\textbf{Random}} &
+     \multicolumn{2}{c}{\textbf{Target-ID-held-out}} &
+     \multicolumn{2}{c}{\textbf{Drug-ID-held-out}} \\
+\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
+\textbf{Model} & \textbf{Interaction paradigm} & \textbf{PLM} & AUROC & AUPRC & AUROC & AUPRC & AUROC & AUPRC \\
+\midrule
+%%MATCHED-ROWS%%
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_comparison.pdf}
+\caption{\textbf{Matched-protocol baseline comparison.} Panel A shows test
+  AUROC and panel B shows test AUPRC for each row of the ladder under the random,
+  Target-ID-held-out and Drug-ID-held-out protocols. All values were measured in
+  this study under one shared training protocol. The Drug-ID-held-out bars are
+  shown for completeness only and are not used to rank the models
+  (Section~\ref{sec:matched}).}
+\label{fig:comparison}
+\end{figure}
+
+\FloatBarrier
+
+Both steps of the ladder improve on the step below them, but by amounts that
+depend strongly on the splitting protocol.
+
+One column should be set aside before reading the table.  Under the
+Drug-ID-held-out protocol, validation AUROC dips below its first-epoch value for
+several epochs in every run, so the shared early-stopping patience of six epochs
+halted all three models before they recovered and restored a first-epoch
+checkpoint.  That column therefore reflects the harness setting rather than the
+converged behaviour of the three architectures, and it is not used to rank them;
+the archived Drug-ID-held-out checkpoint reported in Table~S5, trained with a
+longer patience, reaches AUROC 0.733.  The two remaining columns are read below.
+
+Replacing the convolutional protein encoder with the frozen ESM-2 representation,
+holding the drug encoder and the training recipe fixed, changes AUROC by
+$+0.022$ and $+0.022$ and AUPRC by $+0.120$ and $+0.063$ under the random and
+Target-ID-held-out protocols.  The contribution of the protein language model is
+therefore consistent in direction across both usable protocols, and larger on
+AUPRC than on AUROC.
+
+Replacing concatenation with bidirectional cross-attention, holding both
+encoders fixed, changes AUROC by $+0.006$ and $+0.056$ and AUPRC by $+0.067$ and
+$+0.201$ under the same two protocols.  The interaction module is thus the
+smaller of the two effects on the random split and the larger one when target
+identifiers are held out, where it accounts for most of BioInteract's margin.
+We read this as the clearest positive result of the matched comparison, subject
+to the caveat that each configuration was trained once, so differences of a few
+thousandths are not interpreted.
+
+The Target-ID-held-out column is therefore where the architecture reported here
+separates most clearly from its own controls: BioInteract reaches AUROC 0.934
+and AUPRC 0.569 against 0.878 and 0.369 for the same encoders without
+cross-attention, and 0.856 and 0.306 without the protein language model as well.
+Because this is the protocol under which a model would be asked to score a newly
+characterised target, we regard it, rather than the random split, as the
+informative column of Table~\ref{tab:comparison}.  We do not set these values
+against numbers published for other models: such a comparison requires a shared
+partitioning, binarisation, threshold rule and model-selection rule, and no
+controlled mapping between the two exists.
+
+The random split discriminates poorly between architectures, and the breadth
+check in Supporting Information Table~S14 shows why this matters.  Under the
+same harness on that split, the five architectures tested span 0.885 to 0.913
+AUROC, a range narrow enough that the ordering within it carries little
+information.  The two additional families were not run on the entity-held-out
+protocols, so we make no claim about how they behave there.
+What the random-split breadth check does establish is that the protocol on which
+DTI models are most often compared is the one on which architectural differences
+are least visible, and that a favourable random-split number should not be read
+as evidence for a particular architecture.  The results reported here are
+consistent with that view rather than in tension with it: BioInteract's
+advantage within the controlled ladder appears where the evaluation is harder,
+not where it is easiest.
+%%REV-END
+
+\subsection{Ablation Study}
+\label{sec:ablation}
+
+We assessed the contribution of the principal architectural components by
+removing one component at a time from the full model (Fig.~\ref{fig:ablation}).
+%%REV-START
+These ablation variants come from the archived experiment series rather than
+from the matched-protocol harness, and their absolute values are therefore not
+interchangeable with Table~\ref{tab:comparison}.  They are retained because
+they cover two components---the domain-label channel and graph
+augmentation---that the matched-protocol contrasts do not isolate.
+%%REV-END
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_ablation.pdf}
+\caption{\textbf{Ablation-study results.} Panel A shows the random- and
+  Target-ID-held-out metric matrix for the full model and for each variant with
+  one component removed. Panel B reports the AUROC change after removal
+  of cross-attention, the domain-label channel, ESM-2, or graph augmentation.
+  ESM-2 removal produces the largest AUROC decrease, followed by removal of
+  cross-attention. Values are from the archived experiment series and are not
+  on the same footing as the matched-protocol results in
+  Table~\ref{tab:comparison}.}
+\label{fig:ablation}
+\end{figure}
+
+\FloatBarrier
+
+Removing ESM-2 changes AUROC by $-0.059$ and $-0.137$ for the random and
+Target-ID-held-out splits, respectively; removing cross-attention changes AUROC
+by $-0.040$ and $-0.079$. The domain-label and graph-augmentation variants show
+small mixed changes ($+0.002/-0.018$ and $+0.004/-0.004$, respectively). These
+ablation results describe the tested Davis configuration and do not establish
+structural binding mechanisms or out-of-family generalisation.
+
+\subsection{Strict Within-Davis Cold-Start Evaluation}
+
+The maximum normalised Indel similarity between each Target-ID-held-out test
+sequence and the original
+training targets ranges from 0.382 to 1.000 (median 0.579). The audit also found
+18 duplicate-sequence groups involving 81 target
+identifiers in the full dataset and six groups crossing the original train/test
+boundary.  We therefore report the exact-sequence-grouped results separately
+and limit conclusions to the observed Davis benchmark performance.
+
+\begin{table}[htbp]
+\centering
+\caption{Strict within-Davis cold-start evaluation after grouping target
+  identifiers with identical amino-acid sequences before partitioning.  Both
+  protocols use the original records, seed 42, and the same preprocessing and
+  architecture, but are separately trained from initialisation. For cold-both,
+  70/10/20 is applied independently to drug IDs and
+  target-sequence groups and only within-block pairs are retained. AUROC and
+  AUPRC are threshold-free test metrics.}
+\label{tab:strict_results}
+\begin{tabular}{l@{\hspace{1em}}rrrr}
+\toprule
+\textbf{Strict protocol} & \textbf{Test pairs} & \textbf{Test positives} & \textbf{AUROC} & \textbf{AUPRC} \\
+\midrule
+Exact-sequence-grouped cold-target & 5{,}984 & 208 & 0.873 & 0.383 \\
+Exact-sequence-grouped cold-both   & 1{,}144 & 38  & 0.552 & 0.038 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+After grouping identical target sequences, the exact-sequence-grouped cold-target test gives
+AUROC~$=0.873$ and AUPRC~$=0.383$ (Table~\ref{tab:strict_results}).  Requiring
+both unseen drug identifiers and exact-sequence-grouped targets is substantially
+harder (AUROC~$=0.552$, AUPRC~$=0.038$); this test contains 38 positive pairs.
+These values are reported as an informative within-Davis stress test, not as a
+claim of out-of-family or structure-level generalisation.  Threshold-dependent
+metrics for these small positive sets are secondary and use a threshold selected
+only on the corresponding validation set.
+
+The cold-both train, validation, and test blocks retain 15{,}190, 264, and
+1{,}144 pairs, respectively; 13{,}458 cross-block pairs are excluded by the
+double-held-out construction. The validation block contains only 10 positives.
+At its validation-selected threshold (0.936), the cold-both test yields F1,
+precision, and recall of 0.000, underscoring that its near-random AUROC and low
+AUPRC do not support a positive generalisation claim. Full counts and
+threshold-dependent metrics are reported in Table~S7.
+
+\begin{table}[htbp]
+\centering
+\caption{Leakage-aware diagnostic controls on the exact-sequence-grouped
+  cold-target test. All controls use only training-partition labels. They
+  quantify available drug-side signal; they are not capacity-matched substitutes
+  for BioInteract.}
+\label{tab:diagnostic_controls}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Model or control} & \textbf{AUROC} & \textbf{AUPRC} \\
+\midrule
+BioInteract (exact-sequence-grouped cold-target) & 0.873 & 0.383 \\
+Drug-only Morgan logistic         & 0.764 & 0.164 \\
+Drug-promiscuity prior            & 0.764 & 0.163 \\
+Target-only constant prior        & 0.500 & 0.035 \\
+Label-shuffled drug-only          & 0.407 & 0.029 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The drug-only and drug-promiscuity controls reach AUROC values near 0.764,
+showing that ligand-side activity or promiscuity signal contributes materially
+to this within-kinome task (Table~\ref{tab:diagnostic_controls}).  BioInteract
+exceeds these diagnostic controls, but the comparison does not prove that its
+residue attributions recover physical interactions.  The label-shuffled control
+is near or below the positive-prevalence baseline, confirming that the drug-only
+signal depends on the observed training labels rather than fingerprint ordering.
+
+%%REV-START
+For the exact-sequence-grouped cold-target test, the maximum global sequence
+identity to any training target ranges from 0.231 to 0.867 (median 0.494).
+Figure~\ref{fig:identity_bins} stratifies the 88 held-out targets by that
+maximum identity and reports, for each stratum, BioInteract's AUROC and AUPRC
+together with the number of test targets, test pairs and positive pairs that
+support them.  Performance is not monotone in identity: the lowest-identity
+stratum gives the lowest AUROC (0.806), the two middle strata are the strongest
+(0.908 in both), and the highest-identity stratum falls back to 0.862 with an
+AUPRC of 0.121 computed from only three positive pairs.  The per-stratum
+positive counts make clear that the two outer strata are the least stable, and
+the analysis therefore documents the residual relatedness distribution rather
+than demonstrating robust transfer to homologously distant targets.  Numerical
+values are tabulated in Supporting Information Table~S15.
+%%REV-END
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.86\linewidth]{figures/fig_identity_bins.pdf}
+\caption{\textbf{Identity-stratified performance on the exact-sequence-grouped
+  cold-target test.} Held-out targets are grouped by their maximum full-length
+  global sequence identity to any training target. Bars give BioInteract's
+  AUROC and AUPRC within each stratum; the annotation under each stratum gives
+  the number of held-out targets, test pairs and positive pairs contributing to
+  it. The dashed line marks the positive prevalence of the full cold-target
+  test. Strata with few positives yield unstable AUPRC estimates.}
+\label{fig:identity_bins}
+\end{figure}
+
+\FloatBarrier
+
+Under the Drug-ID-held-out split, the maximum test-to-training Morgan Tanimoto
+similarity ranged from 0.196 to 0.538 (median 0.257).  The fingerprint audit is
+included to clarify that Drug-ID-held-out means unseen compound identifiers, not
+an externally validated scaffold-hopping or out-of-distribution guarantee.
+
+\subsection{Strict External BindingDB Evaluation}
+
+%%REV-START
+\subsubsection{Reproducible Construction of the External Cohort}
+
+Table~\ref{tab:bindingdb_curation} gives the complete row-level accounting for
+the curation described in Section~\ref{sec:bindingdb_methods}.  The
+curated-articles snapshot on which the pre-specified evaluation is based
+contains 93{,}712 rows, of which 91{,}062 (\SI{97.2}{\percent}) report no $K_d$
+at all because they record $K_i$, $\mathrm{IC}_{50}$ or $\mathrm{EC}_{50}$
+instead.  Only 2{,}650 rows carry any $K_d$ value.  Every subsequent filter,
+including both Davis-overlap exclusions, removes at most a few hundred further
+rows, so the size of the final cohort is determined almost entirely by the
+requirement of an exact $K_d$ measurement in a snapshot of that size, not by
+the novelty criteria.
+
+The same pipeline applied to the complete \texttt{BindingDB\_All\_202608}
+release makes this explicit: from 3{,}234{,}499 rows the identical filters
+retain 52{,}085 eligible measurements covering 27{,}079 ligands and 3{,}472
+distinct target sequences, a cohort roughly 24 times larger than the
+curated-articles cohort.  The filter definitions therefore scale as expected,
+and the modest size of the pre-specified cohort is a property of the snapshot
+that was fixed before the evaluation rather than of the criteria themselves.
+Section~\ref{sec:bindingdb_full} reports the frozen evaluation on that larger
+cohort.  Both waterfalls are reproduced by a released audit script, and the
+per-snapshot archive hashes are given in Supporting Information Table~S17.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Row-level filtering waterfall for the external BindingDB cohorts.
+  Filters are applied in the listed order to a shrinking row set, so removals
+  and the retained total sum exactly to the input rows.  Supporting Information
+  Table~S13 reports the same curation for the curated-articles snapshot with the
+  single-chain test applied first; the ordering changes how rows are attributed
+  between the first three filters but not the eligible total.}
+\label{tab:bindingdb_curation}
+\begin{tabular}{lrrrr}
+\toprule
+ & \multicolumn{2}{c}{\textbf{Curated articles, 202607}} &
+   \multicolumn{2}{c}{\textbf{Complete release, 202608}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+\textbf{Filter} & Removed & Remaining & Removed & Remaining \\
+\midrule
+Input rows                                 & ---     & 93{,}712 & ---           & 3{,}234{,}499 \\
+No $K_d$ reported ($K_i$/IC$_{50}$/EC$_{50}$ rows) & 91{,}062 & 2{,}650 & 3{,}104{,}331 & 130{,}168 \\
+$K_d$ inequality-qualified or unparsable   & 160     & 2{,}490  & 47{,}860      & 82{,}308 \\
+Target not a single protein chain          & 27      & 2{,}463  & 2{,}157       & 80{,}151 \\
+Ligand SMILES not parsable by RDKit        & 8       & 2{,}455  & 93            & 80{,}058 \\
+Non-standard residues or sequence $>$ 1{,}200 aa & 141 & 2{,}314 & 7{,}644      & 72{,}414 \\
+Ligand identical to a Davis compound       & 62      & 2{,}252  & 5{,}738       & 66{,}676 \\
+Sequence identical to a Davis target       & 94      & 2{,}158  & 14{,}591      & 52{,}085 \\
+\midrule
+Eligible measurements                      & \multicolumn{2}{c}{2{,}158} & \multicolumn{2}{c}{52{,}085} \\
+Unique eligible ligands / sequences        & \multicolumn{2}{c}{1{,}197 / 400} & \multicolumn{2}{c}{27{,}079 / 3{,}472} \\
+\bottomrule
+\end{tabular}
+\end{table}
+%%REV-END
+
+We next performed the pre-specified, frozen external evaluation on the curated
+BindingDB cohort.  After all measurement-quality, exact-identity novelty, and
+replicate-consistency filters, it contains 1{,}932 pairs from 1{,}195 ligands
+and 396 targets: 516 high-affinity and 1{,}416 low-affinity pairs
+(Table~\ref{tab:bindingdb_external}).  The model was neither retrained nor
+recalibrated, and no BindingDB label was used to choose the checkpoint or
+threshold.
+
+The frozen checkpoint achieved AUROC $=0.560$ (95\% CI 0.531--0.589) and
+AUPRC $=0.340$ (95\% CI 0.314--0.372).  At the frozen Davis threshold, F1 was
+0.070, precision was 0.731, and recall was 0.037.  Thus, although the exact
+double-novel cohort is a valid external test, it does not support a broad DTI-transfer claim.
+Instead, it shows limited transfer from this
+Davis-trained classifier to the broader BindingDB cohort.  This external result
+does not alter the within-Davis checkpoint reconstructions and is not used to
+interpret attention, residue attribution, binding pockets, or mechanisms.
+
+%%REV-START
+\subsection{Frozen Evaluation on the Complete BindingDB Release}
+\label{sec:bindingdb_full}
+
+Because the pre-specified cohort is small, we repeated the frozen evaluation on
+the much larger cohort obtained by applying the identical protocol to the
+complete \texttt{BindingDB\_All\_202608} release
+(Table~\ref{tab:bindingdb_curation}).  After replicate reconciliation this
+cohort contains 38{,}193 double-novel pairs from 26{,}433 ligands and 3{,}462
+target sequences, of which 13{,}264 are high-affinity.  The same
+\texttt{best\_random} checkpoint, the same frozen threshold, and the same
+freshly extracted \texttt{fair-esm} representation were used; no BindingDB label
+influenced the checkpoint, the threshold, or any preprocessing decision.  This
+evaluation was specified and run after the reviewers' comments, and is reported
+as a verification of the pre-specified result rather than as a replacement
+for it.
+
+%%FULLDB-RESULT%%
+
+\subsection{Applicability Domain of the External Cohort}
+\label{sec:applicability}
+
+The external cohort was constructed to exclude exact Davis entities, so it is
+novel by construction; the relevant question is how far novel it is, and whether
+distance from the Davis training distribution accounts for the loss of
+performance.  Table~\ref{tab:applicability} places every external pair on the
+two axes defined in Section~\ref{sec:ad_methods}.
+
+The cohort is overwhelmingly remote from Davis on both axes.  The median
+external ligand has a maximum Tanimoto similarity of 0.197 to any of the 68
+Davis compounds, and \SI{92.6}{\percent} of external ligands fall below 0.30.
+The median external target has a maximum global sequence identity of 0.238 to
+any of the 442 Davis kinases, and \SI{90.2}{\percent} fall below 0.30.  This is
+expected---Davis contains a single protein family---but it means the headline
+external AUROC is dominated by pairs far outside the training distribution.
+
+Performance tracks that distance closely.  In the two lowest ligand-similarity
+strata, which contain \SI{92.8}{\percent} of the pairs, AUROC is 0.509 and
+0.504, that is, indistinguishable from chance.  In the two strata at or above
+0.30 it rises to 0.700 and 0.723.  The target axis behaves the same way: AUROC
+is 0.538 and 0.517 below 0.30 identity and 0.749 and 0.623 above it.  Restricted
+to the 117 pairs that are simultaneously at or above 0.30 on both axes, the
+frozen checkpoint gives AUROC~$=0.596$ and AUPRC~$=0.719$ against a positive
+prevalence of 0.641 in that subset.  The in-domain signal is therefore real but
+modest, and the out-of-domain signal is absent.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Applicability-domain stratification of the strict external BindingDB
+  cohort. Each pair is placed by the maximum Tanimoto similarity of its ligand
+  to the 68 Davis compounds and by the maximum global sequence identity of its
+  target to the 442 Davis targets. ``Entities'' counts the distinct external
+  ligands or targets in the stratum. Mean $\hat{p}$ is the mean predicted
+  probability from the frozen checkpoint.}
+\label{tab:applicability}
+\begin{tabular}{lrrrrrr}
+\toprule
+\textbf{Stratum} & \textbf{Pairs} & \textbf{Positives} & \textbf{Entities} &
+\textbf{AUROC} & \textbf{AUPRC} & \textbf{Mean $\hat{p}$} \\
+\midrule
+\multicolumn{7}{l}{\emph{Maximum ligand Tanimoto similarity to Davis compounds}} \\
+$<0.20$          & 1{,}076 & 296 & 627 & 0.509 & 0.305 & 0.375 \\
+$0.20$--$<0.30$  &    717 & 144 & 479 & 0.504 & 0.217 & 0.366 \\
+$0.30$--$<0.40$  &     46 &  19 &  36 & 0.700 & 0.614 & 0.420 \\
+$\geq 0.40$      &     93 &  57 &  53 & 0.723 & 0.785 & 0.444 \\
+\midrule
+\multicolumn{7}{l}{\emph{Maximum global sequence identity to Davis targets}} \\
+$<0.20$          &     14 &   1 &   7 & 0.538 & 0.143 & 0.397 \\
+$0.20$--$<0.30$  & 1{,}721 & 415 & 350 & 0.517 & 0.266 & 0.371 \\
+$0.30$--$<0.40$  &     73 &  37 &  15 & 0.749 & 0.722 & 0.409 \\
+$\geq 0.40$      &    124 &  63 &  24 & 0.623 & 0.647 & 0.429 \\
+\midrule
+Both axes $\geq 0.30$ & 117 & 75 & --- & 0.596 & 0.719 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A second, independent failure mode is visible in the score distribution rather
+than in the ranking.  The frozen Davis threshold of 0.596 is exceeded by only
+\SI{1.3}{\percent} of external pairs, although \SI{26.7}{\percent} of them are
+positive, which is why the frozen-threshold recall is 0.037 while precision
+remains 0.731.  The predicted probabilities are compressed into a narrow
+band---median 0.363, 95th percentile 0.437---with a mean of 0.392 for positives
+against 0.370 for negatives.  The operating point transferred from Davis is
+therefore miscalibrated for this cohort even where the ranking retains
+information.
+
+Assay and label heterogeneity, by contrast, does not appear to be a major
+contributor.  Only 143 of the 1{,}932 retained pairs had replicate
+measurements, and only 15 candidate pairs were discarded because replicate
+measurements straddled the \SI{30}{nM} boundary, a pair-level conflict rate of
+\SI{0.8}{\percent}.
+
+The same two nearest-neighbour scores are now computed live by the interactive
+web server for every submitted ligand--target pair and reported alongside the
+classifier score with an explicit inside/borderline/outside assessment
+(Fig.~\ref{fig:webserver}), so that a user is told when a query lies in the
+regime where the external evaluation showed chance-level ranking.
+%%REV-END
+
+\subsection{Training Dynamics}
+
+Fig.~\ref{fig:training} reports a single checkpoint-matched, contiguous
+validation-AUROC and training-loss trace for each archived protocol. The
+duplicated Random trace and two restarted Target-ID fragments were excluded
+because their epoch counters reset or their peak validation AUROC did not match
+the released checkpoint. These plots describe observed optimisation paths only;
+they do not establish absence of overfitting, quantify validation-loss behaviour,
+or estimate repeated-seed variability.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/fig4_training.pdf}
+\caption{\textbf{Training dynamics across splitting protocols.}
+  Panel A: validation AUROC over training epochs.  Panel B: training loss curves.
+  Each line is one contiguous archived trace whose peak validation AUROC agrees
+  with the saved checkpoint; duplicated and restarted segments are not plotted.
+  No fitted or interpolated trends are shown. The trajectories do not establish
+  absence of overfitting, validation-loss behaviour, or repeated-seed variability.}
+\label{fig:training}
+\end{figure}
+
+\FloatBarrier
+
+\subsection{Interpretability: Cross-Attention Analysis}
+\label{sec:interpretability}
+
+All interpretability figures and tables are derived directly from the saved
+case-level outputs in the project interpretability-results directory, including
+the report JSON and the corresponding heatmap, profile, and Grad-CAM renderings.
+Accordingly, we report the model's actual residue-level attention and atom-level
+Grad-CAM outputs rather than schematic placeholders.  These are attribution
+outputs of the trained model, not independently validated residue contacts or
+functional-group assignments.
+
+\subsubsection{Global Attention Sparsity}
+
+Analysis of cross-attention patterns across all 1{,}506 positive Davis
+drug--target pairs
+reveals a global attention sparsity of \SI{99.2}{\percent}
+(Table~\ref{tab:global_attn}, Fig.~\ref{fig:sparsity}) under the stated
+normalisation threshold. Figure~\ref{fig:sparsity} is computed directly from
+the archived 1{,}301{,}380 pair-normalised residue scores, not from summary
+bars; its top 1\% and 5\% of scores account for 78.9\% and 90.4\% of their
+total attribution mass, respectively. This describes concentration of model
+attribution; it does not demonstrate the size or location of a physical binding
+interface.
+
+\begin{table}[htbp]
+\centering
+\caption{Global cross-attention statistics computed across all 1{,}506 positive
+  Davis pairs using \texttt{checkpoints/best.pt}. The values quantify the
+  concentration of the model's pair-normalised
+  residue-attribution scores; they do not provide structural validation of a
+  binding pocket.}
+\label{tab:global_attn}
+\begin{tabular}{p{0.72\linewidth}c}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Mean residue attention      & 0.0044 \\
+Median residue attention    & 0.0003 \\
+Top-1\% threshold           & 0.0572 \\
+Top-5\% threshold           & 0.0036 \\
+Fraction of residues with normalised attribution $<0.1$ of the pair-specific maximum & 99.2\% \\
+Top 1\% / top 5\% cumulative attribution mass & 78.9\% / 90.4\% \\
+Samples analysed            & 1{,}506 \\
+Residue-score observations   & 1{,}301{,}380 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig5_attention_sparsity.pdf}
+\caption{\textbf{Attention sparsity analysis.}
+  (A)~Histogram of the archived pair-normalised per-residue attention scores
+  across all 1{,}506 positive Davis pairs (1{,}301{,}380 observations; logarithmic
+  axes); the dashed line denotes the 0.1 sparsity threshold. (B)~Cumulative
+  attribution mass after sorting those same scores in descending order. The
+  \SI{99.2}{\percent} value is an attribution-concentration statistic, not a
+  claim about a contiguous protein-surface region.}
+\label{fig:sparsity}
+\end{figure}
+
+\FloatBarrier
+
+Although softmax attention is dense before normalisation, the observed
+concentration arises after training on the limited and imbalanced Davis data.
+It may reflect learned regularities, data composition, or both; it is therefore
+not presented as independent evidence that the model has recovered molecular
+recognition principles.
+
+\subsubsection{Input-Integrity Audit of Nominal ABL1 Variant Records}
+\label{sec:abl1}
+
+%%REV-START
+This audit tests one falsifiable statement about the benchmark inputs rather
+than about the model: \emph{if} the Davis records labelled with ABL1
+point-mutation names encoded the corresponding sequence substitutions, \emph{then}
+the amino-acid sequences supplied to the model for those records would differ
+from the wild-type sequence and from one another.  The evaluation criterion is
+therefore exact: for every nominal ABL1 record we compare the full amino-acid
+string and its SHA-256 digest in \texttt{target\_sequences.csv}.
+
+The audit falsifies that statement.  Fifteen target records whose nominal names
+begin with ABL1---including the wild-type and the named F317I, F317L, M351T and
+E255K records---all carry the same 1{,}167-residue amino-acid sequence and the
+same SHA-256 digest (Supporting Information, Table~S9).  The consequence is a
+property of the benchmark, not a finding about mutation biology: because
+variant-specific sequence information is absent from the model inputs, any
+difference in predicted score between two nominal ABL1 variants can only reflect
+the paired ligand, and no experiment on these records can measure
+mutation-specific or resistance-specific model behaviour.  The value of the
+audit is that it defines a boundary on what the Davis benchmark can be used to
+test, and it is reported for that reason alone; the mutant-comparison analysis
+that appeared in the original submission is not part of this manuscript.
+%%REV-END
+
+\subsection{Case Study: Functional-Group Attribution}
+
+The saved Grad-CAM outputs for the two archived non-mutant Davis cases provide a
+compact example of atom-level scores aggregated to functional groups
+(Table~\ref{tab:functional_group}).  The entries are model-native attribution
+scores rather than measured contacts or interaction types.
+
+%%REV-START
+\begin{table}[htbp]
+\centering
+\caption{Model-native functional-group attribution for the two archived
+  non-mutant Davis cases. Scores are normalised atom-level Grad-CAM values
+  aggregated by functional group; they do not identify physical contacts. A
+  dash marks a group with no RDKit substructure match in that ligand.}
+\label{tab:functional_group}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Functional group} & \textbf{EGFR--D0014} & \textbf{BRAF--D0023} \\
+ & (class score 0.995) & (class score 0.099) \\
+\midrule
+Carbonyl      & 0.431 & --- \\
+Amide         & 0.389 & --- \\
+Ether         & 0.136 & --- \\
+Halogen       & 0.134 & --- \\
+Amino         & 0.090 & --- \\
+Aromatic ring & 0.000 & 0.059 \\
+Heterocycle N & 0.000 & 0.000 \\
+Hydroxyl      & ---   & 0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+%%REV-END
+
+\FloatBarrier
+
+The two cases differ markedly in classifier score and attribution profile.
+EGFR--D0014 has a high-affinity-class score of 0.995 and its largest aggregated
+groups are carbonyl (0.431) and amide (0.389).  BRAF--D0023 has a score of 0.099
+and only small saved values for aromatic ring (0.059) and hydroxyl (0.000),
+despite its archived positive affinity of 0.19 nM. We therefore treat
+BRAF--D0023 as a low-scoring failure-mode example for an experimentally positive
+pair. This is a descriptive limitation of model behaviour, not an explanation of
+target binding or an assessment of functional-group chemistry.
+
+%%====================================================================
+\section{Discussion}
+\label{sec:discussion}
+%%====================================================================
+
+\subsection{From Prediction Accuracy to Inspectable Hypotheses}
+
+BioInteract is intended to make model behaviour more inspectable than a purely
+scalar DTI prediction.  Its attention matrices and Grad-CAM scores can generate
+hypotheses about which representations contributed to a prediction.  Such
+hypotheses can subsequently be assessed with crystal structures, mutagenesis,
+or structure--activity relationship (SAR) experiments; the present study does
+not replace these measurements.
+
+%%REV-START
+The matched-protocol comparison sharpens what can and cannot be concluded from
+the Davis benchmark, and the two conclusions point in opposite directions.
+
+The favourable one is that, within a ladder where a single component changes at
+a time, both components earn their place, and the cross-modal interaction module
+earns it where the evaluation is hardest.  Cross-attention adds 0.201 AUPRC over
+concatenation under the Target-ID-held-out protocol against 0.067 under the
+random split, with both encoders and the entire training recipe held fixed.  A
+comparison run only on the random split would have judged that module nearly
+worthless.
+
+The qualifying one is that the random split, on which DTI architectures are most
+often ranked, barely separates them: five architectures trained under the same
+harness span 0.885 to 0.913 AUROC (Supporting Information Table~S14).  We
+therefore treat random-split ordering as weak evidence about architecture, and
+we do not rest any conclusion on it.
+
+We therefore present BioInteract as one audited point in this design space
+rather than as a state-of-the-art claim.  These Davis results
+do not show that BioInteract maps a physical binding pocket, assigns an
+interaction type to an atom pair, ranks a large compound library, or assesses
+treatment resistance.
+%%REV-END
+
+\subsection{The 99.2\% Attention Sparsity}
+
+The observed \SI{99.2}{\percent} attention sparsity is a property of the
+pair-normalised, residue-pooled attribution scores under the chosen threshold. Although it is
+compatible with a model focusing on a small subset of residues, it can also be
+affected by the kinase-focused and imbalanced training data.  It should not be
+read as evidence that the highlighted residues constitute a true binding site.
+%%REV-START
+More generally, work that supervises non-covalent interaction labels directly
+has shown that concentrated or plausible-looking attention is not by itself
+evidence of recovered
+interactions.\cite{li2020monn,gim2023arkdta,seo2024blendnet}  We accordingly
+report the sparsity statistic as a description of how the trained model
+distributes attribution mass, and not as support for an interpretability claim.
+%%REV-END
+
+\subsection{Scope of Cold-Start Evaluation}
+
+%%REV-START
+The exact-sequence-grouped cold-target and cold-both evaluations, which provide
+a strict within-Davis stress test, involve kinase proteins and do not
+demonstrate performance on unrelated protein families or pocket classes.
+Equally important, exact-sequence grouping controls duplicate sequences only.
+Held-out targets retain substantial residual relatedness to the training
+set---the maximum global identity has a median of 0.494 and reaches 0.867---so
+these partitions must not be read as a fully homology-reduced cold-target
+benchmark.  A benchmark that clustered targets by kinase-domain similarity, or
+that adopted a predefined clustered split at a fixed identity cut-off, would
+provide the stronger control and is a useful direction for future evaluation.
+%%REV-END
+
+The Drug-ID-held-out result is likewise restricted to the chemical diversity of 68
+kinase inhibitors.  The observed Morgan-similarity distribution documents the
+nearest-neighbour relationship between held-out and training molecules, but it
+does not establish scaffold hopping or out-of-distribution robustness.
+
+\subsection{Diagnostic Controls and Remaining Dataset Bias}
+
+The exact-sequence-grouped cold-target diagnostic controls demonstrate that a target-independent
+drug representation retains substantial ranking signal in Davis.  The
+drug-only Morgan and drug-promiscuity controls each achieve AUROC near 0.764,
+whereas BioInteract reaches 0.873 under the same exact-sequence-grouped
+partition.  This improvement is compatible with the use of target information,
+but it neither excludes ligand-side activity bias nor establishes that the model
+has learned a molecular-recognition mechanism.  We therefore interpret the
+control comparison as a boundary on the Davis result, not as causal evidence for
+any particular encoder or attribution map.  The label-shuffled control confirms
+that the observed drug-only signal depends on the training labels; it is not a
+test of structural interaction recovery.
+
+%%REV-START
+\subsection{Why External Transfer Is Limited}
+\label{sec:transfer}
+
+The external result in Section~\ref{sec:applicability} is best read as two
+separate failures with different remedies.
+
+The first is a domain failure.  More than nine-tenths of the external pairs sit
+below a Tanimoto similarity of 0.30 to any Davis compound and below a sequence
+identity of 0.30 to any Davis target, and it is exactly those pairs whose AUROC
+is indistinguishable from chance.  Within the small in-domain subset, ranking
+recovers to AUROC 0.60--0.75 depending on the axis.  A model trained on 68
+inhibitors and one protein family cannot be expected to rank pairs drawn from
+the whole of BindingDB, and the stratified result shows that the aggregate
+AUROC of 0.560 is a mixture of a usable in-domain regime and an uninformative
+out-of-domain one rather than a uniform level of weak performance.  The remedy
+is broader training data, not a different attribution mechanism.
+
+The second is a calibration failure that is independent of ranking.  The
+decision threshold selected on the Davis validation set is exceeded by
+\SI{1.3}{\percent} of external pairs even though \SI{26.7}{\percent} are
+positive, and the predicted probabilities occupy a narrow band well below that
+threshold.  Any deployment on a new distribution would therefore require the
+threshold to be re-derived on labelled data from that distribution; reporting a
+frozen-threshold F1 across distributions, as we do in
+Table~\ref{tab:bindingdb_external}, understates ranking quality and overstates
+the usefulness of the fixed operating point.
+
+Two candidate explanations are not supported by the data.  Assay and label
+heterogeneity is small in this cohort: the pair-level replicate-conflict rate is
+\SI{0.8}{\percent}, and conflicting pairs were removed before evaluation.  And
+the result is not an artefact of cohort size, since the same filters applied to
+the complete BindingDB release retain 52{,}085 measurements over 3{,}472 target
+sequences (Table~\ref{tab:bindingdb_curation}).  We therefore attribute the
+limited transfer principally to chemical and target novelty relative to Davis,
+compounded by threshold miscalibration, and we report the applicability-domain
+scores in the released web server so that this boundary is visible at the point
+of use.
+%%REV-END
+
+\subsection{Functional-Group Attribution Without Structural Supervision}
+
+The Grad-CAM functional-group ranking is qualitatively compared with kinase
+SAR literature, but it remains a gradient-based attribution.  In particular,
+the analysis does not determine whether a group forms a hydrogen bond, a
+pi-stacking interaction, a cation--pi interaction, or a van der Waals contact,
+nor whether an implicated protein residue contributes through its backbone or
+side chain.  These questions require a structural complex or targeted
+experiments.\cite{zhang2009targeting}
+
+\subsection{Future Directions}
+
+The strict BindingDB evaluation directly indicates limited transfer beyond the
+Davis benchmark; it therefore cannot support a protein-family-agnostic,
+broad-pocket, or chemical-space generalisation claim.  Evaluation after
+retraining and validation on a wider, pre-specified multi-family protocol is
+required to establish whether the limitation arises from the Davis training
+distribution, task definition, or model. Direct comparison with independent
+experimental evidence is also needed before attributions can be assigned a
+structural meaning.
+
+%%REV-START
+The most informative next step for the attribution outputs is not a further
+qualitative case study but a supervised comparison.  Models trained or
+regularised with explicit non-covalent interaction labels provide both the
+benchmark design and the evaluation criterion
+required.\cite{li2020monn,gim2023arkdta,seo2024blendnet}  A future structural
+audit should use a non-overlapping benchmark of experimentally resolved
+complexes, predefine the atom--residue contact criterion, and compare model
+attributions with the resulting contact labels (for example, from
+PLIP\cite{salentin2015plip}) before structural meaning is assigned.  No overlap
+analysis between the Davis cases and PDBBind or LP-PDBBind, and no PLIP contact
+validation, was performed in this study.
+%%REV-END
+
+The present implementation was audited on one NVIDIA GPU. Although the
+2{,}442{,}083 trainable parameters do not increase with the number of training
+pairs, data-processing time, graph batching, ESM-2 embedding extraction and
+storage, and accelerator memory must be profiled at larger scale. Distributed
+training was not evaluated, and no claim is made that the current implementation
+scales linearly to BindingDB-sized data.
+
+Evaluation on curated allosteric and cryptic-site benchmarks, with appropriate
+structural or dynamic context, is likewise required before BioInteract can be
+assessed for non-canonical drug--target interactions.  Existing work highlights
+the need for explicit allosteric-site labels and benchmark design,\cite{wu2022allostericbenchmark,gatlin2026allostericgrammar}
+and for structural or dynamic treatment of cryptic pockets.\cite{zhang2026crypticpockets}
+CryptoBench provides a dedicated cryptic protein--ligand benchmark that can help
+define such a future evaluation.\cite{skrhak2024cryptobench}
+
+Extending BioInteract from binary interaction classification to
+continuous binding-affinity regression ($pK_d$) would provide the finer-grained
+potency estimates needed for lead optimisation, where accurate ranking of closely
+related analogues is as important as binary activity prediction.
+
+%%====================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+%%====================================================================
+
+We have presented BioInteract, a DTI-prediction framework that combines
+chemistry-aware molecular graph encoding, ESM-2/physicochemical residue
+representations, and bidirectional cross-attention.  The model provides
+prediction scores together with inspectable model-native attention and Grad-CAM
+attributions.
+
+%%REV-START
+This revision states the evidence boundary of those outputs explicitly.  Under a
+matched training protocol, both components of the three-model ladder contribute,
+and the cross-modal interaction module contributes most under the
+entity-held-out protocols rather than on the random split.  Because the random
+split separates architectures only weakly, we make no claim of general
+superiority and treat random-split rankings as weakly informative about
+architecture.  The
+observed attention concentration and functional-group ranking describe model
+behaviour, and, in view of results obtained with explicit non-covalent
+interaction supervision, we do not present them as recovered binding contacts or
+mechanisms.  We distinguish Target-ID-held-out performance from
+exact-sequence-grouped cold-start evaluation after detecting duplicate sequences
+in the original target partition, while noting that neither is a
+homology-reduced benchmark.  The strict external BindingDB test shows limited
+transfer of the frozen Davis checkpoint, and the accompanying
+applicability-domain analysis identifies the conditions under which the released
+model should and should not be trusted.  Broader datasets, clustered splits and
+direct structural validation remain necessary for generalisation and mechanistic
+claims.
+%%REV-END
+
+BioInteract is available as a publicly accessible interactive web interface at
+\url{https://huggingface.co/spaces/AI4deeperScience/BioInteract} for the
+custom-prediction workflow shown in Fig.~\ref{fig:webserver}.  The repository
+README documents the command-line workflow for the available attribution
+outputs.
+
+%%REV-START
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.995\linewidth]{figures/fig_webserver.pdf}
+  \caption{\textbf{BioInteract interactive web server.}
+    Panel A shows the input and result state of the publicly accessible
+    interface at \url{https://huggingface.co/spaces/AI4deeperScience/BioInteract}
+    for the released Davis example pair D0017 (dasatinib) and T0210 (LCK,
+    509~residues), including the high-affinity-class classifier score and the
+    applicability-domain readout.  For every submitted pair the interface now
+    reports the ligand's maximum Tanimoto similarity and the target's maximum
+    global sequence identity to the Davis training entities, together with an
+    explicit inside/borderline/outside assessment.  Panels B and C show the two
+    model-native attribution views returned for the same pair: the atom--residue
+    attention map over the highest-attribution residue window, and the ranked
+    top-ten residue attributions.  All three panels are rendered as vector
+    graphics from the released pipeline.  These are model-native attribution
+    views, not physical-contact or hotspot labels.  Command-line instructions
+    for generating the available attribution outputs are provided in the public
+    repository.}
+  \label{fig:webserver}
+\end{figure}
+%%REV-END
+
+BioInteract represents a step toward AI-assisted DTI prediction in which model
+scores are accompanied by transparent attribution outputs and explicit limits on
+their interpretation.  Such outputs are most useful when combined with rigorous
+split auditing, external validation, and biochemical experiments.
+
+%%====================================================================
+\section*{Acknowledgements}
+%%====================================================================
+
+The authors thank Meta AI Research for providing the ESM-2 pretrained protein
+language model and the RDKit developers for maintaining the open-source
+cheminformatics toolkit.
+
+%%====================================================================
+\section*{Supporting Information}
+%%====================================================================
+
+The Supporting Information contains: model hyperparameters and feature details
+(Tables~S1--S3); computational environment (Table~S4); dataset and split
+statistics (Tables~S5--S7); atom features (Table~S8); the Davis ABL1
+nominal-variant input audit (Table~S9); non-mutant EGFR and BRAF case summaries
+(Tables~S10--S11); complete model parameter counts (Table~S12); strict
+BindingDB external-validation provenance and results (Table~S13);
+%%REV-START
+a random-split breadth check across model families
+(Table~S14); the numerical identity-stratified cold-target results
+(Table~S15); matched-protocol comparison provenance (Table~S16); and the
+complete BindingDB filtering waterfall for both snapshots (Table~S17).
+%%REV-END
+This material is available free of charge.
+
+%%====================================================================
+\section*{Data Availability}
+%%====================================================================
+
+All data used in this study are publicly available. The Davis kinase inhibitor
+dataset used for model training and evaluation is available from the original
+publication.\cite{davis2011comprehensive} The external evaluation uses the official
+BindingDB curated-articles TSV snapshot
+\texttt{BindingDB\_BindingDB\_Articles\_202607}, obtained from the BindingDB
+download service;\cite{gilson2016bindingdb} the raw archive remains available from
+its source, and the release provides the deterministic curation and frozen
+evaluation scripts plus manifest hashes.
+%%REV-START
+The verification waterfall additionally uses the complete
+\texttt{BindingDB\_All\_202608} release from the same download service.
+%%REV-END
+The immutable release containing the
+released checkpoints, canonical prediction CSVs, provenance hashes, strict-split
+artifacts, and reproduction scripts is archived at Zenodo,
+\url{https://doi.org/10.5281/zenodo.21437753}. The BioInteract source repository
+is hosted on \href{https://github.com/Liubo-520/bio-intelligence}{GitHub}. An interactive web
+server for the custom-prediction workflow is available through the
+\href{https://huggingface.co/spaces/AI4deeperScience/BioInteract}{BioInteract Space}; the README
+documents the command-line attribution workflow.
+
+\section*{Code Availability}
+
+The BioInteract source code, pretrained model weights, configuration files,
+canonical metric-reconstruction scripts, and figure-generation scripts are
+publicly available through \href{https://github.com/Liubo-520/bio-intelligence}{GitHub} and
+as the immutable Zenodo release, \url{https://doi.org/10.5281/zenodo.21437753}.
+%%REV-START
+The matched-protocol baseline implementations, the BindingDB filtering-waterfall
+audit, and the applicability-domain analysis added in this revision are included
+in the same repository and archive.
+%%REV-END
+The interactive web
+application for the custom-prediction workflow is available through the
+\href{https://huggingface.co/spaces/AI4deeperScience/BioInteract}{BioInteract Space}.
+
+%%====================================================================
+\section*{Author Contributions}
+%%====================================================================
+
+\textbf{Shengnan Wang}: Conceptualisation, Methodology, Software, Formal
+analysis, Writing -- original draft. \\
+\textbf{Qi Zhang}: Methodology, Validation, Data curation, Visualisation,
+Writing -- original draft. \\
+\textbf{Xucheng Liu}: Investigation, Validation, Data curation. \\
+\textbf{Zixuan Wang}: Software, Investigation, Data curation. \\
+\textbf{Jiangke Cheng}: Resources, Validation, Visualisation. \\
+\textbf{Zhi Huang}: Supervision, Writing -- review \& editing, Funding
+acquisition, Corresponding author.
+
+\vspace{0.5em}
+\noindent S.\,Wang and Q.\,Zhang contributed equally to this work.
+
+%%====================================================================
+\section*{Declaration of Competing Interests}
+%%====================================================================
+
+The authors declare no competing interests.
+
+\section*{Funding}
+
+This work was supported by the Sichuan Provincial Key Laboratory for Development and Utilization of Characteristic Horticultural Biological Resources under Grant TSYY202502. The funder had no role in study design, data collection and analysis, decision to publish, or preparation of the manuscript.
+
+\bibliography{references}
+\end{document}

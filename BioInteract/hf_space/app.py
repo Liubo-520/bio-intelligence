@@ -10,6 +10,7 @@ import warnings
 from pathlib import Path
 
 import gradio as gr
+from Bio import Align
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib as mpl
@@ -17,6 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import torch
+from rdkit import Chem
 import yaml
 from PIL import Image
 
@@ -198,12 +200,110 @@ def _plot_top_residues(
     return Image.open(buffer).copy()
 
 
-_EXAMPLE_SMILES = "Cc1ccc(NC(=O)c2ccc(CN3CCN(C)CC3)cc2)cc1Nc1nccc(-c2cccnc2)n1"
+# Davis records D0017 (dasatinib) and T0210 (LCK, 509 residues, Kd = 0.2 nM).
+# Both are taken verbatim from the released Davis input package, and LCK fits
+# inside the 512-residue limit of this browser demonstration.
+_EXAMPLE_SMILES = "CC1=C(C(=CC=C1)Cl)NC(=O)C2=CN=C(S2)NC3=NC(=NC(=C3)N4CCN(CC4)CCO)C"
 _EXAMPLE_SEQUENCE = (
-    "MGPSENDPNLFVALYDFVASGDNTLSITKGEKLRVLGYNHNGEWCEAQTKNGQGWVPSNYITPVNSLEKHSWYHGPVSRNAAE"
-    "YLLSSGINGSFLVRESESSPGQRSISLRYEGRVYHYRINTASDGKLYVSSESRFNTLAELVHHHSTLVQHSDSVESAYRSKLLNSG"
-    "VYHYRINTASDGKLYVSSESRFNTLAELVHHHSTLVQ"
+    "MGCGCSSHPEDDWMENIDVCENCHYPIVPLDGKGTLLIRNGSEVRDPLVTYEGSNPPASPLQDNLVIALHSYEPSHDGDLGFEK"
+    "GEQLRILEQSGEWWKAQSLTTGQEGFIPFNFVAKANSLEPEPWFFKNLSRKDAERQLLAPGNTHGSFLIRESESTAGSFSLSVRD"
+    "FDQNQGEVVKHYKIRNLDNGGFYISPRITFPGLHELVRHYTNASDGLCTRLSRPCQTQKPQKPWWEDEWEVPRETLKLVERLGAG"
+    "QFGEVWMGYYNGHTKVAVKSLKQGSMSPDAFLAEANLMKQLQHQRLVRLYAVVTQEPIYIITEYMENGSLVDFLKTPSGIKLTIN"
+    "KLLDMAAQIAEGMAFIEERNYIHRDLRAANILVSDTLSCKIADFGLARLIEDNEYTAREGAKFPIKWTAPEAINYGTFTIKSDVW"
+    "SFGILLTEIVTHGRIPYPGMTNPEVIQNLERGYRMVRPDNCPEELYQLMRLCWKERPEDRPTFDYLRSVLEDFFTATEGQYQPQP"
 )
+
+
+# --- applicability domain -------------------------------------------------
+_REFERENCE_PATH = ROOT / "examples" / "davis_applicability_reference.json"
+try:
+    with open(_REFERENCE_PATH, encoding="utf-8") as handle:
+        _REFERENCE = json.load(handle)
+    _DAVIS_FP_BITS = [set(bits) for bits in _REFERENCE["ligand_fingerprint"]["on_bits"].values()]
+    _DAVIS_SEQUENCES = list(_REFERENCE["target_sequences"].values())
+    _THRESHOLDS = _REFERENCE["thresholds"]
+except Exception as error:  # the demonstration still runs without the bundle
+    print(f"[BioInteract] Applicability reference unavailable: {error}")
+    _REFERENCE, _DAVIS_FP_BITS, _DAVIS_SEQUENCES = None, [], []
+    _THRESHOLDS = {}
+
+
+def _max_ligand_similarity(smiles: str) -> float | None:
+    """Return the maximum Tanimoto similarity to any Davis training compound."""
+    if not _DAVIS_FP_BITS:
+        return None
+    from rdkit.Chem import rdFingerprintGenerator as _rfg
+
+    molecule = Chem.MolFromSmiles(smiles)
+    if molecule is None:
+        return None
+    generator = _rfg.GetMorganGenerator(radius=2, fpSize=1024, includeChirality=False)
+    query = set(generator.GetFingerprint(molecule).GetOnBits())
+    best = 0.0
+    for reference in _DAVIS_FP_BITS:
+        union = len(query | reference)
+        if union:
+            best = max(best, len(query & reference) / union)
+    return best
+
+
+def _max_target_identity(sequence: str) -> float | None:
+    """Return the maximum global sequence identity to any Davis training target."""
+    if not _DAVIS_SEQUENCES:
+        return None
+    aligner = Align.PairwiseAligner()
+    aligner.mode = "global"
+    aligner.match_score = 1
+    aligner.mismatch_score = 0
+    aligner.open_gap_score = -1
+    aligner.extend_gap_score = -0.5
+    best = 0.0
+    for reference in _DAVIS_SEQUENCES:
+        alignment = aligner.align(sequence, reference)[0]
+        matches = sum(
+            1 for left, right in zip(alignment[0], alignment[1]) if left == right and left != "-"
+        )
+        if alignment.length:
+            best = max(best, matches / alignment.length)
+    return best
+
+
+def _domain_verdict(score: float | None, near: float, far: float) -> str:
+    """Map a nearest-neighbour score onto the reported applicability label."""
+    if score is None:
+        return "not available"
+    if score >= near:
+        return "inside the Davis domain"
+    if score >= far:
+        return "borderline"
+    return "outside the Davis domain"
+
+
+def applicability_report(smiles: str, sequence: str) -> str:
+    """Return the Markdown applicability-domain block shown under the result."""
+    if _REFERENCE is None:
+        return ""
+    ligand = _max_ligand_similarity(smiles)
+    target = _max_target_identity(sequence)
+    ligand_verdict = _domain_verdict(ligand, _THRESHOLDS["ligand_near"], _THRESHOLDS["ligand_far"])
+    target_verdict = _domain_verdict(target, _THRESHOLDS["target_near"], _THRESHOLDS["target_far"])
+    outside = "outside" in (ligand_verdict + target_verdict)
+    caution = (
+        "At least one axis falls outside the Davis training distribution. On a strict "
+        "external BindingDB cohort of exactly this kind, the frozen Davis checkpoint "
+        "reached only AUROC 0.560, so this prediction should be treated as unreliable."
+        if outside
+        else "Both axes lie at or near the Davis training distribution, which is the "
+        "regime in which the reported benchmark metrics were measured."
+    )
+    return (
+        "\n### Applicability domain relative to Davis training data\n\n"
+        "| Axis | Nearest Davis training neighbour | Assessment |\n"
+        "|------|----------------------------------|------------|\n"
+        f"| Ligand (max Tanimoto, Morgan r2/1024) | {ligand:.3f} | {ligand_verdict} |\n"
+        f"| Target (max global sequence identity) | {target:.3f} | {target_verdict} |\n"
+        f"\n_{caution}_\n"
+    )
 
 
 def run_prediction(smiles: str, sequence: str, progress=gr.Progress()):
@@ -274,6 +374,7 @@ def run_prediction(smiles: str, sequence: str, progress=gr.Progress()):
         f"| Drug atoms analysed | {n_real_atoms} |\n"
         f"| Protein residues analysed | {length} |\n"
         "\n_Model-native attribution is hypothesis-generating, not physical contacts._\n"
+        f"{applicability_report(smiles, sequence)}"
     )
     return "Inference complete.", result, heatmap, residue_chart
 
@@ -341,12 +442,15 @@ with gr.Blocks(
                 "Provide a drug SMILES string and a protein amino-acid sequence for binary high-affinity interaction classification and model-native atom-residue attention attribution.\n\n"
                 f"> {_DEMONSTRATION_LIMIT}\n\n"
                 f"> {_CUSTOM_DOMAIN_NOTICE}\n\n"
-                "> ESM-2 is initialised during application startup; no first-request model initialisation is performed."
+                "> ESM-2 is initialised during application startup; no first-request model initialisation is performed.\n\n"
+                "> Every prediction is accompanied by an applicability-domain readout giving the "
+                "submitted ligand's maximum Tanimoto similarity and the submitted target's maximum "
+                "global sequence identity to the Davis training entities."
             )
             smiles_box = gr.Textbox(label="Drug SMILES", lines=2)
             sequence_box = gr.Textbox(label="Protein amino-acid sequence (single-letter code)", lines=4, max_lines=8)
             with gr.Row():
-                example_button = gr.Button("Load Aurora kinase C (Q9UQB9) example", variant="secondary", size="sm")
+                example_button = gr.Button("Load Davis example: dasatinib + LCK", variant="secondary", size="sm")
                 predict_button = gr.Button("Run prediction", variant="primary", size="lg")
             status_box = gr.Textbox(label="Status", interactive=False, lines=1, placeholder="Awaiting input")
             score_markdown = gr.Markdown(min_height=100)

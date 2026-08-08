@@ -1,0 +1,128 @@
+{
+  "cohort": {
+    "pairs": 1932,
+    "positives": 516,
+    "unique_ligands": 1195,
+    "unique_targets": 396
+  },
+  "ligand_similarity_to_davis": {
+    "definition": "Maximum Tanimoto similarity of non-chiral radius-2, 1024-bit Morgan fingerprints against all 68 Davis compounds.",
+    "median": 0.19672131147540983,
+    "minimum": 0.08,
+    "maximum": 1.0,
+    "fraction_below_0.3": 0.9255230125523013,
+    "bins": [
+      {
+        "bin": "[0.0, 0.2)",
+        "pairs": 1076,
+        "positives": 296,
+        "unique_entities": 627,
+        "mean_predicted_probability": 0.3749266229985372,
+        "AUROC": 0.5086062023562024,
+        "AUPRC": 0.30461344116445827
+      },
+      {
+        "bin": "[0.2, 0.3)",
+        "pairs": 717,
+        "positives": 144,
+        "unique_entities": 479,
+        "mean_predicted_probability": 0.36590066311083413,
+        "AUROC": 0.5039388210199729,
+        "AUPRC": 0.21679823473140886
+      },
+      {
+        "bin": "[0.3, 0.4)",
+        "pairs": 46,
+        "positives": 19,
+        "unique_entities": 36,
+        "mean_predicted_probability": 0.4202377420404683,
+        "AUROC": 0.6998050682261209,
+        "AUPRC": 0.6142976431662075
+      },
+      {
+        "bin": "[0.4, 1.0]",
+        "pairs": 93,
+        "positives": 57,
+        "unique_entities": 53,
+        "mean_predicted_probability": 0.4436455016495079,
+        "AUROC": 0.7227095516569201,
+        "AUPRC": 0.7850582597204538
+      }
+    ]
+  },
+  "target_identity_to_davis": {
+    "definition": "Maximum global sequence identity against all 442 Davis targets; exhaustive Biopython global alignment (match 1, mismatch 0, gap open -1, gap extend -0.5).",
+    "median": 0.23800979771491904,
+    "minimum": 0.11976047904191617,
+    "maximum": 0.9989754098360656,
+    "fraction_below_0.3": 0.9015151515151515,
+    "bins": [
+      {
+        "bin": "[0.0, 0.2)",
+        "pairs": 14,
+        "positives": 1,
+        "unique_entities": 7,
+        "mean_predicted_probability": 0.39664637403828756,
+        "AUROC": 0.5384615384615384,
+        "AUPRC": 0.14285714285714285
+      },
+      {
+        "bin": "[0.2, 0.3)",
+        "pairs": 1721,
+        "positives": 415,
+        "unique_entities": 350,
+        "mean_predicted_probability": 0.37061810692613173,
+        "AUROC": 0.5168361039871585,
+        "AUPRC": 0.2663209604710688
+      },
+      {
+        "bin": "[0.3, 0.4)",
+        "pairs": 73,
+        "positives": 37,
+        "unique_entities": 15,
+        "mean_predicted_probability": 0.4086843092147618,
+        "AUROC": 0.7492492492492493,
+        "AUPRC": 0.7222988783238127
+      },
+      {
+        "bin": "[0.4, 1.0]",
+        "pairs": 124,
+        "positives": 63,
+        "unique_entities": 24,
+        "mean_predicted_probability": 0.428556643186077,
+        "AUROC": 0.6234712464220661,
+        "AUPRC": 0.6474073025454401
+      }
+    ]
+  },
+  "joint_in_domain_subset": {
+    "definition": "Pairs whose ligand similarity and target identity to Davis are both at least 0.3.",
+    "pairs": 117,
+    "positives": 75,
+    "AUROC": 0.5961904761904762,
+    "AUPRC": 0.718824536138003
+  },
+  "calibration": {
+    "frozen_threshold": 0.5959881544113159,
+    "observed_positive_prevalence": 0.2670807453416149,
+    "mean_predicted_probability": 0.3759636592050517,
+    "median_predicted_probability": 0.36264796555042267,
+    "fraction_above_threshold": 0.013457556935817806,
+    "mean_probability_positives": 0.3915321616123813,
+    "mean_probability_negatives": 0.3702903913786519,
+    "probability_quantiles": {
+      "0.05": 0.33518757671117777,
+      "0.25": 0.34944487363100046,
+      "0.5": 0.36264796555042267,
+      "0.75": 0.38207291811704636,
+      "0.95": 0.4372165083885192,
+      "0.99": 0.7781503522396117
+    }
+  },
+  "label_heterogeneity": {
+    "pairs_with_replicate_measurements": 143,
+    "median_replicate_count": 2.0,
+    "distinct_source_records": 2114,
+    "note": "Pairs whose replicate measurements straddled the 30 nM boundary were removed during curation; the count of such conflicts is reported in the curation waterfall."
+  }
+}

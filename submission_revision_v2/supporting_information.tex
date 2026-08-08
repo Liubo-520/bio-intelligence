@@ -1,0 +1,586 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{booktabs,longtable,array}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{pdflscape}
+\usepackage{siunitx}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{hyperref}
+\sisetup{detect-all}
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\setlength{\LTleft}{0pt}
+\setlength{\LTright}{0pt}
+
+\title{Supporting Information for\\
+BioInteract: Interpretable Drug--Target Interaction Prediction via Residue-Level Cross-Attention with Protein-Language and Physicochemical Priors}
+\author{ }
+\date{ }
+
+\begin{document}
+\maketitle
+
+\noindent This document reports values recoverable from the released Davis
+records, configuration files, saved result files, source code, and the fixed
+BindingDB external-validation manifest included with this revision. ``Classifier
+score'' denotes the sigmoid output for the binary high-affinity class; it is not
+an experimental affinity. Model-native attention and Grad-CAM values are
+attribution scores, not contact assignments.
+
+\section*{Model configuration and input features}
+
+\begin{table}[H]
+\centering
+\caption{Model architecture confirmed from the checkpoint-embedded model configurations.}
+\begin{tabular}{ll}
+\toprule
+Component & Archived setting \\
+\midrule
+Drug encoder & GINE; 3 layers; hidden dimension 256; dropout 0.20 \\
+Atom and bond input & 52 node features; 16 edge features \\
+Protein language model & \texttt{esm2\_t30\_150M\_UR50D}; 640-dimensional residues \\
+Protein projection & 256-dimensional projection; 32-dimensional domain-label embedding \\
+Cross-attention & 8 heads; attention dimension 256; dropout 0.10 \\
+Pooling & Gated \\
+Prediction head & Hidden dimensions 256 and 128; dropout 0.30; classification task \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Protein-residue input channels and their availability.}
+\begin{tabular}{p{0.26\linewidth}p{0.66\linewidth}}
+\toprule
+Channel & Archived implementation and limitation \\
+\midrule
+ESM-2 & Frozen 640-dimensional residue embeddings; proteins are truncated at 1,200 residues. \\
+Physicochemical vector & Four values per residue: hydrophobicity, normalized molecular weight, charge, and polarity. \\
+Domain-label channel & The configuration reserves a 32-dimensional embedding. The label builder uses \texttt{NONE} when no per-protein JSON annotation is available. \\
+Annotation availability & No \texttt{data/domain\_annotations/*.json} files are present in the released package. Thus the reproducible Davis input uses the unknown label at every residue and is not curated Pfam/InterPro information. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Training provenance for the historical entity-split checkpoints and the
+separately trained exact-sequence-grouped strict models.}
+\small
+\begin{tabular}{p{0.31\linewidth}p{0.61\linewidth}}
+\toprule
+Setting & Value \\
+\midrule
+Historical entity-split scope & Model architecture only; the three historical entity-split checkpoints do not retain optimizer, scheduler, warmup, or loss state \\
+Historical Random and Drug-ID logs & Final-run headers record weighted BCE, label smoothing 0.05, AdamW ($10^{-4}$, $10^{-5}$), and cosine warmup \\
+Historical Target-ID trace & Older \texttt{run\_split.py} header; only loss and validation AUROC are logged, so optimizer, warmup, and smoothing are not recoverable from the artifact \\
+Historical threshold protocol & A validation F1 threshold is frozen before each canonical test evaluation \\
+Strict-model initialisation and data & Each exact-sequence-grouped model was newly initialised with seed 42 and trained only on its new Davis training partition, using the same preprocessing and architecture \\
+Strict-model optimisation & Weighted BCE with 0.05 label smoothing; AdamW (learning rate $10^{-4}$, weight decay $10^{-5}$); batch size 64; gradient-norm clipping 1.0; five-epoch linear warm-up followed by cosine decay; maximum 100 epochs \\
+Strict-model selection & Highest validation AUROC with patience 15; validation F1 threshold selected after loading that checkpoint and frozen for test evaluation \\
+Strict cold-target artifact & \texttt{revision/analysis/sequence\_grouped\_cold\_target.pt}; best epoch 24 of 39; validation AUROC 0.911568; threshold 0.837581; SHA-256 {\scriptsize\texttt{8ea58e1f056b5e33c309787880a811c797393510c459d9442b5dbe67e632fe5c}} \\
+Strict cold-both artifact & \texttt{revision/analysis/sequence\_grouped\_cold\_both.pt}; best epoch 6 of 21; validation AUROC 0.910630; threshold 0.935704; SHA-256 {\scriptsize\texttt{8b7c0f374983a35163a7d3243c89732504a5a97ef4d10c557b2841a627873972}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Computational environment documented during final reproducibility audit.}
+\begin{tabular}{p{0.30\linewidth}p{0.62\linewidth}}
+\toprule
+Item & Value \\
+\midrule
+Python & 3.10.14 \\
+PyTorch & 2.4.0+cu121 \\
+PyTorch Geometric & 2.6.1 \\
+RDKit & 2025.3.6 \\
+\texttt{fair-esm} & 2.0.0 \\
+Biopython and RapidFuzz & 1.87 and 3.14.5 \\
+CUDA availability during audit & Available \\
+Audit GPU & NVIDIA GeForce RTX 4080 \\
+Strict-split run record & \texttt{device: cuda} in \texttt{strict\_split\_metrics.json} \\
+Historical checkpoint files & \texttt{best.pt}, \texttt{best\_random.pt}, \texttt{best\_cold\_target.pt}, \texttt{best\_cold\_drug.pt} \\
+Strict-model checkpoint files & \texttt{revision/analysis/sequence\_grouped\_cold\_target.pt} and \texttt{revision/analysis/sequence\_grouped\_cold\_both.pt} (hashes in Table~S3) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\clearpage
+
+\section*{Dataset, partitions, and metrics}
+
+\begin{table}[H]
+\centering
+\caption{Canonical current-release Davis test-partition summaries. Values are
+from the full-precision checkpoint reconstruction, frozen validation thresholds,
+and the associated prediction files.}
+\begin{tabular}{lrrrrrrr}
+\toprule
+Partition & Test pairs & Positives & AUROC & AUPRC & F1 & Precision & Recall \\
+\midrule
+Random & 6,011 & 276 & 0.904 & 0.560 & 0.565 & 0.602 & 0.533 \\
+Target-ID-held-out & 5,984 & 250 & 0.930 & 0.525 & 0.534 & 0.517 & 0.552 \\
+Drug-ID-held-out & 5,746 & 245 & 0.733 & 0.167 & 0.100 & 0.273 & 0.061 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Bootstrap intervals for the canonical current-release entity-based partitions.
+Each interval uses 600 ordinary pair-level bootstrap replicates sampled with
+replacement at the test-pair level, NumPy seed 42, and the 2.5th and 97.5th
+percentiles of valid replicate metrics. Replicates containing only one class
+are discarded. The main figure shows point estimates only.}
+\begin{tabular}{lcc}
+\toprule
+Partition & AUROC 95\% interval & AUPRC 95\% interval \\
+\midrule
+Random & [0.881, 0.924] & [0.498, 0.624] \\
+Target-ID-held-out & [0.911, 0.948] & [0.454, 0.584] \\
+Drug-ID-held-out & [0.703, 0.763] & [0.129, 0.211] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Exact-sequence-grouped strict within-Davis evaluations from
+\texttt{strict\_split\_metrics.json}. The two models were trained from
+initialisation under the protocol in Table~S3. Threshold-dependent quantities use
+the corresponding validation-set threshold; all strict-split entries are point
+estimates, not bootstrap confidence intervals.}
+\scriptsize
+\textbf{Pair accounting}\par\smallskip
+\begin{tabular}{lrrrrr}
+\toprule
+Protocol & Train pairs & Validation pairs & Test pairs & Test positives & Excluded cross-block pairs \\
+\midrule
+Exact-sequence-grouped cold-target & 21,080 & 2,992 & 5,984 & 208 & 0 \\
+Exact-sequence-grouped cold-both & 15,190 & 264 & 1,144 & 38 & 13,458 \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\textbf{Test metrics}\par\smallskip
+\begin{tabular}{lrrrrrr}
+\toprule
+Protocol & AUROC & AUPRC & Threshold & F1 & Precision & Recall \\
+\midrule
+Exact-sequence-grouped cold-target & 0.873 & 0.383 & 0.838 & 0.468 & 0.517 & 0.428 \\
+Exact-sequence-grouped cold-both & 0.552 & 0.038 & 0.936 & 0.000 & 0.000 & 0.000 \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\raggedright For the cold-both protocol, drug identifiers and exact
+target-sequence groups are partitioned independently at 70/10/20. Only pairs in
+the corresponding train--train, validation--validation, and test--test blocks
+are retained; the remaining cross-block pairs are excluded. The cold-both
+validation block contains 10 positive pairs.
+\end{table}
+
+\section*{Reproducibility details for revision analyses}
+
+\noindent\textbf{Identifier-partition similarity audits.}
+Drug similarities use RDKit~2025.3.6 Morgan fingerprints (radius 2, 1,024 bits,
+\texttt{includeChirality=False}) and Tanimoto similarity. Protein similarities
+for the original Target-ID-held-out audit use RapidFuzz~3.14.5
+\texttt{fuzz.ratio}/100. For sequences $x,y$, this is the normalised Indel
+similarity $1-d_{\mathrm{Indel}}/(|x|+|y|)$, where substitutions are represented
+as one deletion plus one insertion.
+
+\medskip
+\noindent\textbf{Strict-test global alignment.}
+Biopython~1.87 \texttt{Align.PairwiseAligner} is used in global mode with match
+$=1$, mismatch $=0$, gap-opening $=-1$, and gap-extension $=-0.5$. Full-length
+identity is the number of exact-residue matches divided by alignment length; the
+maximum across all training targets is retained for each held-out target.
+
+\medskip
+\noindent\textbf{Bootstrap intervals.}
+The saved 95\% intervals use ordinary, unstratified pair-level resampling with
+replacement, 600 requested replicates, and NumPy random seed 42. Each replicate
+contains the same number of test pairs as the corresponding test set; one-class
+replicates are skipped. Bounds are the 2.5th and 97.5th percentiles of the valid
+AUROC or AUPRC replicate distribution.
+
+\medskip
+\noindent\textbf{Grad-CAM.}
+Hooks are attached to \texttt{drug\_encoder.layers.2}, the third and final GINE
+message-passing layer. Gradients are taken from the pre-sigmoid positive-class
+logit, pooled across graph nodes to obtain channel weights, rectified, and then
+normalised separately within each molecular graph.
+
+\medskip
+\noindent\textbf{Attention sparsity.}
+For pair $q$, residue scores $s_{qj}=\sum_i M_{qij}$ are normalised as
+$\widetilde{s}_{qj}=s_{qj}/\max_k s_{qk}$. The reported fraction is
+$|\{(q,j):\widetilde{s}_{qj}<0.1\}|/\sum_q L_q$. It uses all 1,506 positive Davis
+pairs with the archived \texttt{checkpoints/best.pt}, not a single test set.
+Every pair is normalised before the 1,301,380 valid residue scores are
+concatenated; thus original training, validation, and test memberships are all
+included and longer targets contribute more residue-level observations.
+The archived flat-score array is
+\texttt{BioInteract/results/figure\_data/attention\_distribution.npz}; it is
+the sole source of the attention-distribution figure and cumulative curve in the
+main text.
+
+\begin{center}
+\small
+\textbf{Residue-attribution summary.}\par\smallskip
+\begin{tabular}{lr}
+\toprule
+Quantity & Value \\
+\midrule
+Positive Davis pairs & 1,506 \\
+Residue-score observations & 1,301,380 \\
+Mean / standard deviation & 0.004351 / 0.046243 \\
+Median & 0.000272 \\
+95th / 99th percentile & 0.003617 / 0.057193 \\
+Fraction below 0.1 & 0.992319 \\
+Attribution mass in top 1\% / 5\% scores & 0.788528 / 0.904465 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{center}
+\small
+\textbf{Exact-sequence-grouped target diagnostic controls.} All values use the 5,984-pair strict target test set with 208 positives.\\[3pt]
+\begin{tabular}{lrr}
+\toprule
+Control & AUROC & AUPRC \\
+\midrule
+BioInteract & 0.873 & 0.383 \\
+Drug-only Morgan logistic regression & 0.764 & 0.164 \\
+Drug-promiscuity prior & 0.764 & 0.163 \\
+Target-only constant prior & 0.500 & 0.035 \\
+Label-shuffled drug-only control & 0.407 & 0.029 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\clearpage
+
+\section*{Feature and input audits}
+
+\begin{table}[H]
+\centering
+\caption{Atom and bond feature specification from \texttt{src/data/mol\_graph.py}.}
+\begin{tabular}{llr}
+\toprule
+Level & Feature family & Dimensions \\
+\midrule
+Atom & Atom type one-hot (20 choices including unknown) & 20 \\
+Atom & Hybridization, formal charge, and hydrogen-count one-hot vectors & 18 \\
+Atom & Degree, aromaticity, and ring membership & 3 \\
+Atom & Ring-size membership for sizes 3--8 & 6 \\
+Atom & Donor/acceptor, Crippen logP and MR, Gasteiger charge & 5 \\
+Atom total &  & 52 \\
+Bond & Bond type, conjugation, ring membership, stereo, and direction & 16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{longtable}{@{}l@{\quad}l@{\quad}r@{\quad}c@{\quad}r@{\quad}r@{}}
+\caption{Davis nominal ABL1 input audit. Every listed record has the same complete SHA-256 digest {\scriptsize\texttt{cd6a78b82fede215cdb80a797f228098a41178fdde0753728f3781e6221fb1ee}}; values in the last columns are the archived D0010 and D0017 affinities in nM. The nominal labels do not alter the model sequence input.}\\
+\toprule
+Target ID & Nominal name & Length & Matches ABL1 & D0010 & D0017 \\
+\midrule
+\endfirsthead
+\toprule
+Target ID & Nominal name & Length & Matches ABL1 & D0010 & D0017 \\
+\midrule
+\endhead
+T0001 & ABL1(E255K) & 1167 & Yes & 0.047 & 0.047 \\
+T0002 & ABL1(F317I) & 1167 & Yes & 0.63 & 0.10 \\
+T0003 & ABL1(F317I)p & 1167 & Yes & 0.18 & 0.041 \\
+T0004 & ABL1(F317L) & 1167 & Yes & 0.11 & 0.032 \\
+T0005 & ABL1(F317L)p & 1167 & Yes & 0.029 & 0.019 \\
+T0006 & ABL1(H396P) & 1167 & Yes & 0.062 & 0.025 \\
+T0007 & ABL1(H396P)p & 1167 & Yes & 0.057 & 0.046 \\
+T0008 & ABL1(M351T) & 1167 & Yes & 0.037 & 0.016 \\
+T0009 & ABL1(Q252H) & 1167 & Yes & 0.086 & 0.037 \\
+T0010 & ABL1(Q252H)p & 1167 & Yes & 0.039 & 0.064 \\
+T0011 & ABL1(T315I) & 1167 & Yes & 21 & 890 \\
+T0012 & ABL1(T315I)p & 1167 & Yes & 3.6 & 120 \\
+T0013 & ABL1(Y253F) & 1167 & Yes & 0.036 & 0.058 \\
+T0014 & ABL1 & 1167 & Yes & 0.12 & 0.029 \\
+T0015 & ABL1p & 1167 & Yes & 0.057 & 0.046 \\
+\bottomrule
+\end{longtable}
+
+\begin{table}[H]
+\centering
+\caption{Saved non-mutant EGFR--D0014 functional-group attribution values.}
+\begin{tabular}{lr}
+\toprule
+Functional group & Attribution \\
+\midrule
+Carbonyl & 0.431 \\
+Amide & 0.389 \\
+Ether & 0.136 \\
+Halogen & 0.134 \\
+Amino & 0.090 \\
+Aromatic ring & 0.000 \\
+Heterocycle N & 0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Saved non-mutant BRAF--D0023 failure-mode summary. The archived affinity is positive at the study threshold, whereas the classifier score is low. The score and attributions are model outputs, not an explanation of binding.}
+\begin{tabular}{lr}
+\toprule
+Quantity & Value \\
+\midrule
+High-affinity-class score & 0.099 \\
+Archived Davis affinity (nM) & 0.19 \\
+Aromatic-ring attribution & 0.059 \\
+Hydroxyl attribution & 0.000 \\
+Heterocycle-N attribution & 0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Trainable parameter count recovered from \texttt{interpretability\_report.json}.}
+\begin{tabular}{lr}
+\toprule
+Quantity & Value \\
+\midrule
+Total trainable parameters & 2,442,083 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\clearpage
+\section*{Strict external BindingDB evaluation}
+
+% Source identifier: BindingDB_BindingDB_Articles_202607
+Table~S13 records the frozen external evaluation requested by the reviewers.
+The official curated-articles snapshot was handled independently of Davis, then
+filtered under the pre-specified exact-$K_d$ and exact double-novel protocol.
+This is an external exact-entity test, not a claim of scaffold or remote-homology
+novelty, and no BindingDB label was used to retrain, calibrate, select the
+checkpoint, or select the threshold.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Strict BindingDB external-validation provenance, curation, and frozen
+result. The source archive was \texttt{BindingDB\_BindingDB\_Articles\_202607\_tsv.zip}
+(SHA-256 \texttt{d2584d1519318d00ab5f46289da5ab3549affe732d598a5072f8777b6b3b5262}).
+Only finite exact $K_d$ measurements in nM for valid single-chain proteins
+(maximum 1,200 residues) and valid ligand structures were considered. Exact
+canonical-isomeric-SMILES and full-normalised-sequence matches to every Davis
+ligand or target were excluded. Eligible measurements were grouped by canonical
+ligand--sequence pair; threshold-conflicting groups were removed at the pair
+level, and every remaining pair retained its median exact $K_d$. Confidence
+intervals are pair-stratified bootstrap 95\% intervals from 600 replicates
+(seed 42).}
+\label{tab:bindingdb_external_si}
+\begin{tabular}{p{0.42\linewidth}p{0.49\linewidth}}
+\toprule
+Item & Value \\
+\midrule
+Source snapshot & {\scriptsize\texttt{BindingDB\_BindingDB\_\linebreak[0]Articles\_202607}} (official BindingDB curated articles TSV) \\
+Source rows & 93,712 \\
+Final positives / negatives & 516 / 1,416 \\
+Unique ligands / targets & 1,195 / 396 \\
+Sequential row-level exclusions & 82,988 censored/non-exact $K_d$; 8,261 multi-chain; 139 invalid sequences; 8 invalid SMILES; 64 Davis-ligand matches; 94 Davis-sequence matches \\
+Eligible measurements before pair reconciliation & 2,158 \\
+Threshold-conflicting replicate groups & 15 ligand--target pairs, comprising 44 measurement rows; conflicts are counted at the pair level \\
+Threshold-consistent measurement rows & 2,114 \\
+Median replicate aggregation & 143 retained pairs had $\geq2$ consistent measurements; 182 repeated measurement rows were collapsed by the within-pair median $K_d$ \\
+Final external pairs & 1,932 \\
+Frozen model and threshold & \texttt{checkpoints/best\_random.pt}; 0.5959881544 (existing Davis random-validation threshold) \\
+Protein features & Newly extracted \texttt{fair-esm} 2.0.0 \texttt{esm2\_t30\_150M\_UR50D}; all 396 caches passed 640-dimensional and length checks \\
+AUROC (95\% CI) & 0.5597 [0.5313, 0.5885] \\
+AUPRC (95\% CI) & 0.3404 [0.3138, 0.3724] \\
+Frozen-threshold F1 / precision / recall & 0.0701 / 0.7308 / 0.0368 \\
+Two-run reproducibility & Identical per-pair probabilities; the complete SHA-256 is recorded in \texttt{bindingdb\_external\_manifest.json} \\
+Interpretation & Limited external transfer; the result does not support a broad DTI-transfer claim and is not used for structural or attribution interpretation. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\clearpage
+\section*{Breadth check across model families}
+
+The main-text comparison in Table~1 is a single-variable ladder: the same
+molecular graph encoder throughout, first without a protein language model,
+then with one, then with cross-attention in place of concatenation. Table~S14
+places that ladder alongside two further architectures trained by the same
+harness, under the same protocol described in Table~S16, on the random split.
+The two additional models are a sequence convolutional model in the DeepDTA
+family and the low-rank bilinear attention and bilinear pooling of DrugBAN
+applied to the same two encoders used by BioInteract. They were run on the
+random split only, as a breadth check across families rather than as a second
+controlled contrast, and their protocol-dependence was therefore not assessed.
+
+The five architectures fall within roughly 0.03 AUROC of one another on this
+split: the sequence convolutional model, which uses neither a molecular graph
+nor a protein language model, reaches AUROC 0.912 and AUPRC 0.569, the bilinear
+interaction module reaches 0.907 and 0.547, and BioInteract reaches 0.913 and
+0.545. This is the basis for the statement in the main text that the random
+split separates architectures weakly, so that a favourable random-split number
+is poor evidence for a design choice and the informative contrasts are the
+entity-held-out ones.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Random-split breadth check. All values were measured in this study
+under the shared protocol of Table~S16. The first three rows are the main-text
+ladder; the last two are the additional architectures. ``PLM'' indicates
+whether the model consumes the frozen \texttt{esm2\_t30\_150M\_UR50D} residue
+representation. Best value in each column is in bold.}
+\begin{tabular}{llccc}
+\toprule
+Model & Interaction paradigm & PLM & AUROC & AUPRC \\
+\midrule
+GraphDTA & Graph + sequence CNN & No & 0.885 & 0.358 \\
+ESM2-GraphConcat & Graph + PLM, concatenation & Yes & 0.907 & 0.478 \\
+\textbf{BioInteract (ours)} & Graph + PLM, cross-attention & Yes & \textbf{0.913} & 0.545 \\
+DeepDTA & Sequence CNN & No & 0.912 & \textbf{0.569} \\
+ESM2-Bilinear & Graph + PLM, bilinear attention & Yes & 0.907 & 0.547 \\
+\bottomrule
+\end{tabular}
+\label{tab:breadth_si}
+\end{table}
+
+\clearpage
+\section*{Identity-stratified cold-target results}
+
+Table~S15 gives the numerical values plotted in main-text Figure~3. Held-out
+targets in the exact-sequence-grouped cold-target partition are grouped by their
+maximum full-length global sequence identity to any training target, computed
+with the Biopython global aligner (match $=1$, mismatch $=0$, gap opening $=-1$,
+gap extension $=-0.5$); identity is exact-residue matches divided by full
+alignment length. The two outer strata contain 75 and 3 positive pairs
+respectively, so their AUPRC estimates are unstable; the ordering across strata
+is not monotone and should not be read as a homology-transfer trend.
+
+\begin{table}[H]
+\centering
+\small
+\caption{BioInteract performance on the exact-sequence-grouped cold-target test,
+stratified by maximum global sequence identity to the training targets. The
+positive prevalence of the full cold-target test is 0.035.}
+\begin{tabular}{lrrrrrr}
+\toprule
+Maximum identity & Test targets & Test pairs & Positive pairs &
+Positive prevalence & AUROC & AUPRC \\
+\midrule
+$<0.40$         & 31 & 2{,}108 & 75 & 0.036 & 0.806 & 0.305 \\
+$0.40$--$<0.60$ & 28 & 1{,}904 & 77 & 0.040 & 0.908 & 0.456 \\
+$0.60$--$<0.80$ & 24 & 1{,}632 & 53 & 0.032 & 0.908 & 0.466 \\
+$\geq 0.80$     &  5 &    340 &  3 & 0.009 & 0.862 & 0.121 \\
+\midrule
+All             & 88 & 5{,}984 & 208 & 0.035 & 0.873 & 0.383 \\
+\bottomrule
+\end{tabular}
+\label{tab:identity_bins_si}
+\end{table}
+
+\clearpage
+\section*{Matched-protocol comparison provenance}
+
+Table~S16 records one row per training run behind main-text Table~1. Every run
+used the same Davis records, the same partition for its protocol, seed 42,
+weighted binary cross-entropy with 0.05 label smoothing, AdamW (learning rate
+$10^{-4}$, weight decay $10^{-5}$), an effective batch size of 64 assembled from
+micro-batches of 16 with gradient accumulation, automatic mixed precision,
+gradient-norm clipping at 1.0, a five-epoch linear warm-up followed by cosine
+decay, a maximum of 30 epochs, and early stopping at patience 6 on validation
+AUROC. Validation and test inference were run in full precision. The reported
+threshold was selected once on that run's validation predictions by maximising
+F1 and then frozen for the test evaluation. Each configuration was trained once;
+repeated-seed variability was not estimated, so small differences between
+adjacent rows should not be interpreted.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\caption{Per-run provenance for the matched-protocol comparison. ``Best epoch''
+is the epoch whose validation AUROC was highest and whose weights were restored
+before the test evaluation.}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrrrrrrr}
+\toprule
+Model & Protocol & Parameters & Epochs & Best epoch & Val.\ AUROC &
+Threshold & Test AUROC & Test AUPRC \\
+\midrule
+BioInteract & random & 2{,}442{,}083 & 21 & 15 & 0.9456 & 0.9036 & 0.9128 & 0.5454 \\
+DeepDTA & random & 919{,}169 & 30 & 27 & 0.9316 & 0.9207 & 0.9125 & 0.5692 \\
+ESM2-Bilinear & random & 1{,}533{,}697 & 30 & 28 & 0.9175 & 0.8270 & 0.9065 & 0.5470 \\
+ESM2-GraphConcat & random & 1{,}335{,}553 & 30 & 29 & 0.9236 & 0.8277 & 0.9071 & 0.4785 \\
+GraphDTA & random & 2{,}264{,}513 & 26 & 20 & 0.8895 & 0.8822 & 0.8851 & 0.3581 \\
+BioInteract & target\_id\_held\_out & 2{,}442{,}083 & 25 & 19 & 0.9214 & 0.8867 & 0.9340 & 0.5693 \\
+DeepDTA & target\_id\_held\_out & 919{,}169 & 30 & 26 & 0.8846 & 0.7149 & 0.9136 & 0.4932 \\
+ESM2-GraphConcat & target\_id\_held\_out & 1{,}335{,}553 & 23 & 17 & 0.8553 & 0.8958 & 0.8780 & 0.3687 \\
+GraphDTA & target\_id\_held\_out & 2{,}264{,}513 & 22 & 16 & 0.8457 & 0.6843 & 0.8557 & 0.3056 \\
+BioInteract & drug\_id\_held\_out & 2{,}442{,}083 & 7 & 1 & 0.5708 & 0.6939 & 0.7126 & 0.1259 \\
+ESM2-GraphConcat & drug\_id\_held\_out & 1{,}335{,}553 & 7 & 1 & 0.5833 & 0.5038 & 0.6836 & 0.0968 \\
+GraphDTA & drug\_id\_held\_out & 2{,}264{,}513 & 7 & 1 & 0.6180 & 0.6050 & 0.6793 & 0.1050 \\
+\bottomrule
+\end{tabular}
+}
+\label{tab:matched_provenance_si}
+\end{table}
+
+\clearpage
+\section*{BindingDB filtering waterfall and snapshot provenance}
+
+Table~S17 records the provenance of the two BindingDB snapshots audited in this
+revision and the reconciliation of the two filter orderings. Both orderings
+apply exactly the same criteria and both retain the same number of eligible
+measurements for a given snapshot; they differ only in the order in which the
+measurement-quality and target-validity tests are applied, which changes how
+individual rows are attributed between the first three counters. The
+measurement-first ordering used in main-text Table~4 was adopted because it
+isolates the dominant cause of the reduction, namely rows that report no $K_d$
+at all.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Provenance of the two BindingDB snapshots and reconciliation of the two
+audit orderings. The curated-articles snapshot is the pre-specified source of
+the frozen external evaluation; the complete release was added in this revision
+as an independent verification that the filter definitions scale.}
+\begin{tabular}{p{0.30\linewidth}p{0.31\linewidth}p{0.31\linewidth}}
+\toprule
+Item & Curated articles & Complete release \\
+\midrule
+Source version & {\scriptsize\texttt{BindingDB\_BindingDB\_\linebreak[0]Articles\_202607}} & \texttt{BindingDB\_All\_202608} \\
+Archive file & {\scriptsize\texttt{BindingDB\_BindingDB\_\linebreak[0]Articles\_202607\_tsv.zip}} & \texttt{\scriptsize BindingDB\_All\_202608\_tsv.zip} \\
+Archive bytes & 18{,}114{,}757 & 592{,}986{,}963 \\
+Archive SHA-256 & {\scriptsize\texttt{d2584d1519318d00ab5f46289da5ab35\linebreak[0]49affe732d598a5072f8777b6b3b5262}} & {\scriptsize\texttt{8dc30541d668e5e403ba1fe9a682b76c\linebreak[0]42a50e1711aac44329c62ba24ccd57db}} \\
+TSV member & {\scriptsize\texttt{BindingDB\_BindingDB\_\linebreak[0]Articles.tsv}} & \texttt{BindingDB\_All.tsv} \\
+Input rows & 93{,}712 & 3{,}234{,}499 \\
+Rows with no $K_d$ reported & 91{,}062 (97.2\%) & 3{,}104{,}331 (96.0\%) \\
+Eligible measurements, measurement-first ordering & 2{,}158 & 52{,}085 \\
+Eligible measurements, single-chain-first ordering & 2{,}158 & 52{,}085 \\
+Pair-level threshold conflicts removed & 15 pairs / 44 rows & 1{,}992 pairs / 5{,}233 rows \\
+Retained double-novel pairs & 1{,}932 & 38{,}193 \\
+Retained positives / negatives & 516 / 1{,}416 & 13{,}264 / 24{,}929 \\
+Unique ligands / targets & 1{,}195 / 396 & 26{,}433 / 3{,}462 \\
+Frozen AUROC (95\% CI) & 0.560 [0.531, 0.589] & 0.533 [0.526, 0.539] \\
+Frozen AUPRC (95\% CI) & 0.340 [0.314, 0.372] & 0.383 [0.378, 0.390] \\
+Frozen-threshold F1 / precision / recall & 0.070 / 0.731 / 0.037 & 0.044 / 0.513 / 0.023 \\
+Prediction SHA-256 & {\scriptsize\texttt{9e50dfadbdcb9974d6bc2dcefbdc4edb\linebreak[0]f4bd089b14598d76724da48fa40bba1c}} & {\scriptsize\texttt{303ba15ab0e605607102d08e7b2fc3c4\linebreak[0]cee888d11cc531d5aced121d00cf9013}} \\
+Repeat-run check & Two runs gave identical per-pair probabilities & Evaluated once; the repeat run was not performed \\
+Role in this study & Pre-specified frozen external evaluation & Verification of filter scaling and a larger frozen external evaluation \\
+\bottomrule
+\end{tabular}
+\label{tab:bindingdb_waterfall_si}
+\end{table}
+
+\end{document}

@@ -1,0 +1,106 @@
+{
+  "BindingDB_BindingDB_Articles_202607_tsv.zip": {
+    "archive": "BindingDB_BindingDB_Articles_202607_tsv.zip",
+    "input_rows": 93712,
+    "waterfall": [
+      {
+        "filter": "no_kd_reported",
+        "description": "No Kd value reported (Ki/IC50/EC50 rows)",
+        "rows_removed": 91062,
+        "rows_remaining": 2650
+      },
+      {
+        "filter": "censored_kd",
+        "description": "Kd present but inequality-qualified or unparsable",
+        "rows_removed": 160,
+        "rows_remaining": 2490
+      },
+      {
+        "filter": "multichain_target",
+        "description": "Target is not a single protein chain",
+        "rows_removed": 27,
+        "rows_remaining": 2463
+      },
+      {
+        "filter": "invalid_smiles",
+        "description": "Ligand SMILES not parsable by RDKit",
+        "rows_removed": 8,
+        "rows_remaining": 2455
+      },
+      {
+        "filter": "invalid_or_long_sequence",
+        "description": "Non-standard residues or sequence > 1200 aa",
+        "rows_removed": 141,
+        "rows_remaining": 2314
+      },
+      {
+        "filter": "davis_ligand_overlap",
+        "description": "Ligand identical to a Davis compound",
+        "rows_removed": 62,
+        "rows_remaining": 2252
+      },
+      {
+        "filter": "davis_target_overlap",
+        "description": "Sequence identical to a Davis target",
+        "rows_removed": 94,
+        "rows_remaining": 2158
+      }
+    ],
+    "eligible_measurements": 2158,
+    "eligible_unique_ligands": 1197,
+    "eligible_unique_sequences": 400,
+    "structure_checks_applied": true
+  },
+  "BindingDB_All_202608_tsv.zip": {
+    "archive": "BindingDB_All_202608_tsv.zip",
+    "input_rows": 3234499,
+    "waterfall": [
+      {
+        "filter": "no_kd_reported",
+        "description": "No Kd value reported (Ki/IC50/EC50 rows)",
+        "rows_removed": 3104331,
+        "rows_remaining": 130168
+      },
+      {
+        "filter": "censored_kd",
+        "description": "Kd present but inequality-qualified or unparsable",
+        "rows_removed": 47860,
+        "rows_remaining": 82308
+      },
+      {
+        "filter": "multichain_target",
+        "description": "Target is not a single protein chain",
+        "rows_removed": 2157,
+        "rows_remaining": 80151
+      },
+      {
+        "filter": "invalid_smiles",
+        "description": "Ligand SMILES not parsable by RDKit",
+        "rows_removed": 93,
+        "rows_remaining": 80058
+      },
+      {
+        "filter": "invalid_or_long_sequence",
+        "description": "Non-standard residues or sequence > 1200 aa",
+        "rows_removed": 7644,
+        "rows_remaining": 72414
+      },
+      {
+        "filter": "davis_ligand_overlap",
+        "description": "Ligand identical to a Davis compound",
+        "rows_removed": 5738,
+        "rows_remaining": 66676
+      },
+      {
+        "filter": "davis_target_overlap",
+        "description": "Sequence identical to a Davis target",
+        "rows_removed": 14591,
+        "rows_remaining": 52085
+      }
+    ],
+    "eligible_measurements": 52085,
+    "eligible_unique_ligands": 27079,
+    "eligible_unique_sequences": 3472,
+    "structure_checks_applied": true
+  }
+}

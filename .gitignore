@@ -16,3 +16,11 @@ __pycache__/
 *.out
 *.synctex.gz
 *.toc
+
+# Second-revision analysis scratch output
+revision_v2/analysis/_*.log
+revision_v2/analysis/webserver_app.log
+
+# Confidential peer-review correspondence: reviewer comments are not published
+revision_v2/comments.md
+submission_revision_v2/response_to_reviewers.*
