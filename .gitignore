@@ -23,4 +23,7 @@ revision_v2/analysis/webserver_app.log
 
 # Confidential peer-review correspondence: reviewer comments are not published
 revision_v2/comments.md
-submission_revision_v2/response_to_reviewers.*
+revision/reviewer*.txt
+revision/reviewer*.pdf
+**/response_to_reviewers.*
+**/response-to-reviewers.*
